@@ -91,10 +91,30 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
       let ideaMsg = 'Help us shape a Play for this idea:';
       if (extracted_idea_prompt) ideaMsg += ` ${extracted_idea_prompt}`;
       messages.push({ role: 'user', content: ideaMsg });
-      // Always instruct the AI to return the five sections, with anchoring and filter
+      // Always instruct the AI to return the six sections, with sharper instructions
       messages.push({
         role: 'user',
-        content: `Please return your answer with the following sections:\n1. Hypothesis (in Rhythm90 framing)\n2. How-to-Run Summary (small plan, big impact)\n3. Signals to Watch (what surprises or confirms progress)\n4. Owner Role (who leads, who contributes)\n5. What Success Looks Like (what learning or behavior shift, not just KPI)\n\nTailor your output to the Owner Role if specified.\n\nImportant: Always ensure your recommendations are directly tied to the provided idea_prompt and top_signal. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.\n\nAvoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or signal.`
+        content: `Please return your answer with the following sections:
+1. Hypothesis (in Rhythm90 framing)
+2. How-to-Run Summary (include timeframe, sample size, control/experiment)
+3. Signals to Watch (what surprises or confirms progress)
+4. Owner Role (who leads, who contributes)
+5. What Success Looks Like (include what we will learn and how it informs future plays)
+6. Next Recommendation (Based on what we learn, what should we do next?)
+
+Incorporate the Additional Context into all sections. Provide category-specific recommendations when possible.
+
+In the How-to-Run Summary, provide timeframe, sample size, and control vs. experiment details where applicable.
+
+In What Success Looks Like, include what we will learn from the results and how that learning can inform future plays.
+
+Include a brief recommendation: Based on what we learn, what should we do next?
+
+Tailor your output to the Owner Role if specified.
+
+Important: Always ensure your recommendations are directly tied to the provided idea_prompt and top_signal. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.
+
+Avoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or signal.`
       });
     } else if (extracted_idea) {
       // Fallback to old prompt structure
