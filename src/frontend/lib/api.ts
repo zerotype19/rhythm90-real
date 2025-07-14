@@ -104,10 +104,10 @@ class ApiClient {
   }
 
   // AI Features
-  async generatePlay(idea: string, context?: string) {
+  async generatePlay(payload: any) {
     return this.request('/api/plays/generate', {
       method: 'POST',
-      body: JSON.stringify({ idea, context }),
+      body: JSON.stringify(payload),
       credentials: 'include',
     });
   }
