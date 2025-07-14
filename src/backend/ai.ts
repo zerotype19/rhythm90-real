@@ -51,7 +51,13 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
     if (!user) return errorResponse('Unauthorized', 401);
     const body: any = await request.json();
     // New fields
-    const { team_type, quarter_focus, top_signal, owner_role, idea_prompt } = body;
+    let { team_type, quarter_focus, top_signal, owner_role, idea_prompt } = body;
+    // Coerce to string if needed
+    team_type = typeof team_type === 'string' ? team_type : (team_type ? String(team_type) : '');
+    quarter_focus = typeof quarter_focus === 'string' ? quarter_focus : (quarter_focus ? String(quarter_focus) : '');
+    top_signal = typeof top_signal === 'string' ? top_signal : (top_signal ? String(top_signal) : '');
+    owner_role = typeof owner_role === 'string' ? owner_role : (owner_role ? String(owner_role) : '');
+    idea_prompt = typeof idea_prompt === 'string' ? idea_prompt : (idea_prompt ? String(idea_prompt) : '');
     // Old fields for fallback
     const { idea, context } = body;
     let messages = [PLAY_BUILDER_SYSTEM_MESSAGE];
