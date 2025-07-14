@@ -1,3 +1,7 @@
+# WARNING: Deploying with wrangler will overwrite any environment variables and bindings set in the Cloudflare dashboard
+# unless you use the --keep-vars flag. Always keep all required variables and bindings in this file.
+# If you add variables/bindings in the dashboard, add them here as well to avoid losing them on deploy.
+
 name = "rhythm90-real"
 main = "src/backend/index.ts"
 compatibility_date = "2024-01-15"
