@@ -50,51 +50,58 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
     const body: any = await request.json();
-    // New fields
-    let { team_type, quarter_focus, top_signal, owner_role, idea_prompt } = body;
+    // Log raw request body (excluding PII)
+    const { idea_prompt, top_signal, team_type, quarter_focus, owner_role, idea, context } = body;
+    console.log('[AI DEBUG] Raw PlayBuilder request body:', JSON.stringify({ idea_prompt, top_signal, team_type, quarter_focus, owner_role, idea, context }, null, 2));
     // Extraction helper
-    function extractField(field: any): string {
+    function extractField(field: any, fieldName: string): string {
+      let result = '';
       if (field && typeof field === 'object') {
-        if ('value' in field && typeof field.value === 'string') return field.value;
-        if ('label' in field && typeof field.label === 'string') return field.label;
-        return '';
+        if ('value' in field && typeof field.value === 'string') result = field.value;
+        else if ('label' in field && typeof field.label === 'string') result = field.label;
+        else result = '';
+      } else {
+        result = typeof field === 'string' ? field : (field ? String(field) : '');
       }
-      return typeof field === 'string' ? field : (field ? String(field) : '');
+      console.log(`[AI DEBUG] Extracted ${fieldName}:`, result);
+      return result;
     }
-    team_type = extractField(team_type);
-    quarter_focus = extractField(quarter_focus);
-    top_signal = extractField(top_signal);
-    owner_role = extractField(owner_role);
-    idea_prompt = extractField(idea_prompt);
+    // New fields
+    let extracted_team_type = extractField(team_type, 'team_type');
+    let extracted_quarter_focus = extractField(quarter_focus, 'quarter_focus');
+    let extracted_top_signal = extractField(top_signal, 'top_signal');
+    let extracted_owner_role = extractField(owner_role, 'owner_role');
+    let extracted_idea_prompt = extractField(idea_prompt, 'idea_prompt');
     // Old fields for fallback
-    const { idea, context } = body;
+    let extracted_idea = extractField(idea, 'idea');
+    let extracted_context = extractField(context, 'context');
     let messages = [PLAY_BUILDER_SYSTEM_MESSAGE];
     // If new fields are present, use new prompt structure
-    if (team_type || quarter_focus || top_signal || owner_role || idea_prompt) {
+    if (extracted_team_type || extracted_quarter_focus || extracted_top_signal || extracted_owner_role || extracted_idea_prompt) {
       let contextMsg = 'Context:';
-      if (team_type) contextMsg += `\nTeam Type: ${team_type}`;
-      if (quarter_focus) contextMsg += `\nQuarter Focus: ${quarter_focus}`;
-      if (top_signal) contextMsg += `\nTop Signal: ${top_signal}`;
-      if (owner_role) contextMsg += `\nOwner Role: ${owner_role}`;
+      if (extracted_team_type) contextMsg += `\nTeam Type: ${extracted_team_type}`;
+      if (extracted_quarter_focus) contextMsg += `\nQuarter Focus: ${extracted_quarter_focus}`;
+      if (extracted_top_signal) contextMsg += `\nTop Signal: ${extracted_top_signal}`;
+      if (extracted_owner_role) contextMsg += `\nOwner Role: ${extracted_owner_role}`;
       // Repeat key fields for emphasis
-      if (idea_prompt) contextMsg += `\n\nThe core idea to address is: ${idea_prompt}.`;
-      if (top_signal) contextMsg += `\nThe key signal driving this is: ${top_signal}.`;
+      if (extracted_idea_prompt) contextMsg += `\n\nThe core idea to address is: ${extracted_idea_prompt}.`;
+      if (extracted_top_signal) contextMsg += `\nThe key signal driving this is: ${extracted_top_signal}.`;
       messages.push({ role: 'user', content: contextMsg });
       let ideaMsg = 'Help us shape a Play for this idea:';
-      if (idea_prompt) ideaMsg += ` ${idea_prompt}`;
+      if (extracted_idea_prompt) ideaMsg += ` ${extracted_idea_prompt}`;
       messages.push({ role: 'user', content: ideaMsg });
       // Always instruct the AI to return the five sections, with anchoring and filter
       messages.push({
         role: 'user',
         content: `Please return your answer with the following sections:\n1. Hypothesis (in Rhythm90 framing)\n2. How-to-Run Summary (small plan, big impact)\n3. Signals to Watch (what surprises or confirms progress)\n4. Owner Role (who leads, who contributes)\n5. What Success Looks Like (what learning or behavior shift, not just KPI)\n\nTailor your output to the Owner Role if specified.\n\nImportant: Always ensure your recommendations are directly tied to the provided idea_prompt and top_signal. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.\n\nAvoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or signal.`
       });
-    } else if (idea) {
+    } else if (extracted_idea) {
       // Fallback to old prompt structure
-      let legacyPrompt = `As a business strategy expert, help convert this idea into a testable hypothesis:\n\nIdea: ${idea}`;
-      if (context) legacyPrompt += `\nContext: ${context}`;
+      let legacyPrompt = `As a business strategy expert, help convert this idea into a testable hypothesis:\n\nIdea: ${extracted_idea}`;
+      if (extracted_context) legacyPrompt += `\nContext: ${extracted_context}`;
       // Repeat key fields for emphasis
-      legacyPrompt += `\n\nThe core idea to address is: ${idea}.`;
-      legacyPrompt += `\nThe key signal driving this is: ${context ? context : 'N/A'}.`;
+      legacyPrompt += `\n\nThe core idea to address is: ${extracted_idea}.`;
+      legacyPrompt += `\nThe key signal driving this is: ${extracted_context ? extracted_context : 'N/A'}.`;
       legacyPrompt += `\n\nPlease provide:\n1. A clear, testable hypothesis statement\n2. 3-5 specific suggestions for how to test this hypothesis\n\nImportant: Always ensure your recommendations are directly tied to the provided idea and context. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.\n\nAvoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or context.\n\nFormat your response as JSON with "hypothesis" and "suggestions" fields.`;
       messages.push({ role: 'user', content: legacyPrompt });
     } else {
