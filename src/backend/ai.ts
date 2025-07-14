@@ -22,6 +22,11 @@ const MODULE_CONTEXTS = {
   }
 };
 
+const PLAY_BUILDER_SYSTEM_MESSAGE = {
+  role: 'system',
+  content: `You are a Rhythm90 Play Builder assistant.\n\nYour job is to help teams turn rough ideas into sharp, testable plays using the Rhythm90 framework.\n\nA Play should:\n- Follow the format: We believe [action] for [audience/context] will result in [outcome] because [reasoning].\n- Be small enough to test inside a quarter, big enough to generate meaningful learning.\n- Be tied to a real signal, not just a business opinion.\n- Assign clear ownership.\n- Include guidance on what signals to watch, not just KPIs.`
+};
+
 function buildTeamSessionContext(team_type?: string, session_purpose?: string, challenges?: string | string[]): any | null {
   if (!team_type && !session_purpose && !challenges) return null;
   let content = '';
@@ -41,36 +46,40 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
   try {
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
-    const body: GeneratePlayRequest = await request.json();
-    const { idea, context, team_type, session_purpose, challenges } = body;
-    if (!idea) return errorResponse('Idea is required', 400);
-    const messages = [
-      SYSTEM_MESSAGE,
-      MODULE_CONTEXTS.play,
-    ];
-    const teamSessionMsg = buildTeamSessionContext(team_type, session_purpose, challenges);
-    if (teamSessionMsg) messages.push(teamSessionMsg);
-    // User prompt
-    let userPrompt = `Idea: ${idea}`;
-    if (context) userPrompt += `\nContext: ${context}`;
-    // Specify output format for UI
-    userPrompt += `\n\nPlease provide:\n1. A clear, testable hypothesis statement\n2. 3-5 specific suggestions for how to test this hypothesis\n\nFormat your response as JSON with "hypothesis" and "suggestions" fields.`;
-    messages.push({ role: 'user', content: userPrompt });
-    const aiResponse = await callOpenAI(messages, env);
-    try {
-      const parsed = JSON.parse(aiResponse);
-      const response: GeneratePlayResponse = {
-        hypothesis: parsed.hypothesis || 'Failed to generate hypothesis',
-        suggestions: parsed.suggestions || ['Try again later']
-      };
-      return jsonResponse(response);
-    } catch (parseError) {
-      const response: GeneratePlayResponse = {
-        hypothesis: aiResponse,
-        suggestions: ['Review and refine the hypothesis', 'Consider different angles', 'Test with your team']
-      };
-      return jsonResponse(response);
+    const body: any = await request.json();
+    // New fields
+    const { team_type, quarter_focus, top_signal, owner_role, idea_prompt } = body;
+    // Old fields for fallback
+    const { idea, context } = body;
+    let messages = [PLAY_BUILDER_SYSTEM_MESSAGE];
+    // If new fields are present, use new prompt structure
+    if (team_type || quarter_focus || top_signal || owner_role || idea_prompt) {
+      let contextMsg = 'Context:';
+      if (team_type) contextMsg += `\nTeam Type: ${team_type}`;
+      if (quarter_focus) contextMsg += `\nQuarter Focus: ${quarter_focus}`;
+      if (top_signal) contextMsg += `\nTop Signal: ${top_signal}`;
+      if (owner_role) contextMsg += `\nOwner Role: ${owner_role}`;
+      messages.push({ role: 'user', content: contextMsg });
+      let ideaMsg = 'Help us shape a Play for this idea:';
+      if (idea_prompt) ideaMsg += ` ${idea_prompt}`;
+      messages.push({ role: 'user', content: ideaMsg });
+      // Always instruct the AI to return the five sections
+      messages.push({
+        role: 'user',
+        content: `Please return your answer with the following sections:\n1. Hypothesis (in Rhythm90 framing)\n2. How-to-Run Summary (small plan, big impact)\n3. Signals to Watch (what surprises or confirms progress)\n4. Owner Role (who leads, who contributes)\n5. What Success Looks Like (what learning or behavior shift, not just KPI)\n\nTailor your output to the Owner Role if specified.`
+      });
+    } else if (idea) {
+      // Fallback to old prompt structure
+      let legacyPrompt = `As a business strategy expert, help convert this idea into a testable hypothesis:\n\nIdea: ${idea}`;
+      if (context) legacyPrompt += `\nContext: ${context}`;
+      legacyPrompt += `\n\nPlease provide:\n1. A clear, testable hypothesis statement\n2. 3-5 specific suggestions for how to test this hypothesis\n\nFormat your response as JSON with \"hypothesis\" and \"suggestions\" fields.`;
+      messages.push({ role: 'user', content: legacyPrompt });
+    } else {
+      return errorResponse('Idea or idea_prompt is required', 400);
     }
+    const aiResponse = await callOpenAI(messages, env);
+    // Pass through raw AI output (frontend will structure)
+    return jsonResponse({ output: aiResponse });
   } catch (error) {
     console.error('Generate play error:', error);
     return errorResponse('Failed to generate play', 500);
