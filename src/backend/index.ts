@@ -2,7 +2,7 @@ import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts } from './ai';
-import { jsonResponse, errorResponse } from './utils';
+import { jsonResponse, errorResponse, corsHeaders } from './utils';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -12,11 +12,7 @@ export default {
     // Handle CORS preflight requests
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
+        headers: corsHeaders,
       });
     }
 
@@ -67,10 +63,16 @@ export default {
       }
 
       // 404 for unknown routes
-      return errorResponse('Not found', 404);
+      return new Response(JSON.stringify({ error: 'Not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     } catch (error) {
       console.error('Request error:', error);
-      return errorResponse('Internal server error', 500);
-  }
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   },
 }; 
