@@ -7,6 +7,7 @@ function RitualGuide() {
   const [teamContext, setTeamContext] = useState('');
   const [agenda, setAgenda] = useState<string[]>([]);
   const [prompts, setPrompts] = useState<string[]>([]);
+  const [output, setOutput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGenerate = async () => {
@@ -14,8 +15,15 @@ function RitualGuide() {
     try {
       const response = await apiClient.generateRitualPrompts(ritualType, teamContext);
       if (response.data) {
-        setAgenda(response.data.agenda);
-        setPrompts(response.data.prompts);
+        if (response.data.output) {
+          setOutput(response.data.output);
+          setAgenda([]);
+          setPrompts([]);
+        } else {
+          setAgenda(response.data.agenda);
+          setPrompts(response.data.prompts);
+          setOutput('');
+        }
       }
     } catch (error) {
       console.error('Failed to generate ritual prompts:', error);
@@ -76,8 +84,11 @@ function RitualGuide() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Meeting Structure</h2>
-            
-            {agenda.length > 0 || prompts.length > 0 ? (
+            {output ? (
+              <div className="prose max-w-none">
+                <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+              </div>
+            ) : agenda.length > 0 || prompts.length > 0 ? (
               <div className="space-y-6">
                 {agenda.length > 0 && (
                   <div>

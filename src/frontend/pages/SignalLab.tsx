@@ -5,6 +5,7 @@ import { apiClient } from '../lib/api';
 function SignalLab() {
   const [observation, setObservation] = useState('');
   const [context, setContext] = useState('');
+  const [output, setOutput] = useState('');
   const [interpretation, setInterpretation] = useState('');
   const [confidence, setConfidence] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -16,8 +17,15 @@ function SignalLab() {
     try {
       const response = await apiClient.interpretSignal(observation, context);
       if (response.data) {
-        setInterpretation(response.data.interpretation);
-        setConfidence(response.data.confidence);
+        if (response.data.output) {
+          setOutput(response.data.output);
+          setInterpretation('');
+          setConfidence(0);
+        } else {
+          setInterpretation(response.data.interpretation);
+          setConfidence(response.data.confidence);
+          setOutput('');
+        }
       }
     } catch (error) {
       console.error('Failed to interpret signal:', error);
@@ -76,8 +84,11 @@ function SignalLab() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Interpretation</h2>
-            
-            {interpretation ? (
+            {output ? (
+              <div className="prose max-w-none">
+                <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+              </div>
+            ) : interpretation ? (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

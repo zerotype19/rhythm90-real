@@ -5,6 +5,7 @@ import { apiClient } from '../lib/api';
 function PlayBuilder() {
   const [idea, setIdea] = useState('');
   const [context, setContext] = useState('');
+  const [output, setOutput] = useState('');
   const [hypothesis, setHypothesis] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -16,8 +17,15 @@ function PlayBuilder() {
     try {
       const response = await apiClient.generatePlay(idea, context);
       if (response.data) {
-        setHypothesis(response.data.hypothesis);
-        setSuggestions(response.data.suggestions);
+        if (response.data.output) {
+          setOutput(response.data.output);
+          setHypothesis('');
+          setSuggestions([]);
+        } else {
+          setHypothesis(response.data.hypothesis);
+          setSuggestions(response.data.suggestions);
+          setOutput('');
+        }
       }
     } catch (error) {
       console.error('Failed to generate play:', error);
@@ -76,8 +84,12 @@ function PlayBuilder() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Generated Hypothesis</h2>
-            
-            {hypothesis ? (
+            {output ? (
+              <div className="prose max-w-none">
+                {/* Optionally use a markdown renderer here if desired */}
+                <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+              </div>
+            ) : hypothesis ? (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
