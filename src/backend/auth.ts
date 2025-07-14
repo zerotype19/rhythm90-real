@@ -208,8 +208,10 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     const jwt = generateJWT({ user_id: user.id, email: user.email, exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60 }, env.JWT_SECRET);
     // Set cookie
     const cookie = setAuthCookie(jwt);
+    console.log('handleGoogleCallback: Setting cookie:', cookie);
     // Redirect based on team membership
     const redirectUrl = teams.length === 0 ? `${appUrl}/app/onboarding` : `${appUrl}/app/dashboard`;
+    console.log('handleGoogleCallback: Redirecting to:', redirectUrl);
     return new Response(null, { status: 302, headers: { 'Location': redirectUrl, 'Set-Cookie': cookie } });
   } catch (err) {
     console.error('OAuth callback unexpected error:', err);
@@ -219,21 +221,30 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
 
 export async function handleGetSession(request: Request, env: Env): Promise<Response> {
   const cookie = request.headers.get('Cookie') || '';
+  console.log('handleGetSession: Cookie header:', cookie);
   const match = cookie.match(/rhythm90_token=([^;]+)/);
   if (!match) {
+    console.log('handleGetSession: No rhythm90_token found in cookie');
     return jsonResponse({ user: null, teams: [] });
   }
   try {
     const token = match[1];
+    console.log('handleGetSession: Found token, length:', token.length);
     const payload = JSON.parse(atob(token.split('.')[1]));
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      console.log('handleGetSession: Token expired');
       return jsonResponse({ user: null, teams: [] });
     }
     const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(payload.user_id).first();
-    if (!user) return jsonResponse({ user: null, teams: [] });
+    if (!user) {
+      console.log('handleGetSession: No user found for token');
+      return jsonResponse({ user: null, teams: [] });
+    }
     const teams = await getTeamsByUserId(env.DB, user.id);
+    console.log('handleGetSession: Success, user:', user.id, 'teams:', teams.length);
     return jsonResponse({ user, teams });
   } catch (err) {
+    console.error('handleGetSession: Error:', err);
     return jsonResponse({ user: null, teams: [] });
   }
 }
