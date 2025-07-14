@@ -115,15 +115,23 @@ function PlayBuilder() {
     if (Object.keys(errs).length > 0) return;
     setIsLoading(true);
     try {
-      // Compose payload
+      // Helper to extract .value for dropdowns/objects, or use string
+      const extractValue = (field: any) => {
+        if (field && typeof field === 'object') {
+          if ('value' in field && typeof field.value === 'string') return field.value;
+          if ('label' in field && typeof field.label === 'string') return field.label;
+          return '';
+        }
+        return typeof field === 'string' ? field : (field ? String(field) : '');
+      };
       const payload: any = {
-        team_type: teamType === 'Other' ? teamTypeOther : teamType,
-        quarter_focus: quarterFocus === 'Other' ? quarterFocusOther : quarterFocus,
-        top_signal: topSignal,
-        owner_role: ownerRole === 'Other' ? ownerRoleOther : ownerRole,
-        idea_prompt: ideaPrompt,
-        idea: ideaPrompt, // legacy
-        context: context
+        team_type: extractValue(teamType === 'Other' ? teamTypeOther : teamType),
+        quarter_focus: extractValue(quarterFocus === 'Other' ? quarterFocusOther : quarterFocus),
+        top_signal: extractValue(topSignal),
+        owner_role: extractValue(ownerRole === 'Other' ? ownerRoleOther : ownerRole),
+        idea_prompt: extractValue(ideaPrompt),
+        idea: extractValue(ideaPrompt), // legacy
+        context: extractValue(context)
       };
       const response = await apiClient.generatePlay(payload);
       if (response.data) {
