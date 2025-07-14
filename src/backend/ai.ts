@@ -123,6 +123,8 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
     const body: GenerateRitualPromptsRequest = await request.json();
     const { ritual_type, team_context } = body;
 
+    console.log('handleGenerateRitualPrompts: Request from user:', user.id, 'ritual_type:', ritual_type);
+
     if (!ritual_type) {
       return errorResponse('Ritual type is required', 400);
     }
@@ -147,12 +149,14 @@ Format your response as JSON with "agenda" and "prompts" fields.`;
     
     try {
       const parsed = JSON.parse(aiResponse);
+      console.log('handleGenerateRitualPrompts: Successfully parsed AI response');
       const response: GenerateRitualPromptsResponse = {
         agenda: parsed.agenda || ['Welcome and introductions', 'Review objectives', 'Open discussion', 'Action items', 'Next steps'],
         prompts: parsed.prompts || ['What went well this week?', 'What challenges did we face?', 'How can we improve?']
       };
       return jsonResponse(response);
     } catch (parseError) {
+      console.log('handleGenerateRitualPrompts: Failed to parse AI response, using fallback');
       // Fallback if AI response isn't valid JSON
       const response: GenerateRitualPromptsResponse = {
         agenda: ['Welcome and introductions', 'Review objectives', 'Open discussion', 'Action items', 'Next steps'],
