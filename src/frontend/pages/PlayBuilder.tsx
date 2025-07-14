@@ -50,18 +50,11 @@ function PlayBuilder() {
   const renderOutput = () => {
     if (!output) return null;
     let parsed: any = null;
+    // Try JSON parse first
     try {
       parsed = JSON.parse(output);
     } catch (e) {
-      // Not JSON, just show as pre
-      return (
-        <div className="prose max-w-none text-xs">
-          <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
-            <FaLightbulb aria-label="Output" className="inline text-yellow-400" /> Output
-          </label>
-          <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100">{output}</pre>
-        </div>
-      );
+      parsed = null;
     }
     // If JSON and has hypothesis/suggestions
     if (parsed && (parsed.hypothesis || parsed.suggestions)) {
@@ -98,7 +91,38 @@ function PlayBuilder() {
         </div>
       );
     }
-    // If JSON but not expected structure, show as pre
+    // Try to parse new multi-section output (numbered sections)
+    const sectionRegex = /(?:^|\n)(\d+)\.\s*([^\n]+)\n([\s\S]*?)(?=(?:\n\d+\.|$))/g;
+    const sections: { title: string; content: string }[] = [];
+    let match;
+    while ((match = sectionRegex.exec(output)) !== null) {
+      sections.push({ title: match[2].trim(), content: match[3].trim() });
+    }
+    if (sections.length > 0) {
+      // Map section titles to icons
+      const sectionIcons: Record<string, JSX.Element> = {
+        'Hypothesis': <FaLightbulb aria-label="Hypothesis" className="inline text-yellow-400" />,
+        'How-to-Run Summary': <FaClipboardList aria-label="How-to-Run" className="inline text-blue-400" />,
+        'Signals to Watch': <FaClipboardList aria-label="Signals" className="inline text-blue-400" />,
+        'Owner Role': <FaCheckCircle aria-label="Owner Role" className="inline text-green-500" />,
+        'What Success Looks Like': <FaCheckCircle aria-label="Success" className="inline text-green-500" />,
+      };
+      return (
+        <div className="space-y-6 text-xs">
+          {sections.map((section, idx) => (
+            <div key={idx}>
+              <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+                {sectionIcons[section.title] || null} {section.title}
+              </label>
+              <div className="p-2 bg-gray-50 rounded-md border border-gray-100 whitespace-pre-line">
+                <span className="text-gray-900">{section.content}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    // Fallback: show as preformatted text
     return (
       <div className="prose max-w-none text-xs">
         <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
