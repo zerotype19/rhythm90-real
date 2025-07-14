@@ -150,9 +150,14 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
+    const appUrl = env.APP_URL || '';
+    if (!appUrl) {
+      // Fallback if APP_URL is missing
+      return Response.redirect('/login?error=missing_app_url', 302);
+    }
     if (error || !code) {
       console.error('OAuth callback missing code or error param:', { code, error });
-      return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
+      return Response.redirect(`${appUrl}/login?error=oauth_failed`, 302);
     }
     // Exchange code for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -173,7 +178,7 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
         statusText: tokenResponse.statusText,
         body: tokenText,
       });
-      return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
+      return Response.redirect(`${appUrl}/login?error=oauth_failed`, 302);
     }
     const tokenData = JSON.parse(tokenText);
     const { access_token } = tokenData;
@@ -188,11 +193,10 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
         statusText: userInfoResponse.statusText,
         body: userInfoText,
       });
-      return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
+      return Response.redirect(`${appUrl}/login?error=oauth_failed`, 302);
     }
     const userInfo = JSON.parse(userInfoText);
     const { id: google_id, name, email } = userInfo;
-    
     // Check if user exists
     let user = await getUserByGoogleId(env.DB, google_id);
     if (!user) {
@@ -205,11 +209,11 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     // Set cookie
     const cookie = setAuthCookie(jwt);
     // Redirect based on team membership
-    const redirectUrl = teams.length === 0 ? `${env.APP_URL}/app/onboarding` : `${env.APP_URL}/app/dashboard`;
+    const redirectUrl = teams.length === 0 ? `${appUrl}/app/onboarding` : `${appUrl}/app/dashboard`;
     return new Response(null, { status: 302, headers: { 'Location': redirectUrl, 'Set-Cookie': cookie } });
   } catch (err) {
     console.error('OAuth callback unexpected error:', err);
-    return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
+    return Response.redirect('/login?error=oauth_failed', 302);
   }
 }
 
