@@ -59,20 +59,26 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
       if (quarter_focus) contextMsg += `\nQuarter Focus: ${quarter_focus}`;
       if (top_signal) contextMsg += `\nTop Signal: ${top_signal}`;
       if (owner_role) contextMsg += `\nOwner Role: ${owner_role}`;
+      // Repeat key fields for emphasis
+      if (idea_prompt) contextMsg += `\n\nThe core idea to address is: ${idea_prompt}.`;
+      if (top_signal) contextMsg += `\nThe key signal driving this is: ${top_signal}.`;
       messages.push({ role: 'user', content: contextMsg });
       let ideaMsg = 'Help us shape a Play for this idea:';
       if (idea_prompt) ideaMsg += ` ${idea_prompt}`;
       messages.push({ role: 'user', content: ideaMsg });
-      // Always instruct the AI to return the five sections
+      // Always instruct the AI to return the five sections, with anchoring and filter
       messages.push({
         role: 'user',
-        content: `Please return your answer with the following sections:\n1. Hypothesis (in Rhythm90 framing)\n2. How-to-Run Summary (small plan, big impact)\n3. Signals to Watch (what surprises or confirms progress)\n4. Owner Role (who leads, who contributes)\n5. What Success Looks Like (what learning or behavior shift, not just KPI)\n\nTailor your output to the Owner Role if specified.`
+        content: `Please return your answer with the following sections:\n1. Hypothesis (in Rhythm90 framing)\n2. How-to-Run Summary (small plan, big impact)\n3. Signals to Watch (what surprises or confirms progress)\n4. Owner Role (who leads, who contributes)\n5. What Success Looks Like (what learning or behavior shift, not just KPI)\n\nTailor your output to the Owner Role if specified.\n\nImportant: Always ensure your recommendations are directly tied to the provided idea_prompt and top_signal. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.\n\nAvoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or signal.`
       });
     } else if (idea) {
       // Fallback to old prompt structure
       let legacyPrompt = `As a business strategy expert, help convert this idea into a testable hypothesis:\n\nIdea: ${idea}`;
       if (context) legacyPrompt += `\nContext: ${context}`;
-      legacyPrompt += `\n\nPlease provide:\n1. A clear, testable hypothesis statement\n2. 3-5 specific suggestions for how to test this hypothesis\n\nFormat your response as JSON with \"hypothesis\" and \"suggestions\" fields.`;
+      // Repeat key fields for emphasis
+      legacyPrompt += `\n\nThe core idea to address is: ${idea}.`;
+      legacyPrompt += `\nThe key signal driving this is: ${context ? context : 'N/A'}.`;
+      legacyPrompt += `\n\nPlease provide:\n1. A clear, testable hypothesis statement\n2. 3-5 specific suggestions for how to test this hypothesis\n\nImportant: Always ensure your recommendations are directly tied to the provided idea and context. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.\n\nAvoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or context.\n\nFormat your response as JSON with "hypothesis" and "suggestions" fields.`;
       messages.push({ role: 'user', content: legacyPrompt });
     } else {
       return errorResponse('Idea or idea_prompt is required', 400);
