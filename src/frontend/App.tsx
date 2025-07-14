@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './lib/auth';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import PlayBuilder from './pages/PlayBuilder';
 import SignalLab from './pages/SignalLab';
@@ -24,6 +25,7 @@ function App() {
             
             {/* Protected app routes */}
             <Route path="/app" element={<ProtectedRoute />}>
+              <Route path="onboarding" element={<Onboarding />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="play-builder" element={<PlayBuilder />} />
               <Route path="signal-lab" element={<SignalLab />} />

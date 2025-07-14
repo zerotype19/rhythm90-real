@@ -2,44 +2,33 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const OAUTH_REDIRECT_URI = 'https://api.rhythm90.io/auth/callback/google';
+
 function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, user } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
     if (user) {
       navigate('/app/dashboard');
-      return;
     }
-
-    // Check for authorization code from Google OAuth
-    const code = searchParams.get('code');
-    if (code) {
-      handleGoogleAuth(code);
-    }
-  }, [user, navigate, searchParams]);
-
-  const handleGoogleAuth = async (code: string) => {
-    try {
-      await login(code);
-      navigate('/app/dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-      // Handle error - could show a toast or error message
-    }
-  };
+  }, [user, navigate]);
 
   const handleGoogleLogin = () => {
-    const clientId = 'your-google-client-id'; // This should come from environment
-    const redirectUri = window.location.origin + '/login';
     const scope = 'email profile';
-    
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
-    
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(scope)}`;
     window.location.href = authUrl;
   };
+
+  // Error handling
+  const error = searchParams.get('error');
+  let errorMessage = '';
+  if (error === 'oauth_failed') {
+    errorMessage = 'Google sign-in failed. Please try again.';
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -54,6 +43,11 @@ function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          {errorMessage && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4 text-red-700 text-sm text-center">
+              {errorMessage}
+            </div>
+          )}
           <div>
             <button
               onClick={handleGoogleLogin}

@@ -12,6 +12,7 @@ export interface Team {
   name: string;
   industry: string;
   owner_id: string;
+  invite_code: string | null;
   created_at: string;
 }
 

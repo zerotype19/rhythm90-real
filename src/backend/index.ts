@@ -1,5 +1,5 @@
 import { Env } from './types';
-import { handleGoogleAuth } from './auth';
+import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts } from './ai';
 import { jsonResponse, errorResponse } from './utils';
@@ -24,6 +24,15 @@ export default {
       // Authentication routes
       if (path === '/api/auth/google' && request.method === 'POST') {
         return await handleGoogleAuth(request, env);
+      }
+      if (path === '/api/auth/callback/google' && request.method === 'GET') {
+        return await handleGoogleCallback(request, env);
+      }
+      if (path === '/api/auth/me' && request.method === 'GET') {
+        return await handleGetSession(request, env);
+      }
+      if (path === '/api/auth/logout' && request.method === 'POST') {
+        return await handleLogout(request, env);
       }
 
       // Team routes

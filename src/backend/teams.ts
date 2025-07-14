@@ -1,5 +1,5 @@
 import { Env, CreateTeamRequest, Team, User } from './types';
-import { createTeam, jsonResponse, errorResponse } from './utils';
+import { createTeam, joinTeam, jsonResponse, errorResponse } from './utils';
 import { verifyAuth } from './auth';
 
 export async function handleCreateTeam(request: Request, env: Env): Promise<Response> {
@@ -19,6 +19,12 @@ export async function handleCreateTeam(request: Request, env: Env): Promise<Resp
 
     if (!name || !industry) {
       return errorResponse('Team name and industry are required', 400);
+    }
+
+    // Check if team name already exists
+    const existingTeam = await env.DB.prepare('SELECT id FROM teams WHERE name = ?').bind(name).first();
+    if (existingTeam) {
+      return errorResponse('Team name is already taken.', 409);
     }
 
     // Create team
@@ -79,14 +85,23 @@ export async function handleJoinTeam(request: Request, env: Env): Promise<Respon
       return errorResponse('Invite code is required', 400);
     }
 
-    // For now, return a placeholder response
-    // TODO: Implement invite code logic
-    return jsonResponse({ 
-      message: 'Join team functionality coming soon',
-      invite_code 
-    });
+    // Join team
+    const team = await joinTeam(env.DB, invite_code, user.id);
+
+    return jsonResponse({ team });
   } catch (error) {
     console.error('Join team error:', error);
+    
+    // Handle specific error cases
+    if (error instanceof Error) {
+      if (error.message === 'Invalid invite code') {
+        return errorResponse('Invalid invite code.', 400);
+      }
+      if (error.message === 'User already a member of this team') {
+        return errorResponse('You\'re already a member of this team.', 409);
+      }
+    }
+    
     return errorResponse('Failed to join team', 500);
   }
 } 

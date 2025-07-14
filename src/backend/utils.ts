@@ -52,15 +52,46 @@ export async function getTeamsByUserId(db: any, userId: string): Promise<Team[]>
   return result.results as Team[];
 }
 
-export async function createTeam(db: any, team: Omit<Team, 'id' | 'created_at'>, ownerId: string): Promise<Team> {
+// Generate a unique 6-character alphanumeric invite code
+function generateInviteCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Generate a unique invite code that doesn't exist in the database
+async function generateUniqueInviteCode(db: any): Promise<string> {
+  let inviteCode: string;
+  let attempts = 0;
+  const maxAttempts = 10;
+  let existing: any;
+  
+  do {
+    inviteCode = generateInviteCode();
+    existing = await db.prepare('SELECT id FROM teams WHERE invite_code = ?').bind(inviteCode).first();
+    attempts++;
+    
+    if (attempts > maxAttempts) {
+      throw new Error('Failed to generate unique invite code after maximum attempts');
+    }
+  } while (existing);
+  
+  return inviteCode;
+}
+
+export async function createTeam(db: any, team: Omit<Team, 'id' | 'created_at' | 'invite_code'>, ownerId: string): Promise<Team> {
   const teamId = crypto.randomUUID();
   const memberId = crypto.randomUUID();
+  const inviteCode = await generateUniqueInviteCode(db);
   
   // Create team
   await db.prepare(`
-    INSERT INTO teams (id, name, industry, owner_id)
-    VALUES (?, ?, ?, ?)
-  `).bind(teamId, team.name, team.industry, ownerId).run();
+    INSERT INTO teams (id, name, industry, owner_id, invite_code)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(teamId, team.name, team.industry, ownerId, inviteCode).run();
   
   // Add owner as team member
   await db.prepare(`
@@ -77,6 +108,33 @@ export async function createTeam(db: any, team: Omit<Team, 'id' | 'created_at'>,
   
   const result = await db.prepare('SELECT * FROM teams WHERE id = ?').bind(teamId).first();
   return result as Team;
+}
+
+export async function joinTeam(db: any, inviteCode: string, userId: string): Promise<Team> {
+  // Find team by invite code
+  const team = await db.prepare('SELECT * FROM teams WHERE invite_code = ?').bind(inviteCode).first();
+  if (!team) {
+    throw new Error('Invalid invite code');
+  }
+  
+  // Check if user is already a member
+  const existingMember = await db.prepare(`
+    SELECT id FROM team_members 
+    WHERE user_id = ? AND team_id = ?
+  `).bind(userId, team.id).first();
+  
+  if (existingMember) {
+    throw new Error('User already a member of this team');
+  }
+  
+  // Add user as team member
+  const memberId = crypto.randomUUID();
+  await db.prepare(`
+    INSERT INTO team_members (id, user_id, team_id, role)
+    VALUES (?, ?, ?, ?)
+  `).bind(memberId, userId, team.id, 'member').run();
+  
+  return team as Team;
 }
 
 // OpenAI integration

@@ -66,6 +66,20 @@ class ApiClient {
     });
   }
 
+  async getSession() {
+    return this.request('/api/auth/me', {
+      method: 'GET',
+      credentials: 'include',
+    });
+  }
+
+  async logout() {
+    return this.request('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+  }
+
   // Teams
   async createTeam(name: string, industry: string) {
     return this.request('/api/teams', {
