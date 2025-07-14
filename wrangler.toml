@@ -1,6 +1,5 @@
-# WARNING: Deploying with wrangler will overwrite any environment variables and bindings set in the Cloudflare dashboard
-# unless you use the --keep-vars flag. Always keep all required variables and bindings in this file.
-# If you add variables/bindings in the dashboard, add them here as well to avoid losing them on deploy.
+# WARNING: All production bindings and variables must be present here.
+# Deploying with wrangler will overwrite dashboard values with these.
 
 name = "rhythm90-real"
 main = "src/backend/index.ts"
@@ -23,5 +22,11 @@ ENVIRONMENT = "development"
 [env.production]
 name = "rhythm90-api"
 
-# Production D1 binding is managed in the Cloudflare dashboard, not here.
-# Production environment variables (APP_URL, ENVIRONMENT) are managed in the Cloudflare dashboard, not here. 
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "rhythm90-db"
+database_id = "73d8857c-97f9-4cfa-800a-225d7346be67"
+
+[env.production.vars]
+APP_URL = "https://rhythm90.io"
+ENVIRONMENT = "production" 
