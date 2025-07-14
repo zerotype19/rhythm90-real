@@ -17,7 +17,7 @@ ENVIRONMENT = "development"
 
 # Production environment
 [env.production]
-name = "rhythm90-api"
+name = "rhythm90-real"
 
 [[env.production.d1_databases]]
 binding = "DB"
