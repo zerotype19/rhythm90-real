@@ -138,11 +138,13 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
         code,
         client_id: env.GOOGLE_CLIENT_ID,
         client_secret: env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: 'https://api.rhythm90.io/auth/callback/google',
+        redirect_uri: 'https://api.rhythm90.io/api/auth/callback/google',
         grant_type: 'authorization_code',
       }),
     });
     if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('Google token exchange failed:', errorText);
       return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
     }
     const tokenData = await tokenResponse.json();
@@ -152,6 +154,8 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
       headers: { 'Authorization': `Bearer ${access_token}` },
     });
     if (!userInfoResponse.ok) {
+      const errorText = await userInfoResponse.text();
+      console.error('Google userinfo fetch failed:', errorText);
       return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
     }
     const userInfo = await userInfoResponse.json();
