@@ -23,9 +23,5 @@ ENVIRONMENT = "development"
 [env.production]
 name = "rhythm90-api"
 
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "rhythm90-db"
-database_id = "73d8857c-97f9-4cfa-800a-225d7346be67"
-
+# Production D1 binding is managed in the Cloudflare dashboard, not here.
 # Production environment variables (APP_URL, ENVIRONMENT) are managed in the Cloudflare dashboard, not here. 
