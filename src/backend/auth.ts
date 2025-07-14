@@ -128,6 +128,7 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
     if (error || !code) {
+      console.error('OAuth callback missing code or error param:', { code, error });
       return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
     }
     // Exchange code for access token
@@ -142,23 +143,31 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
         grant_type: 'authorization_code',
       }),
     });
+    const tokenText = await tokenResponse.text();
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error('Google token exchange failed:', errorText);
+      console.error('Google token exchange failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        body: tokenText,
+      });
       return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
     }
-    const tokenData = await tokenResponse.json();
+    const tokenData = JSON.parse(tokenText);
     const { access_token } = tokenData;
     // Get user info from Google
     const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { 'Authorization': `Bearer ${access_token}` },
     });
+    const userInfoText = await userInfoResponse.text();
     if (!userInfoResponse.ok) {
-      const errorText = await userInfoResponse.text();
-      console.error('Google userinfo fetch failed:', errorText);
+      console.error('Google userinfo fetch failed:', {
+        status: userInfoResponse.status,
+        statusText: userInfoResponse.statusText,
+        body: userInfoText,
+      });
       return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
     }
-    const userInfo = await userInfoResponse.json();
+    const userInfo = JSON.parse(userInfoText);
     const { id: google_id, name, email } = userInfo;
     // Check if user exists
     let user = await getUserByGoogleId(env.DB, google_id);
@@ -175,6 +184,7 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     const redirectUrl = teams.length === 0 ? `${env.APP_URL}/app/onboarding` : `${env.APP_URL}/app/dashboard`;
     return new Response(null, { status: 302, headers: { 'Location': redirectUrl, 'Set-Cookie': cookie } });
   } catch (err) {
+    console.error('OAuth callback unexpected error:', err);
     return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
   }
 }
