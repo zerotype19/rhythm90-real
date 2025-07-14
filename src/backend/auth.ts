@@ -86,39 +86,47 @@ export async function handleGoogleAuth(request: Request, env: Env): Promise<Resp
 
 export async function verifyAuth(request: Request, env: Env): Promise<User | null> {
   let token: string | null = null;
-  
+
+  // Log headers for debugging
+  console.log('verifyAuth: Authorization:', request.headers.get('Authorization'));
+  console.log('verifyAuth: Cookie:', request.headers.get('Cookie'));
+
   // Check for Bearer token in Authorization header
   const authHeader = request.headers.get('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.substring(7);
+    console.log('verifyAuth: Using Bearer token');
   }
-  
+
   // Check for cookie-based token
   if (!token) {
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/rhythm90_token=([^;]+)/);
     if (match) {
       token = match[1];
+      console.log('verifyAuth: Using rhythm90_token from cookie');
     }
   }
-  
+
   if (!token) {
+    console.log('verifyAuth: No token found');
     return null;
   }
 
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    
     // Check if token is expired
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+      console.log('verifyAuth: Token expired');
       return null;
     }
-
     // Get user from database
     const user = await env.DB.prepare(
       'SELECT * FROM users WHERE id = ?'
     ).bind(payload.user_id).first();
-
+    if (!user) {
+      console.log('verifyAuth: No user found for token');
+    }
     return user as User;
   } catch (error) {
     console.error('Token verification error:', error);
