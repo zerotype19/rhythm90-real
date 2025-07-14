@@ -28,6 +28,4 @@ binding = "DB"
 database_name = "rhythm90-db"
 database_id = "73d8857c-97f9-4cfa-800a-225d7346be67"
 
-[env.production.vars]
-APP_URL = "https://rhythm90.io"
-ENVIRONMENT = "production" 
+# Production environment variables (APP_URL, ENVIRONMENT) are managed in the Cloudflare dashboard, not here. 
