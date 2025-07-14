@@ -3,13 +3,48 @@ import AppLayout from '../components/AppLayout';
 import { apiClient } from '../lib/api';
 import { FaLightbulb, FaClipboardList, FaCheckCircle } from 'react-icons/fa';
 
+const TEAM_TYPE_OPTIONS = [
+  'B2B', 'B2C', 'SaaS', 'DTC', 'Agency', 'Other'
+];
+const QUARTER_FOCUS_OPTIONS = [
+  'Growth', 'Retention', 'Friction Reduction', 'Brand Lift', 'Other'
+];
+const OWNER_ROLE_OPTIONS = [
+  'Rhythm90 Lead', 'Strategic Lead', 'Executional Lead', 'Signal Owner', 'Other'
+];
+
 function PlayBuilder() {
-  const [idea, setIdea] = useState('');
+  // New fields
+  const [teamType, setTeamType] = useState('');
+  const [teamTypeOther, setTeamTypeOther] = useState('');
+  const [quarterFocus, setQuarterFocus] = useState('');
+  const [quarterFocusOther, setQuarterFocusOther] = useState('');
+  const [topSignal, setTopSignal] = useState('');
+  const [ownerRole, setOwnerRole] = useState('');
+  const [ownerRoleOther, setOwnerRoleOther] = useState('');
+  const [ideaPrompt, setIdeaPrompt] = useState('');
+  // Legacy fields
   const [context, setContext] = useState('');
+  // Output
   const [output, setOutput] = useState('');
   const [hypothesis, setHypothesis] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Validation
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Helper to validate fields
+  const validate = () => {
+    const errs: {[key: string]: string} = {};
+    if (!ideaPrompt.trim()) errs.idea_prompt = 'Idea is required.';
+    if (ideaPrompt.length > 300) errs.idea_prompt = 'Max 300 characters.';
+    if (context.length > 300) errs.context = 'Max 300 characters.';
+    if (topSignal.length > 300) errs.top_signal = 'Max 300 characters.';
+    if (teamType === 'Other' && (!teamTypeOther.trim() || teamTypeOther.length > 50)) errs.team_type_other = 'Required, max 50 characters.';
+    if (quarterFocus === 'Other' && (!quarterFocusOther.trim() || quarterFocusOther.length > 50)) errs.quarter_focus_other = 'Required, max 50 characters.';
+    if (ownerRole === 'Other' && (!ownerRoleOther.trim() || ownerRoleOther.length > 50)) errs.owner_role_other = 'Required, max 50 characters.';
+    return errs;
+  };
 
   // Helper to render output
   const renderOutput = () => {
@@ -75,11 +110,22 @@ function PlayBuilder() {
   };
 
   const handleGenerate = async () => {
-    if (!idea.trim()) return;
-
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setIsLoading(true);
     try {
-      const response = await apiClient.generatePlay(idea, context);
+      // Compose payload
+      const payload: any = {
+        team_type: teamType === 'Other' ? teamTypeOther : teamType,
+        quarter_focus: quarterFocus === 'Other' ? quarterFocusOther : quarterFocus,
+        top_signal: topSignal,
+        owner_role: ownerRole === 'Other' ? ownerRoleOther : ownerRole,
+        idea_prompt: ideaPrompt,
+        idea: ideaPrompt, // legacy
+        context: context
+      };
+      const response = await apiClient.generatePlay(payload);
       if (response.data) {
         if (response.data.output) {
           setOutput(response.data.output);
@@ -109,35 +155,129 @@ function PlayBuilder() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Transform Your Idea</h2>
             
             <div className="space-y-4">
+              {/* Team Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Idea
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Team Type</label>
+                <select
+                  value={teamType}
+                  onChange={e => setTeamType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">Select team type</option>
+                  {TEAM_TYPE_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                {teamType === 'Other' && (
+                  <input
+                    type="text"
+                    value={teamTypeOther}
+                    onChange={e => setTeamTypeOther(e.target.value)}
+                    maxLength={50}
+                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Please specify (max 50 characters)"
+                  />
+                )}
+                <p className="text-xs text-gray-500 mt-1">Select the type of team or business model. Choose ‘Other’ to enter a custom type.</p>
+                {errors.team_type_other && <p className="text-xs text-red-500">{errors.team_type_other}</p>}
+              </div>
+              {/* Quarter Focus */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quarter Focus</label>
+                <select
+                  value={quarterFocus}
+                  onChange={e => setQuarterFocus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">Select focus</option>
+                  {QUARTER_FOCUS_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                {quarterFocus === 'Other' && (
+                  <input
+                    type="text"
+                    value={quarterFocusOther}
+                    onChange={e => setQuarterFocusOther(e.target.value)}
+                    maxLength={50}
+                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Please specify (max 50 characters)"
+                  />
+                )}
+                <p className="text-xs text-gray-500 mt-1">What is your team’s main focus this quarter? Choose ‘Other’ to enter a custom focus area.</p>
+                {errors.quarter_focus_other && <p className="text-xs text-red-500">{errors.quarter_focus_other}</p>}
+              </div>
+              {/* Top Signal */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Top Signal</label>
+                <input
+                  type="text"
+                  value={topSignal}
+                  onChange={e => setTopSignal(e.target.value)}
+                  maxLength={300}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="E.g., high churn at onboarding"
+                />
+                <p className="text-xs text-gray-500 mt-1">Describe the key signal or observation driving this play. (E.g., ‘High churn at onboarding’)</p>
+                {errors.top_signal && <p className="text-xs text-red-500">{errors.top_signal}</p>}
+              </div>
+              {/* Owner Role */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Owner Role</label>
+                <select
+                  value={ownerRole}
+                  onChange={e => setOwnerRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="">Select owner role</option>
+                  {OWNER_ROLE_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                {ownerRole === 'Other' && (
+                  <input
+                    type="text"
+                    value={ownerRoleOther}
+                    onChange={e => setOwnerRoleOther(e.target.value)}
+                    maxLength={50}
+                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="Please specify (max 50 characters)"
+                  />
+                )}
+                <p className="text-xs text-gray-500 mt-1">Who will own this play? Select a role or choose ‘Other’ to enter a custom owner.</p>
+                {errors.owner_role_other && <p className="text-xs text-red-500">{errors.owner_role_other}</p>}
+              </div>
+              {/* Idea Prompt (Your Idea) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Your Idea</label>
                 <textarea
-                  value={idea}
-                  onChange={(e) => setIdea(e.target.value)}
-                  placeholder="Describe your idea or observation..."
+                  value={ideaPrompt}
+                  onChange={e => setIdeaPrompt(e.target.value)}
+                  placeholder="Describe your idea or challenge"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={4}
+                  maxLength={300}
                 />
+                <p className="text-xs text-gray-500 mt-1">Briefly describe your idea or challenge. (Required, max 300 characters)</p>
+                {errors.idea_prompt && <p className="text-xs text-red-500">{errors.idea_prompt}</p>}
               </div>
-              
+              {/* Context (Optional) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Context (Optional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Context (Optional)</label>
                 <textarea
                   value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  placeholder="Add any relevant context about your team, market, or situation..."
+                  onChange={e => setContext(e.target.value)}
+                  placeholder="Add any relevant background, team details, or market context..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={3}
+                  maxLength={300}
                 />
+                <p className="text-xs text-gray-500 mt-1">Add any relevant background, team details, or market context. (Optional, max 300 characters)</p>
+                {errors.context && <p className="text-xs text-red-500">{errors.context}</p>}
               </div>
-              
               <button
                 onClick={handleGenerate}
-                disabled={!idea.trim() || isLoading}
+                disabled={!ideaPrompt.trim() || isLoading}
                 className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
                 {isLoading ? 'Generating...' : 'Generate Hypothesis'}
