@@ -85,13 +85,28 @@ export async function handleGoogleAuth(request: Request, env: Env): Promise<Resp
 }
 
 export async function verifyAuth(request: Request, env: Env): Promise<User | null> {
+  let token: string | null = null;
+  
+  // Check for Bearer token in Authorization header
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+  }
+  
+  // Check for cookie-based token
+  if (!token) {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/rhythm90_token=([^;]+)/);
+    if (match) {
+      token = match[1];
+    }
+  }
+  
+  if (!token) {
     return null;
   }
 
   try {
-    const token = authHeader.substring(7);
     const payload = JSON.parse(atob(token.split('.')[1]));
     
     // Check if token is expired
