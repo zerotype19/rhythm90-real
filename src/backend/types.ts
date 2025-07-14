@@ -76,6 +76,9 @@ export interface JoinTeamRequest {
 export interface GeneratePlayRequest {
   idea: string;
   context?: string;
+  team_type?: string;
+  session_purpose?: string;
+  challenges?: string | string[];
 }
 
 export interface GeneratePlayResponse {
@@ -86,6 +89,9 @@ export interface GeneratePlayResponse {
 export interface InterpretSignalRequest {
   observation: string;
   context?: string;
+  team_type?: string;
+  session_purpose?: string;
+  challenges?: string | string[];
 }
 
 export interface InterpretSignalResponse {
@@ -96,6 +102,9 @@ export interface InterpretSignalResponse {
 export interface GenerateRitualPromptsRequest {
   ritual_type: 'kickoff' | 'pulse_check' | 'rr';
   team_context?: string;
+  team_type?: string;
+  session_purpose?: string;
+  challenges?: string | string[];
 }
 
 export interface GenerateRitualPromptsResponse {

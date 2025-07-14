@@ -138,15 +138,17 @@ export async function joinTeam(db: any, inviteCode: string, userId: string): Pro
 }
 
 // OpenAI integration
-export async function callOpenAI(prompt: string, env: Env): Promise<string> {
+/**
+ * If any sensitive user data is added later, consider redacting logs.
+ */
+export async function callOpenAI(messages: any[], env: Env): Promise<string> {
   try {
-    console.log('callOpenAI: Starting request with prompt length:', prompt.length);
+    console.log('callOpenAI: Final messages array:', JSON.stringify(messages, null, 2));
+    const model = 'gpt-3.5-turbo';
     const startTime = Date.now();
-    
     // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -154,24 +156,21 @@ export async function callOpenAI(prompt: string, env: Env): Promise<string> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo', // Use faster model
-        messages: [{ role: 'user', content: prompt }],
+        model,
+        messages,
         max_tokens: 500,
         temperature: 0.7,
       }),
       signal: controller.signal,
     });
-
     clearTimeout(timeoutId);
     const duration = Date.now() - startTime;
-    console.log('callOpenAI: Request completed in', duration, 'ms');
-
+    console.log('callOpenAI: Model used:', model, '| Response time:', duration, 'ms');
     if (!response.ok) {
       const errorText = await response.text();
       console.error('callOpenAI: OpenAI API error:', response.status, errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
-
     const data = await response.json();
     const content = data.choices[0]?.message?.content || 'No response from AI';
     console.log('callOpenAI: Response length:', content.length);
