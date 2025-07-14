@@ -1,4 +1,8 @@
-const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8787';
+const API_BASE = (import.meta as any).env?.VITE_API_URL;
+
+if (!API_BASE) {
+  throw new Error('VITE_API_URL is not set. Please configure it in your environment variables.');
+}
 
 interface ApiResponse<T> {
   data?: T;
