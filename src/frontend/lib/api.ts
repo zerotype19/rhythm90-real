@@ -85,17 +85,21 @@ class ApiClient {
     return this.request('/api/teams', {
       method: 'POST',
       body: JSON.stringify({ name, industry }),
+      credentials: 'include',
     });
   }
 
   async getTeams() {
-    return this.request('/api/teams');
+    return this.request('/api/teams', {
+      credentials: 'include',
+    });
   }
 
   async joinTeam(inviteCode: string) {
     return this.request('/api/teams/join', {
       method: 'POST',
       body: JSON.stringify({ invite_code: inviteCode }),
+      credentials: 'include',
     });
   }
 
@@ -104,6 +108,7 @@ class ApiClient {
     return this.request('/api/plays/generate', {
       method: 'POST',
       body: JSON.stringify({ idea, context }),
+      credentials: 'include',
     });
   }
 
@@ -111,6 +116,7 @@ class ApiClient {
     return this.request('/api/signals/interpret', {
       method: 'POST',
       body: JSON.stringify({ observation, context }),
+      credentials: 'include',
     });
   }
 
@@ -118,6 +124,7 @@ class ApiClient {
     return this.request('/api/rituals/prompts', {
       method: 'POST',
       body: JSON.stringify({ ritual_type: ritualType, team_context: teamContext }),
+      credentials: 'include',
     });
   }
 
