@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import { apiClient } from '../lib/api';
+import { FaLightbulb, FaClipboardList, FaCheckCircle } from 'react-icons/fa';
 
 function PlayBuilder() {
   const [idea, setIdea] = useState('');
@@ -20,33 +21,39 @@ function PlayBuilder() {
       // Not JSON, just show as pre
       return (
         <div className="prose max-w-none text-xs">
-          <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+          <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <FaLightbulb aria-label="Output" className="inline text-yellow-400" /> Output
+          </label>
+          <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100">{output}</pre>
         </div>
       );
     }
     // If JSON and has hypothesis/suggestions
     if (parsed && (parsed.hypothesis || parsed.suggestions)) {
       return (
-        <div className="space-y-4 text-xs">
+        <div className="space-y-6 text-xs">
           {parsed.hypothesis && (
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Hypothesis
+              <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <FaLightbulb aria-label="Hypothesis" className="inline text-yellow-400" /> Hypothesis
               </label>
-              <div className="p-2 bg-gray-50 rounded-md">
+              <div className="p-2 bg-gray-50 rounded-md border border-gray-100">
                 <p className="text-gray-900">{parsed.hypothesis}</p>
               </div>
             </div>
           )}
+          {parsed.hypothesis && parsed.suggestions && (
+            <hr className="my-2 border-gray-200" />
+          )}
           {parsed.suggestions && Array.isArray(parsed.suggestions) && (
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Testing Suggestions
+              <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <FaClipboardList aria-label="Testing Suggestions" className="inline text-blue-400" /> Testing Suggestions
               </label>
-              <ul className="space-y-1">
+              <ul className="space-y-2 bg-gray-50 rounded-md p-2 border border-gray-100">
                 {parsed.suggestions.map((suggestion: string, index: number) => (
                   <li key={index} className="flex items-start space-x-2">
-                    <span className="text-red-500 mt-1">•</span>
+                    <FaCheckCircle aria-label="Suggestion" className="text-green-500 mt-0.5" />
                     <span className="text-gray-900">{suggestion}</span>
                   </li>
                 ))}
@@ -59,7 +66,10 @@ function PlayBuilder() {
     // If JSON but not expected structure, show as pre
     return (
       <div className="prose max-w-none text-xs">
-        <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+        <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+          <FaLightbulb aria-label="Output" className="inline text-yellow-400" /> Output
+        </label>
+        <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100">{output}</pre>
       </div>
     );
   };
@@ -137,29 +147,33 @@ function PlayBuilder() {
 
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Generated Hypothesis</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FaLightbulb className="text-yellow-400" /> Generated Hypothesis
+            </h2>
             {output ? (
               renderOutput()
             ) : hypothesis ? (
-              <div className="space-y-4 text-xs">
+              <div className="space-y-6 text-xs">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Hypothesis
+                  <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+                    <FaLightbulb aria-label="Hypothesis" className="inline text-yellow-400" /> Hypothesis
                   </label>
-                  <div className="p-2 bg-gray-50 rounded-md">
+                  <div className="p-2 bg-gray-50 rounded-md border border-gray-100">
                     <p className="text-gray-900">{hypothesis}</p>
                   </div>
                 </div>
-                
+                {hypothesis && suggestions.length > 0 && (
+                  <hr className="my-2 border-gray-200" />
+                )}
                 {suggestions.length > 0 && (
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Testing Suggestions
+                    <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+                      <FaClipboardList aria-label="Testing Suggestions" className="inline text-blue-400" /> Testing Suggestions
                     </label>
-                    <ul className="space-y-1">
+                    <ul className="space-y-2 bg-gray-50 rounded-md p-2 border border-gray-100">
                       {suggestions.map((suggestion, index) => (
                         <li key={index} className="flex items-start space-x-2">
-                          <span className="text-red-500 mt-1">•</span>
+                          <FaCheckCircle aria-label="Suggestion" className="text-green-500 mt-0.5" />
                           <span className="text-gray-900">{suggestion}</span>
                         </li>
                       ))}
