@@ -1,17 +1,17 @@
-export interface Env {
-  DB: D1Database;
-  APP_URL?: string;
-}
+import { Env } from './types';
+import { handleGoogleAuth } from './auth';
+import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
+import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts } from './ai';
+import { jsonResponse, errorResponse } from './utils';
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
     const url = new URL(request.url);
-    const { pathname } = url;
+    const path = url.pathname;
 
     // Handle CORS preflight requests
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        status: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -20,33 +20,48 @@ export default {
       });
     }
 
-    // Health check
-    if (pathname === "/health") {
-      return new Response(JSON.stringify({ status: "ok" }), {
-        headers: { 
-          "Content-Type": "application/json",
-          'Access-Control-Allow-Origin': '*',
-        }
-      });
-    }
-
-    // API routes
-    if (pathname === "/api/hello") {
-      return new Response(JSON.stringify({ message: "Hello from Rhythm90 Real API!" }), {
-        headers: { 
-          "Content-Type": "application/json",
-          'Access-Control-Allow-Origin': '*',
-        }
-      });
-    }
-
-    // Default response for unmatched routes
-    return new Response(JSON.stringify({ error: "Not found" }), {
-      status: 404,
-      headers: { 
-        "Content-Type": "application/json",
-        'Access-Control-Allow-Origin': '*',
+    try {
+      // Authentication routes
+      if (path === '/api/auth/google' && request.method === 'POST') {
+        return await handleGoogleAuth(request, env);
       }
-    });
-  }
-} 
+
+      // Team routes
+      if (path === '/api/teams' && request.method === 'POST') {
+        return await handleCreateTeam(request, env);
+      }
+
+      if (path === '/api/teams' && request.method === 'GET') {
+        return await handleGetTeams(request, env);
+      }
+
+      if (path === '/api/teams/join' && request.method === 'POST') {
+        return await handleJoinTeam(request, env);
+      }
+
+      // AI routes
+      if (path === '/api/plays/generate' && request.method === 'POST') {
+        return await handleGeneratePlay(request, env);
+      }
+
+      if (path === '/api/signals/interpret' && request.method === 'POST') {
+        return await handleInterpretSignal(request, env);
+      }
+
+      if (path === '/api/rituals/prompts' && request.method === 'POST') {
+        return await handleGenerateRitualPrompts(request, env);
+      }
+
+      // Health check
+      if (path === '/api/health' && request.method === 'GET') {
+        return jsonResponse({ status: 'ok', timestamp: new Date().toISOString() });
+      }
+
+      // 404 for unknown routes
+      return errorResponse('Not found', 404);
+    } catch (error) {
+      console.error('Request error:', error);
+      return errorResponse('Internal server error', 500);
+    }
+  },
+}; 

@@ -2,6 +2,20 @@ name = "rhythm90-real"
 main = "src/backend/index.ts"
 compatibility_date = "2024-01-15"
 
+# Development environment
+[env.development]
+name = "rhythm90-real-dev"
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "rhythm90-db"
+database_id = "73d8857c-97f9-4cfa-800a-225d7346be67"
+
+[env.development.vars]
+APP_URL = "http://localhost:5173"
+ENVIRONMENT = "development"
+
+# Production environment
 [env.production]
 name = "rhythm90-real"
 
@@ -11,4 +25,5 @@ database_name = "rhythm90-db"
 database_id = "73d8857c-97f9-4cfa-800a-225d7346be67"
 
 [env.production.vars]
-APP_URL = "https://rhythm90-real.pages.dev" 
+APP_URL = "https://rhythm90-real.pages.dev"
+ENVIRONMENT = "production" 

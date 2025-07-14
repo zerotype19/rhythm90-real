@@ -1,0 +1,13 @@
+# Google OAuth2 Configuration
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+
+# OpenAI API Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+
+# JWT Secret for session management
+JWT_SECRET=your_jwt_secret_here
+
+# App Configuration
+APP_URL=http://localhost:5173
+ENVIRONMENT=development 
