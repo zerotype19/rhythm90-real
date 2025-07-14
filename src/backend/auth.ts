@@ -138,11 +138,11 @@ export async function verifyAuth(request: Request, env: Env): Promise<User | nul
 
 function setAuthCookie(token: string): string {
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
-  return `rhythm90_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Expires=${expires}`;
+  return `rhythm90_token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Domain=.rhythm90.io; Expires=${expires}`;
 }
 
 function clearAuthCookie(): string {
-  return `rhythm90_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  return `rhythm90_token=; HttpOnly; Secure; SameSite=Lax; Path=/; Domain=.rhythm90.io; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }
 
 export async function handleGoogleCallback(request: Request, env: Env): Promise<Response> {
