@@ -2,6 +2,7 @@ import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts } from './ai';
+import { lastPlayBuilderDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 
 export default {
@@ -55,6 +56,15 @@ export default {
 
       if (path === '/api/rituals/prompts' && request.method === 'POST') {
         return await handleGenerateRitualPrompts(request, env);
+      }
+
+      // AI Debugger: Play Builder last log
+      if (path === '/api/debug/last-play' && request.method === 'GET') {
+        if (typeof lastPlayBuilderDebugLog !== 'undefined' && lastPlayBuilderDebugLog) {
+          return jsonResponse(lastPlayBuilderDebugLog);
+        } else {
+          return jsonResponse({ error: 'No Play Builder debug log found.' }, 404);
+        }
       }
 
       // Health check

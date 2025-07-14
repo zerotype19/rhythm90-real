@@ -27,6 +27,9 @@ const PLAY_BUILDER_SYSTEM_MESSAGE = {
   content: `You are a Rhythm90 Play Builder assistant.\n\nYour job is to help teams turn rough ideas into sharp, testable plays using the Rhythm90 framework.\n\nA Play should:\n- Follow the format: We believe [action] for [audience/context] will result in [outcome] because [reasoning].\n- Be small enough to test inside a quarter, big enough to generate meaningful learning.\n- Be tied to a real signal, not just a business opinion.\n- Assign clear ownership.\n- Include guidance on what signals to watch, not just KPIs.`
 };
 
+// In-memory store for last Play Builder debug log
+export let lastPlayBuilderDebugLog: any = null;
+
 function buildTeamSessionContext(team_type?: string, session_purpose?: string, challenges?: string | string[]): any | null {
   if (!team_type && !session_purpose && !challenges) return null;
   let content = '';
@@ -83,9 +86,26 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
     } else {
       return errorResponse('Idea or idea_prompt is required', 400);
     }
+    // --- AI Debugger Logging ---
+    // Log prettified prompt
+    console.log('[AI DEBUG] PlayBuilder Final Prompt:', JSON.stringify(messages, null, 2));
+    // Call OpenAI
     const aiResponse = await callOpenAI(messages, env);
+    // Log full OpenAI response
+    console.log('[AI DEBUG] PlayBuilder Raw OpenAI Response:', aiResponse);
+    // Prepare backend payload
+    const backendPayload = { output: aiResponse };
+    // Log backend payload
+    console.log('[AI DEBUG] PlayBuilder Backend Payload:', JSON.stringify(backendPayload, null, 2));
+    // Store last debug log in memory (excluding user emails, account IDs, backend IDs)
+    lastPlayBuilderDebugLog = {
+      prompt: messages,
+      openai_response: aiResponse,
+      backend_payload: backendPayload,
+      timestamp: new Date().toISOString()
+    };
     // Pass through raw AI output (frontend will structure)
-    return jsonResponse({ output: aiResponse });
+    return jsonResponse(backendPayload);
   } catch (error) {
     console.error('Generate play error:', error);
     return errorResponse('Failed to generate play', 500);
