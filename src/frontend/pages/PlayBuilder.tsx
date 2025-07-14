@@ -10,6 +10,60 @@ function PlayBuilder() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Helper to render output
+  const renderOutput = () => {
+    if (!output) return null;
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(output);
+    } catch (e) {
+      // Not JSON, just show as pre
+      return (
+        <div className="prose max-w-none text-xs">
+          <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+        </div>
+      );
+    }
+    // If JSON and has hypothesis/suggestions
+    if (parsed && (parsed.hypothesis || parsed.suggestions)) {
+      return (
+        <div className="space-y-4 text-xs">
+          {parsed.hypothesis && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Hypothesis
+              </label>
+              <div className="p-2 bg-gray-50 rounded-md">
+                <p className="text-gray-900">{parsed.hypothesis}</p>
+              </div>
+            </div>
+          )}
+          {parsed.suggestions && Array.isArray(parsed.suggestions) && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Testing Suggestions
+              </label>
+              <ul className="space-y-1">
+                {parsed.suggestions.map((suggestion: string, index: number) => (
+                  <li key={index} className="flex items-start space-x-2">
+                    <span className="text-red-500 mt-1">•</span>
+                    <span className="text-gray-900">{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+    // If JSON but not expected structure, show as pre
+    return (
+      <div className="prose max-w-none text-xs">
+        <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+      </div>
+    );
+  };
+
   const handleGenerate = async () => {
     if (!idea.trim()) return;
 
@@ -85,27 +139,24 @@ function PlayBuilder() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Generated Hypothesis</h2>
             {output ? (
-              <div className="prose max-w-none">
-                {/* Optionally use a markdown renderer here if desired */}
-                <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
-              </div>
+              renderOutput()
             ) : hypothesis ? (
-              <div className="space-y-4">
+              <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Hypothesis
                   </label>
-                  <div className="p-3 bg-gray-50 rounded-md">
+                  <div className="p-2 bg-gray-50 rounded-md">
                     <p className="text-gray-900">{hypothesis}</p>
                   </div>
                 </div>
                 
                 {suggestions.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Testing Suggestions
                     </label>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1">
                       {suggestions.map((suggestion, index) => (
                         <li key={index} className="flex items-start space-x-2">
                           <span className="text-red-500 mt-1">•</span>
