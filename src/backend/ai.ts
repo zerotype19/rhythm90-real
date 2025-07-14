@@ -83,6 +83,7 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
       if (extracted_quarter_focus) contextMsg += `\nQuarter Focus: ${extracted_quarter_focus}`;
       if (extracted_top_signal) contextMsg += `\nTop Signal: ${extracted_top_signal}`;
       if (extracted_owner_role) contextMsg += `\nOwner Role: ${extracted_owner_role}`;
+      if (extracted_context) contextMsg += `\nAdditional Context: ${extracted_context}`;
       // Repeat key fields for emphasis
       if (extracted_idea_prompt) contextMsg += `\n\nThe core idea to address is: ${extracted_idea_prompt}.`;
       if (extracted_top_signal) contextMsg += `\nThe key signal driving this is: ${extracted_top_signal}.`;
