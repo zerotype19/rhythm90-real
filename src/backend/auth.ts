@@ -124,6 +124,15 @@ function clearAuthCookie(): string {
 
 export async function handleGoogleCallback(request: Request, env: Env): Promise<Response> {
   try {
+    console.log('OAuth callback - env check:', {
+      hasDB: !!env.DB,
+      hasGoogleClientId: !!env.GOOGLE_CLIENT_ID,
+      hasGoogleClientSecret: !!env.GOOGLE_CLIENT_SECRET,
+      hasJwtSecret: !!env.JWT_SECRET,
+      appUrl: env.APP_URL,
+      environment: env.ENVIRONMENT
+    });
+    
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
@@ -169,6 +178,22 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     }
     const userInfo = JSON.parse(userInfoText);
     const { id: google_id, name, email } = userInfo;
+    
+    // Debug database access
+    if (!env.DB) {
+      console.error('Database binding is undefined');
+      return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
+    }
+    
+    try {
+      // Test database connection
+      await env.DB.prepare('SELECT 1').first();
+      console.log('Database connection successful');
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      return Response.redirect(`${env.APP_URL}/login?error=oauth_failed`, 302);
+    }
+    
     // Check if user exists
     let user = await getUserByGoogleId(env.DB, google_id);
     if (!user) {
