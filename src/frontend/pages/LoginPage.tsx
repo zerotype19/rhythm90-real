@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const OAUTH_REDIRECT_URI = 'https://api.rhythm90.io/auth/callback/google';
+const OAUTH_REDIRECT_URI = 'https://api.rhythm90.io/api/auth/callback/google';
 
 function LoginPage() {
   const navigate = useNavigate();

@@ -25,7 +25,7 @@ export default {
       if (path === '/api/auth/google' && request.method === 'POST') {
         return await handleGoogleAuth(request, env);
       }
-      if (path === '/api/auth/callback/google' && request.method === 'GET') {
+      if ((path === '/api/auth/callback/google' || path === '/auth/callback/google') && request.method === 'GET') {
         return await handleGoogleCallback(request, env);
       }
       if (path === '/api/auth/me' && request.method === 'GET') {
@@ -33,7 +33,7 @@ export default {
       }
       if (path === '/api/auth/logout' && request.method === 'POST') {
         return await handleLogout(request, env);
-      }
+    }
 
       // Team routes
       if (path === '/api/teams' && request.method === 'POST') {
@@ -55,7 +55,7 @@ export default {
 
       if (path === '/api/signals/interpret' && request.method === 'POST') {
         return await handleInterpretSignal(request, env);
-      }
+    }
 
       if (path === '/api/rituals/prompts' && request.method === 'POST') {
         return await handleGenerateRitualPrompts(request, env);
@@ -71,6 +71,6 @@ export default {
     } catch (error) {
       console.error('Request error:', error);
       return errorResponse('Internal server error', 500);
-    }
+  }
   },
 }; 
