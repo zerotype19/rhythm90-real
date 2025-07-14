@@ -130,7 +130,8 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
       hasGoogleClientSecret: !!env.GOOGLE_CLIENT_SECRET,
       hasJwtSecret: !!env.JWT_SECRET,
       appUrl: env.APP_URL,
-      environment: env.ENVIRONMENT
+      environment: env.ENVIRONMENT,
+      allEnvKeys: Object.keys(env)
     });
     
     const url = new URL(request.url);
