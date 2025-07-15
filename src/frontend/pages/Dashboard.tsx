@@ -27,6 +27,8 @@ interface TeamActivity {
   userName: string;
   action: string;
   toolName: string;
+  summary?: string;
+  sharedSlug?: string;
   timestamp: string;
   responseId?: string;
 }
@@ -275,15 +277,21 @@ const Dashboard: React.FC = () => {
                       <div className="flex-1">
                         <p className="text-gray-900">
                           <span className="font-medium">{activity.userName}</span>
-                          <span className="text-gray-600"> {activity.action} on </span>
+                          <span className="text-gray-600"> shared </span>
                           <span className="font-medium text-blue-600">{activity.toolName}</span>
+                          {activity.summary && (
+                            <span className="text-gray-600">: {activity.summary}</span>
+                          )}
                         </p>
                         <p className="text-sm text-gray-500">{formatTimestamp(activity.timestamp)}</p>
                       </div>
-                      {activity.responseId && (
-                        <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                      {activity.sharedSlug && (
+                        <a 
+                          href={`/app/team-shared/${activity.sharedSlug}`}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
                           View
-                        </button>
+                        </a>
                       )}
                     </div>
                   ))}

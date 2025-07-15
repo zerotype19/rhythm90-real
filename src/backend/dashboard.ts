@@ -52,11 +52,21 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
       AND DATE(aul.timestamp) <= ?
   `).bind(teamId, periodStart, periodEnd).first();
 
-  // Get saved responses count (team-wide, last 30d)
+  // Get saved responses count (user-specific, last 30d)
   const savedResponses = await env.DB.prepare(`
     SELECT COUNT(*) as saved_responses
     FROM ai_saved_responses
+    WHERE user_id = ?
+      AND DATE(created_at) >= ?
+      AND DATE(created_at) <= ?
+  `).bind(user.id, periodStart, periodEnd).first();
+
+  // Get team shared count (team-wide, last 30d)
+  const teamShared = await env.DB.prepare(`
+    SELECT COUNT(*) as team_shared
+    FROM ai_saved_responses
     WHERE team_id = ?
+      AND is_shared_team = 1
       AND DATE(created_at) >= ?
       AND DATE(created_at) <= ?
   `).bind(teamId, periodStart, periodEnd).first();
@@ -71,14 +81,22 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     LIMIT 5
   `).bind(user.id).all();
 
-  // Team activity (last 5 actions, all team members)
+  // Team activity (last 5 shared items, all team members)
   const team = await env.DB.prepare(`
-    SELECT aul.*, u.name as user_name
-    FROM ai_usage_logs aul
-    JOIN team_members tm ON aul.user_id = tm.user_id
-    JOIN users u ON aul.user_id = u.id
+    SELECT 
+      asr.id,
+      asr.tool_name,
+      asr.summary,
+      asr.shared_slug,
+      asr.created_at as timestamp,
+      u.name as user_name,
+      u.id as user_id
+    FROM ai_saved_responses asr
+    JOIN team_members tm ON asr.user_id = tm.user_id
+    JOIN users u ON asr.user_id = u.id
     WHERE tm.team_id = ?
-    ORDER BY aul.timestamp DESC
+      AND asr.is_shared_team = 1
+    ORDER BY asr.created_at DESC
     LIMIT 5
   `).bind(teamId).all();
 
@@ -99,12 +117,12 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     ORDER BY created_at DESC
   `).all();
 
-  debugLog(env, 'Dashboard overview data', { toolUsage, savedResponses, personal, team, announcements });
+  debugLog(env, 'Dashboard overview data', { toolUsage, savedResponses, teamShared, personal, team, announcements });
 
   return jsonResponse({
     stats: {
       totalSavedResponses: savedResponses?.saved_responses || 0,
-      totalTeamShared: savedResponses?.saved_responses || 0, // This should be calculated separately
+      totalTeamShared: teamShared?.team_shared || 0,
       topTools: [
         { toolName: 'Play Builder', count: toolUsage?.plays_created || 0 },
         { toolName: 'Signal Lab', count: toolUsage?.signals_logged || 0 },
@@ -114,10 +132,12 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     teamActivity: team.results?.map((activity: any) => ({
       id: activity.id || crypto.randomUUID(),
       userName: activity.user_name || 'Unknown User',
-      action: 'used',
+      action: 'shared',
       toolName: activity.tool_name || 'Unknown Tool',
+      summary: activity.summary || '',
+      sharedSlug: activity.shared_slug || '',
       timestamp: activity.timestamp,
-      responseId: activity.response_id
+      responseId: activity.id
     })) || [],
     announcements: announcements.results || [],
   });
