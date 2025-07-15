@@ -20,6 +20,9 @@ import SyntheticFocusGroup from './pages/mini-tools/SyntheticFocusGroup';
 import Community from './pages/Community';
 import Settings from './pages/Settings';
 import TeamBenchmarking from './pages/TeamBenchmarking';
+import HistoryPage from './pages/HistoryPage';
+import TeamSharedPage from './pages/TeamSharedPage';
+import PublicSharedPage from './pages/PublicSharedPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -32,6 +35,7 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/shared/:slug" element={<PublicSharedPage />} />
             
             {/* Protected app routes */}
             <Route path="/app" element={<ProtectedRoute />}>
@@ -53,6 +57,8 @@ function App() {
               <Route path="community" element={<Community />} />
               <Route path="settings" element={<Settings />} />
               <Route path="team-benchmarking" element={<TeamBenchmarking />} />
+              <Route path="history" element={<HistoryPage />} />
+              <Route path="team-shared" element={<TeamSharedPage />} />
               <Route index element={<Navigate to="/app/dashboard" replace />} />
             </Route>
             
