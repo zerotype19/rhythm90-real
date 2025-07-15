@@ -35,114 +35,112 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     const teamId = teamMember.team_id;
     debugLog(env, 'Dashboard overview requested', { user, teamId });
 
-  // Team stats (last 30d)
-  const periodStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const periodEnd = new Date().toISOString().slice(0, 10);
+    // Team stats (last 30d)
+    const periodStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const periodEnd = new Date().toISOString().slice(0, 10);
 
-  // Get tool usage from ai_usage_logs (team-wide, last 30d)
-  const toolUsage = await env.DB.prepare(`
-    SELECT 
-      SUM(CASE WHEN tool_name = 'play_builder' THEN 1 ELSE 0 END) as plays_created,
-      SUM(CASE WHEN tool_name = 'ritual_guide' THEN 1 ELSE 0 END) as rituals_completed,
-      SUM(CASE WHEN tool_name = 'signal_lab' THEN 1 ELSE 0 END) as signals_logged
-    FROM ai_usage_logs aul
-    JOIN team_members tm ON aul.user_id = tm.user_id
-    WHERE tm.team_id = ?
-      AND DATE(aul.timestamp) >= ?
-      AND DATE(aul.timestamp) <= ?
-  `).bind(teamId, periodStart, periodEnd).first();
+    // Get tool usage from ai_usage_logs (team-wide, last 30d)
+    const toolUsage = await env.DB.prepare(`
+      SELECT 
+        SUM(CASE WHEN tool_name = 'play_builder' THEN 1 ELSE 0 END) as plays_created,
+        SUM(CASE WHEN tool_name = 'ritual_guide' THEN 1 ELSE 0 END) as rituals_completed,
+        SUM(CASE WHEN tool_name = 'signal_lab' THEN 1 ELSE 0 END) as signals_logged
+      FROM ai_usage_logs aul
+      JOIN team_members tm ON aul.user_id = tm.user_id
+      WHERE tm.team_id = ?
+        AND DATE(aul.timestamp) >= ?
+        AND DATE(aul.timestamp) <= ?
+    `).bind(teamId, periodStart, periodEnd).first();
 
-  // Get saved responses count (user-specific, last 30d)
-  const savedResponses = await env.DB.prepare(`
-    SELECT COUNT(*) as saved_responses
-    FROM ai_saved_responses
-    WHERE user_id = ?
-      AND DATE(created_at) >= ?
-      AND DATE(created_at) <= ?
-  `).bind(user.id, periodStart, periodEnd).first();
+    // Get saved responses count (user-specific, last 30d)
+    const savedResponses = await env.DB.prepare(`
+      SELECT COUNT(*) as saved_responses
+      FROM ai_saved_responses
+      WHERE user_id = ?
+        AND DATE(created_at) >= ?
+        AND DATE(created_at) <= ?
+    `).bind(user.id, periodStart, periodEnd).first();
 
-  // Get team shared count (team-wide, last 30d)
-  const teamShared = await env.DB.prepare(`
-    SELECT COUNT(*) as team_shared
-    FROM ai_saved_responses
-    WHERE team_id = ?
-      AND is_shared_team = 1
-      AND DATE(created_at) >= ?
-      AND DATE(created_at) <= ?
-  `).bind(teamId, periodStart, periodEnd).first();
+    // Get team shared count (team-wide, last 30d)
+    const teamShared = await env.DB.prepare(`
+      SELECT COUNT(*) as team_shared
+      FROM ai_saved_responses
+      WHERE team_id = ?
+        AND is_shared_team = 1
+        AND DATE(created_at) >= ?
+        AND DATE(created_at) <= ?
+    `).bind(teamId, periodStart, periodEnd).first();
 
+    // Personal activity (last 5 actions)
+    const personal = await env.DB.prepare(`
+      SELECT * FROM ai_usage_logs
+      WHERE user_id = ?
+      ORDER BY timestamp DESC
+      LIMIT 5
+    `).bind(user.id).all();
 
+    // Team activity (last 5 shared or favorited items, all team members)
+    const team = await env.DB.prepare(`
+      SELECT 
+        asr.id,
+        asr.tool_name,
+        asr.summary,
+        asr.shared_slug,
+        asr.is_favorite,
+        asr.is_shared_team,
+        asr.created_at as timestamp,
+        u.name as user_name,
+        u.id as user_id
+      FROM ai_saved_responses asr
+      JOIN team_members tm ON asr.user_id = tm.user_id
+      JOIN users u ON asr.user_id = u.id
+      WHERE tm.team_id = ?
+        AND (asr.is_shared_team = 1 OR asr.is_favorite = 1)
+      ORDER BY asr.created_at DESC
+      LIMIT 5
+    `).bind(teamId).all();
 
-  // Personal activity (last 5 actions)
-  const personal = await env.DB.prepare(`
-    SELECT * FROM ai_usage_logs
-    WHERE user_id = ?
-    ORDER BY timestamp DESC
-    LIMIT 5
-  `).bind(user.id).all();
+    // Active dashboard announcements
+    const announcements = await env.DB.prepare(`
+      SELECT 
+        id,
+        title,
+        content as summary,
+        content as body,
+        link,
+        created_at,
+        author_email,
+        is_active,
+        created_at as updated_at
+      FROM dashboard_announcements
+      WHERE is_active = 1
+      ORDER BY created_at DESC
+    `).all();
 
-  // Team activity (last 5 shared or favorited items, all team members)
-  const team = await env.DB.prepare(`
-    SELECT 
-      asr.id,
-      asr.tool_name,
-      asr.summary,
-      asr.shared_slug,
-      asr.is_favorite,
-      asr.is_shared_team,
-      asr.created_at as timestamp,
-      u.name as user_name,
-      u.id as user_id
-    FROM ai_saved_responses asr
-    JOIN team_members tm ON asr.user_id = tm.user_id
-    JOIN users u ON asr.user_id = u.id
-    WHERE tm.team_id = ?
-      AND (asr.is_shared_team = 1 OR asr.is_favorite = 1)
-    ORDER BY asr.created_at DESC
-    LIMIT 5
-  `).bind(teamId).all();
+    debugLog(env, 'Dashboard overview data', { toolUsage, savedResponses, teamShared, personal, team, announcements });
 
-  // Active dashboard announcements
-  const announcements = await env.DB.prepare(`
-    SELECT 
-      id,
-      title,
-      content as summary,
-      content as body,
-      link,
-      created_at,
-      author_email,
-      is_active,
-      created_at as updated_at
-    FROM dashboard_announcements
-    WHERE is_active = 1
-    ORDER BY created_at DESC
-  `).all();
-
-  debugLog(env, 'Dashboard overview data', { toolUsage, savedResponses, teamShared, personal, team, announcements });
-
-  return jsonResponse({
-    stats: {
-      totalSavedResponses: savedResponses?.saved_responses || 0,
-      totalTeamShared: teamShared?.team_shared || 0,
-      topTools: [
-        { toolName: 'Play Builder', count: toolUsage?.plays_created || 0 },
-        { toolName: 'Signal Lab', count: toolUsage?.signals_logged || 0 },
-        { toolName: 'Ritual Guide', count: toolUsage?.rituals_completed || 0 }
-      ]
-    },
-    teamActivity: team.results?.map((activity: any) => ({
-      id: activity.id || crypto.randomUUID(),
-      userName: activity.user_name || 'Unknown User',
-      action: activity.is_shared_team ? 'shared' : 'favorited',
-      toolName: activity.tool_name || 'Unknown Tool',
-      summary: activity.summary || '',
-      sharedSlug: activity.shared_slug || '',
-      timestamp: activity.timestamp,
-      responseId: activity.id
-    })) || [],
-    announcements: announcements.results || [],
-  });
+    return jsonResponse({
+      stats: {
+        totalSavedResponses: savedResponses?.saved_responses || 0,
+        totalTeamShared: teamShared?.team_shared || 0,
+        topTools: [
+          { toolName: 'Play Builder', count: toolUsage?.plays_created || 0 },
+          { toolName: 'Signal Lab', count: toolUsage?.signals_logged || 0 },
+          { toolName: 'Ritual Guide', count: toolUsage?.rituals_completed || 0 }
+        ]
+      },
+      teamActivity: team.results?.map((activity: any) => ({
+        id: activity.id || crypto.randomUUID(),
+        userName: activity.user_name || 'Unknown User',
+        action: activity.is_shared_team ? 'shared' : 'favorited',
+        toolName: activity.tool_name || 'Unknown Tool',
+        summary: activity.summary || '',
+        sharedSlug: activity.shared_slug || '',
+        timestamp: activity.timestamp,
+        responseId: activity.id
+      })) || [],
+      announcements: announcements.results || [],
+    });
   } catch (error) {
     console.error('Dashboard overview error:', error);
     return errorResponse('Internal server error', 500);
