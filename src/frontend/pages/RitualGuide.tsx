@@ -1,28 +1,46 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import { apiClient } from '../lib/api';
+import { FaClipboardList, FaComments, FaUsers, FaLightbulb, FaCheckCircle } from 'react-icons/fa';
 
 function RitualGuide() {
-  const [ritualType, setRitualType] = useState<'kickoff' | 'pulse_check' | 'rr'>('kickoff');
-  const [teamContext, setTeamContext] = useState('');
-  const [agenda, setAgenda] = useState<string[]>([]);
-  const [prompts, setPrompts] = useState<string[]>([]);
+  const [ritualType, setRitualType] = useState('kickoff');
+  const [teamType, setTeamType] = useState('');
+  const [topChallenges, setTopChallenges] = useState('');
+  const [focusAreas, setFocusAreas] = useState('');
+  const [additionalContext, setAdditionalContext] = useState('');
   const [output, setOutput] = useState('');
+  const [structured, setStructured] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGenerate = async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.generateRitualPrompts(ritualType, teamContext);
+      const payload = {
+        ritual_type: ritualType,
+        team_type: teamType,
+        top_challenges: topChallenges,
+        focus_areas: focusAreas,
+        additional_context: additionalContext
+      };
+      const response = await apiClient.generateRitualPrompts(payload);
       if (response.data) {
-        if (response.data.output) {
-          setOutput(response.data.output);
-          setAgenda([]);
-          setPrompts([]);
-        } else {
-          setAgenda(response.data.agenda);
-          setPrompts(response.data.prompts);
+        // Try to parse structured fields
+        if (
+          response.data.agenda !== undefined ||
+          response.data.discussion_prompts !== undefined ||
+          response.data.roles_contributions !== undefined ||
+          response.data.preparation_tips !== undefined ||
+          response.data.success_definition !== undefined
+        ) {
+          setStructured(response.data);
           setOutput('');
+        } else if (response.data.output) {
+          setOutput(response.data.output);
+          setStructured(null);
+        } else {
+          setOutput(JSON.stringify(response.data, null, 2));
+          setStructured(null);
         }
       }
     } catch (error) {
@@ -30,6 +48,64 @@ function RitualGuide() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper to render structured output
+  const renderStructured = () => {
+    if (!structured) return null;
+    const sections = [
+      {
+        key: 'agenda',
+        label: 'Agenda',
+        icon: <FaClipboardList className="text-blue-500 mr-2" />,
+        content: structured.agenda && Array.isArray(structured.agenda)
+          ? structured.agenda.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>)
+          : structured.agenda,
+      },
+      {
+        key: 'discussion_prompts',
+        label: 'Discussion Prompts',
+        icon: <FaComments className="text-green-500 mr-2" />,
+        content: structured.discussion_prompts && Array.isArray(structured.discussion_prompts)
+          ? structured.discussion_prompts.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>)
+          : structured.discussion_prompts,
+      },
+      {
+        key: 'roles_contributions',
+        label: 'Roles & Contributions',
+        icon: <FaUsers className="text-purple-500 mr-2" />,
+        content: structured.roles_contributions,
+      },
+      {
+        key: 'preparation_tips',
+        label: 'Preparation Tips',
+        icon: <FaLightbulb className="text-yellow-500 mr-2" />,
+        content: structured.preparation_tips,
+      },
+      {
+        key: 'success_definition',
+        label: 'Success Definition',
+        icon: <FaCheckCircle className="text-emerald-500 mr-2" />,
+        content: structured.success_definition,
+      },
+    ];
+    return (
+      <div className="space-y-4">
+        {sections.map((section) =>
+          section.content && (Array.isArray(section.content) ? section.content.length > 0 : section.content.length > 0) ? (
+            <div key={section.key} className="bg-white rounded-md shadow-sm p-3">
+              <div className="flex items-center mb-1">
+                {section.icon}
+                <span className="font-bold text-sm text-gray-900">{section.label}</span>
+              </div>
+              <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
+                {Array.isArray(section.content) ? <ol className="list-decimal ml-5">{section.content}</ol> : section.content}
+              </div>
+            </div>
+          ) : null
+        )}
+      </div>
+    );
   };
 
   return (
@@ -49,25 +125,65 @@ function RitualGuide() {
                 </label>
                 <select
                   value={ritualType}
-                  onChange={(e) => setRitualType(e.target.value as any)}
+                  onChange={(e) => setRitualType(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  <option value="kickoff">Kickoff Meeting</option>
-                  <option value="pulse_check">Pulse Check</option>
-                  <option value="rr">Retrospective & Planning</option>
+                  <option value="kickoff">Kickoff</option>
+                  <option value="midpoint">Midpoint</option>
+                  <option value="close_call">Close & Call</option>
+                  <option value="custom">Custom</option>
                 </select>
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Team Context (Optional)
+                  Team Type (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={teamType}
+                  onChange={(e) => setTeamType(e.target.value)}
+                  placeholder="e.g., B2B SaaS, DTC, Agency..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Top Challenges (Optional)
                 </label>
                 <textarea
-                  value={teamContext}
-                  onChange={(e) => setTeamContext(e.target.value)}
-                  placeholder="Describe your team's current situation, challenges, or focus areas..."
+                  value={topChallenges}
+                  onChange={(e) => setTopChallenges(e.target.value)}
+                  placeholder="What are the main challenges your team is facing?"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  rows={3}
+                  rows={2}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Focus Areas (Optional)
+                </label>
+                <textarea
+                  value={focusAreas}
+                  onChange={(e) => setFocusAreas(e.target.value)}
+                  placeholder="What areas should the team focus on this quarter?"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={2}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Additional Context (Optional)
+                </label>
+                <textarea
+                  value={additionalContext}
+                  onChange={(e) => setAdditionalContext(e.target.value)}
+                  placeholder="Any other relevant context about your team or situation..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={2}
                 />
               </div>
               
@@ -84,43 +200,11 @@ function RitualGuide() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Meeting Structure</h2>
-            {output ? (
-              <div className="prose max-w-none">
+            {structured ? (
+              renderStructured()
+            ) : output ? (
+              <div className="prose max-w-none text-xs">
                 <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
-              </div>
-            ) : agenda.length > 0 || prompts.length > 0 ? (
-              <div className="space-y-6">
-                {agenda.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Agenda
-                    </label>
-                    <ol className="space-y-2">
-                      {agenda.map((item, index) => (
-                        <li key={index} className="flex items-start space-x-2">
-                          <span className="text-red-500 font-medium">{index + 1}.</span>
-                          <span className="text-gray-900">{item}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-                
-                {prompts.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Discussion Prompts
-                    </label>
-                    <ul className="space-y-2">
-                      {prompts.map((prompt, index) => (
-                        <li key={index} className="flex items-start space-x-2">
-                          <span className="text-red-500 mt-1">•</span>
-                          <span className="text-gray-900">{prompt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="text-center text-gray-500 py-8">

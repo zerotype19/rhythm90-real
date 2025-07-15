@@ -120,10 +120,10 @@ class ApiClient {
     });
   }
 
-  async generateRitualPrompts(ritualType: 'kickoff' | 'pulse_check' | 'rr', teamContext?: string) {
+  async generateRitualPrompts(payload: any) {
     return this.request('/api/rituals/prompts', {
       method: 'POST',
-      body: JSON.stringify({ ritual_type: ritualType, team_context: teamContext }),
+      body: JSON.stringify(payload),
       credentials: 'include',
     });
   }
