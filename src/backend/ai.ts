@@ -847,7 +847,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       
       // Store persona in session for Ask Mode
       if (parsed.persona_sheet && Object.keys(parsed.persona_sheet).length > 0) {
+        console.log(`[DEBUG] Storing persona for user ${user_id}:`, parsed.persona_sheet.name);
         storePersonaSession(user_id, parsed.persona_sheet);
+      } else {
+        console.log(`[DEBUG] No persona sheet to store for user ${user_id}`);
       }
     } catch (err) {
       // If JSON parsing failed, try to extract structured data from the raw response
@@ -890,7 +893,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         
         // Store persona in session for Ask Mode (even if extracted via fallback)
         if (Object.keys(persona_sheet).length > 0) {
+          console.log(`[DEBUG] Storing fallback persona for user ${user_id}:`, persona_sheet.name);
           storePersonaSession(user_id, persona_sheet);
+        } else {
+          console.log(`[DEBUG] No fallback persona to store for user ${user_id}`);
         }
       } else {
         // Complete fallback: return raw response
@@ -1578,10 +1584,15 @@ const personaSessions = new Map<string, { persona: any; timestamp: number }>();
 function cleanupExpiredSessions() {
   const now = Date.now();
   const oneHour = 60 * 60 * 1000;
+  let cleanedCount = 0;
   for (const [key, value] of personaSessions.entries()) {
     if (now - value.timestamp > oneHour) {
       personaSessions.delete(key);
+      cleanedCount++;
     }
+  }
+  if (cleanedCount > 0) {
+    console.log(`[DEBUG] Cleaned up ${cleanedCount} expired sessions`);
   }
 }
 
@@ -1592,12 +1603,17 @@ function storePersonaSession(userId: string, persona: any) {
     persona,
     timestamp: Date.now()
   });
+  console.log(`[DEBUG] Stored persona for user ${userId}:`, persona.name);
+  console.log(`[DEBUG] Total sessions: ${personaSessions.size}`);
 }
 
 // Get persona from session
 function getPersonaSession(userId: string): any | null {
   cleanupExpiredSessions();
   const session = personaSessions.get(userId);
+  console.log(`[DEBUG] Looking for persona for user ${userId}`);
+  console.log(`[DEBUG] Session found:`, !!session);
+  console.log(`[DEBUG] Available sessions:`, Array.from(personaSessions.keys()));
   return session ? session.persona : null;
 }
 
@@ -1616,10 +1632,13 @@ export async function handlePersonaAsk(request: Request, env: Env): Promise<Resp
     }
 
     // Get persona from session
+    console.log(`[DEBUG] PersonaAsk called with user_id: ${user_id}`);
     const persona = getPersonaSession(user_id);
     if (!persona) {
+      console.log(`[DEBUG] No persona found for user ${user_id}`);
       return errorResponse('No persona found for this session. Please generate a persona first.', 400);
     }
+    console.log(`[DEBUG] Found persona: ${persona.name}`);
 
     const systemMessage = {
       role: 'system',
