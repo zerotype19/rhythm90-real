@@ -39,28 +39,29 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
   const periodStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const periodEnd = new Date().toISOString().slice(0, 10);
 
-  // Plays, rituals, saved items (team)
-  const stats = await env.DB.prepare(`
-    SELECT
-      SUM(CASE WHEN tool_name = 'Play Builder' THEN 1 ELSE 0 END) as plays_created,
-      SUM(CASE WHEN tool_name = 'Ritual Guide' THEN 1 ELSE 0 END) as rituals_completed,
-      COUNT(*) as saved_responses
+  // Get tool usage from ai_usage_logs (team-wide, last 30d)
+  const toolUsage = await env.DB.prepare(`
+    SELECT 
+      SUM(CASE WHEN tool_name = 'play_builder' THEN 1 ELSE 0 END) as plays_created,
+      SUM(CASE WHEN tool_name = 'ritual_guide' THEN 1 ELSE 0 END) as rituals_completed,
+      SUM(CASE WHEN tool_name = 'signal_lab' THEN 1 ELSE 0 END) as signals_logged
+    FROM ai_usage_logs aul
+    JOIN team_members tm ON aul.user_id = tm.user_id
+    WHERE tm.team_id = ?
+      AND DATE(aul.timestamp) >= ?
+      AND DATE(aul.timestamp) <= ?
+  `).bind(teamId, periodStart, periodEnd).first();
+
+  // Get saved responses count (team-wide, last 30d)
+  const savedResponses = await env.DB.prepare(`
+    SELECT COUNT(*) as saved_responses
     FROM ai_saved_responses
     WHERE team_id = ?
       AND DATE(created_at) >= ?
       AND DATE(created_at) <= ?
   `).bind(teamId, periodStart, periodEnd).first();
 
-  // Signals logged (from ai_usage_logs) - need to join with team_members to get team_id
-  const signals = await env.DB.prepare(`
-    SELECT COUNT(*) as signals_logged
-    FROM ai_usage_logs aul
-    JOIN team_members tm ON aul.user_id = tm.user_id
-    WHERE tm.team_id = ?
-      AND aul.tool_name = 'Signal Lab'
-      AND DATE(aul.timestamp) >= ?
-      AND DATE(aul.timestamp) <= ?
-  `).bind(teamId, periodStart, periodEnd).first();
+
 
   // Personal activity (last 5 actions)
   const personal = await env.DB.prepare(`
@@ -98,16 +99,16 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     ORDER BY created_at DESC
   `).all();
 
-  debugLog(env, 'Dashboard overview data', { stats, signals, personal, team, announcements });
+  debugLog(env, 'Dashboard overview data', { toolUsage, savedResponses, personal, team, announcements });
 
   return jsonResponse({
     stats: {
-      totalSavedResponses: stats?.saved_responses || 0,
-      totalTeamShared: stats?.saved_responses || 0, // This should be calculated separately
+      totalSavedResponses: savedResponses?.saved_responses || 0,
+      totalTeamShared: savedResponses?.saved_responses || 0, // This should be calculated separately
       topTools: [
-        { toolName: 'Play Builder', count: stats?.plays_created || 0 },
-        { toolName: 'Signal Lab', count: signals?.signals_logged || 0 },
-        { toolName: 'Ritual Guide', count: stats?.rituals_completed || 0 }
+        { toolName: 'Play Builder', count: toolUsage?.plays_created || 0 },
+        { toolName: 'Signal Lab', count: toolUsage?.signals_logged || 0 },
+        { toolName: 'Ritual Guide', count: toolUsage?.rituals_completed || 0 }
       ]
     },
     teamActivity: team.results?.map((activity: any) => ({
