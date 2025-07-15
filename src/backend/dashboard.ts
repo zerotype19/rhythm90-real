@@ -16,22 +16,23 @@ function debugLog(env: Env, msg: string, meta?: any) {
 
 // GET /api/dashboard/overview
 export async function handleDashboardOverview(request: Request, env: Env, ctx: any) {
-  const user = await verifyAuth(request, env);
-  if (!user) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-  
-  // Get user's team_id from team_members table
-  const teamMember = await env.DB.prepare(`
-    SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
-  `).bind(user.id).first();
-  
-  if (!teamMember?.team_id) {
-    return new Response('User must belong to a team', { status: 400 });
-  }
-  
-  const teamId = teamMember.team_id;
-  debugLog(env, 'Dashboard overview requested', { user, teamId });
+  try {
+    const user = await verifyAuth(request, env);
+    if (!user) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+    
+    // Get user's team_id from team_members table
+    const teamMember = await env.DB.prepare(`
+      SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+    `).bind(user.id).first();
+    
+    if (!teamMember?.team_id) {
+      return new Response('User must belong to a team', { status: 400 });
+    }
+    
+    const teamId = teamMember.team_id;
+    debugLog(env, 'Dashboard overview requested', { user, teamId });
 
   // Team stats (last 30d)
   const periodStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -120,6 +121,13 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
   }), {
     headers: { 'Content-Type': 'application/json' },
   });
+  } catch (error) {
+    console.error('Dashboard overview error:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error', details: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 // GET /api/dashboard/announcements
