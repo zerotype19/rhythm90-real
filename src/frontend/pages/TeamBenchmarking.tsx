@@ -306,9 +306,14 @@ function TeamBenchmarking() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600">
-                        {teamValue > industryAvg 
-                          ? `You're performing ${Math.round((teamValue / industryAvg - 1) * 100)}% above the industry average.`
-                          : `You're performing ${Math.round((1 - teamValue / industryAvg) * 100)}% below the industry average.`
+                        {industryAvg > 0 
+                          ? (teamValue > industryAvg 
+                              ? `You're performing ${Math.round((teamValue / industryAvg - 1) * 100)}% above the industry average.`
+                              : `You're performing ${Math.round((1 - teamValue / industryAvg) * 100)}% below the industry average.`
+                            )
+                          : teamValue > 0 
+                            ? "You're the first team to record data in this category!"
+                            : "No data recorded yet for this category."
                         }
                       </p>
                     </div>
