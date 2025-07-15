@@ -568,6 +568,13 @@ function TeamSharedPage() {
                       className="text-sm text-gray-700 whitespace-pre-wrap break-words"
                       dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
                     />
+                    {/* Debug info - remove after testing */}
+                    <div className="mt-4 p-2 bg-blue-50 text-xs text-blue-700 rounded">
+                      <strong>Debug Info:</strong><br/>
+                      Raw blob length: {selectedResponse.response_blob.length}<br/>
+                      Parsed content length: {parseAIResponse(selectedResponse.response_blob).length}<br/>
+                      First 100 chars: {selectedResponse.response_blob.substring(0, 100)}...
+                    </div>
                   </div>
                 </div>
 
