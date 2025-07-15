@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft, FaSearch, FaStar, FaHeart, FaShare, FaEye, FaGlobe, FaUsers } from 'react-icons/fa';
 import { apiClient } from '../lib/api';
 import { SavedResponseActions } from '../components/SavedResponseActions';
 import AppLayout from '../components/AppLayout';
@@ -215,213 +216,196 @@ const HistoryPage: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="md:ml-64 p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Loading State */}
-          {loading && (
-            <div className="min-h-screen bg-gray-50">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="bg-white p-6 rounded-lg shadow">
-                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-2/3 mb-4"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <button
+              onClick={() => navigate('/app')}
+              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+            >
+              <FaArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </button>
+            <h1 className="text-3xl font-bold text-gray-900">My Saved Responses</h1>
+            <p className="text-gray-600 mt-2">View and manage your saved AI tool responses</p>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search responses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
               </div>
+
+              {/* Tool Filter */}
+              <select
+                value={selectedTool}
+                onChange={(e) => setSelectedTool(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="all">All Tools</option>
+                {availableTools.map(tool => (
+                  <option key={tool} value={tool}>{tool}</option>
+                ))}
+              </select>
+
+              {/* Favorites Filter */}
+              <button
+                onClick={() => setShowFavoritesOnly((v) => !v)}
+                className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  showFavoritesOnly 
+                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <FaHeart className={`w-4 h-4 mr-2 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                Favorites Only
+              </button>
+
+              {/* Shared Filter */}
+              <button
+                onClick={() => setShowSharedOnly((v) => !v)}
+                className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  showSharedOnly 
+                    ? 'bg-blue-100 text-blue-800 border border-blue-300' 
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <FaShare className="w-4 h-4 mr-2" />
+                Shared Only
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* Error State */}
-          {!loading && error && (
-            <div className="min-h-screen bg-gray-50">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="text-center">
-                  <div className="text-red-600 text-lg font-medium mb-4">{error}</div>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              </div>
+          {/* Results */}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+              <p className="text-gray-600 mt-2">Loading your responses...</p>
             </div>
-          )}
-
-          {/* Main Content */}
-          {!loading && !error && (
-            <>
-              {/* Header */}
-              <div className="mb-8">
-                <button
-                  onClick={() => navigate('/app')}
-                  className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-                >
-                  <span className="mr-2">←</span>
-                  Back to Dashboard
-                </button>
-                <h1 className="text-3xl font-bold text-gray-900">My Saved Responses</h1>
-              </div>
-
-              {/* Search and Filters */}
-              <div className="bg-white rounded-lg shadow p-6 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Search */}
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
-                    <input
-                      type="text"
-                      placeholder="Search responses..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                  </div>
-
-                  {/* Tool Filter */}
-                  <select
-                    value={selectedTool}
-                    onChange={(e) => setSelectedTool(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="all">All Tools</option>
-                    {availableTools.map(tool => (
-                      <option key={tool} value={tool}>{tool}</option>
-                    ))}
-                  </select>
-
-                  {/* Favorites Filter */}
-                  <button
-                    onClick={() => setShowFavoritesOnly((v) => !v)}
-                    className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium ${showFavoritesOnly ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'} mr-2`}
-                  >
-                    <span className="mr-2">⭐</span>
-                    Favorites Only
-                  </button>
-
-                  {/* Shared Filter */}
-                  <button
-                    onClick={() => setShowSharedOnly((v) => !v)}
-                    className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium ${showSharedOnly ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}
-                  >
-                    <span className="mr-2">🔗</span>
-                    Shared Only
-                  </button>
-                </div>
-              </div>
-
-              {/* Results */}
-              <div className="space-y-4">
-                {filteredResponses.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow p-8 text-center">
-                    <div className="text-gray-500 text-lg mb-2">
-                      {responses.length === 0 ? 'No saved responses yet' : 'No responses match your filters'}
-                    </div>
-                    <div className="text-gray-400">
-                      {responses.length === 0 
-                        ? 'Start using AI tools to save your first response'
-                        : 'Try adjusting your search or filters'
-                      }
-                    </div>
-                  </div>
-                ) : (
-                  filteredResponses.map((response) => (
-                    <div key={response.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow flex flex-col gap-2">
-                      {/* Tool name and badges row */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900 text-base">
-                            {/* Optionally add emoji for tool type */}
-                            {response.tool_name === 'Plain English Translator' && '🔤 '}
-                            {response.tool_name === 'Persona Generator' && '👤 '}
-                            {response.tool_name === 'Synthetic Focus Group' && '👥 '}
-                            {response.tool_name === 'Ritual Guide' && '📅 '}
-                            {response.tool_name === 'Play Builder' && '🎯 '}
-                            {response.tool_name === 'Signal Lab' && '📊 '}
-                            {response.tool_name}
-                          </span>
-                          {/* Badges */}
-                          {response.is_favorite && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 ml-1">
-                              ⭐ Favorite
-                            </span>
-                          )}
-                          {response.is_shared_public && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-1">
-                              🌐 Public
-                            </span>
-                          )}
-                          {response.is_shared_team && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-1">
-                              👥 Team
-                            </span>
-                          )}
-                        </div>
-                        {/* View Button */}
-                        <button
-                          onClick={() => { setSelectedResponse(response); setShowViewModal(true); }}
-                          className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 font-semibold text-xs hover:bg-gray-200 transition"
-                        >
-                          👁️ View
-                        </button>
-                      </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-red-600">{error}</p>
+            </div>
+          ) : filteredResponses.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">📝</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? 'No matching responses' : 'No saved responses yet'}
+              </h3>
+              <p className="text-gray-600">
+                {searchTerm 
+                  ? 'Try adjusting your search terms'
+                  : 'Use AI tools and save responses to see them here'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredResponses.map((response) => (
+                <div key={response.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      {/* Tool name */}
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {response.tool_name}
+                      </h3>
+                      
                       {/* Summary */}
-                      <div className="text-gray-700 text-sm mb-2">
+                      <p className="text-gray-700 mb-3">
                         {truncateSummary(response.summary)}
-                      </div>
+                      </p>
+                      
                       {/* Date */}
-                      <div className="text-xs text-gray-400 mt-auto">Saved on {formatDate(response.created_at)}</div>
+                      <p className="text-sm text-gray-500">
+                        Saved on {formatDate(response.created_at)}
+                      </p>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {/* View Modal */}
-              {showViewModal && selectedResponse && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                  <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                    <div className="flex items-center justify-between p-6 border-b">
-                      <div className="flex items-center">
-                        {getToolIcon(selectedResponse.tool_name)}
-                        <h3 className="ml-2 text-lg font-medium">{selectedResponse.tool_name}</h3>
-                      </div>
+                    
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 ml-4">
+                      {/* Badges */}
+                      {response.is_favorite && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <FaHeart className="w-3 h-3 mr-1 fill-current" />
+                          Favorite
+                        </span>
+                      )}
+                      {response.is_shared_public && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <FaGlobe className="w-3 h-3 mr-1" />
+                          Public
+                        </span>
+                      )}
+                      {response.is_shared_team && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <FaUsers className="w-3 h-3 mr-1" />
+                          Team
+                        </span>
+                      )}
+                      
+                      {/* View Button */}
                       <button
-                        onClick={() => setShowViewModal(false)}
-                        className="text-gray-400 hover:text-gray-600"
+                        onClick={() => { setSelectedResponse(response); setShowViewModal(true); }}
+                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                       >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <FaEye className="w-4 h-4 mr-1" />
+                        View
                       </button>
                     </div>
-                    <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                      <div className="prose max-w-none">
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-500 mb-2">Summary</h4>
-                          <p className="text-gray-900">{selectedResponse.summary}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-2">Full Response</h4>
-                          <div 
-                            className="text-gray-900 whitespace-pre-wrap"
-                            dangerouslySetInnerHTML={{ __html: selectedResponse.response_blob }}
-                          />
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </div>
       </div>
+
+      {/* View Modal */}
+      {showViewModal && selectedResponse && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center">
+                {getToolIcon(selectedResponse.tool_name)}
+                <h3 className="ml-2 text-lg font-medium">{selectedResponse.tool_name}</h3>
+              </div>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="prose max-w-none">
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Summary</h4>
+                  <p className="text-gray-900">{selectedResponse.summary}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">Full Response</h4>
+                  <div 
+                    className="text-gray-900 whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: selectedResponse.response_blob }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 };
