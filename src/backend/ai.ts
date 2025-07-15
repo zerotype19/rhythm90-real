@@ -317,13 +317,15 @@ Define success as collective team learning + individual clarity on next actions.
 Include domain-specific or category-specific examples when possible.
 
 Additional Refinements:
+- For Agenda: Provide step-by-step items without numbers (e.g., "Welcome & Introductions" not "1. Welcome & Introductions"). Each item should be a clear action or topic.
+
 - For Discussion Prompts: Include ritual-type-specific blocker surfacing:
   * Kickoff: Ask about known blockers to anticipate
   * Pulse Check: Ask about in-flight blockers
   * R&R: Ask about blockers that emerged over the quarter
   * Cover both quarterly and recurring blockers
 
-- For Preparation Tips: Format as a concise checklist with checkmarks (✓), aiming for 5-7 items max. Include reference to prior insights: "Review prior insights, including last quarter's key plays and signals."
+- For Preparation Tips: Format as a concise checklist, aiming for 5-7 items max. Include reference to prior insights: "Review prior insights, including last quarter's key plays and signals." Do NOT include checkmarks (✓) or any special characters.
 
 - For Success Definition: Include how learnings will transfer to next-quarter action. Suggest general guidance like "Consider codifying learnings in a team playbook or onboarding docs" with focus on team-level learning transfer.
 
