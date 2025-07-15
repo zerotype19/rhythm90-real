@@ -1473,7 +1473,9 @@ export async function handleSyntheticFocusGroup(request: Request, env: Env): Pro
     if (!topic_or_category || !audience_seed_info) {
       return errorResponse('Topic/category and audience seed info are required', 400);
     }
-    if (!user_id) return errorResponse('User ID is required', 400);
+    
+    // Generate a user ID if not provided (for testing without auth)
+    const userId = user_id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const systemMessage = {
       role: 'system',
@@ -1580,7 +1582,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     // Store focus group in cookie if we have one
     let response = jsonResponse(backendPayload);
     if (backendPayload.persona_lineup && Array.isArray(backendPayload.persona_lineup) && backendPayload.persona_lineup.length > 0) {
-      response = storeFocusGroupSession(user_id, backendPayload, response);
+      response = storeFocusGroupSession(userId, backendPayload, response);
     }
     return response;
   } catch (error) {

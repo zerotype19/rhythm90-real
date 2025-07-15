@@ -250,18 +250,6 @@ class ApiClient {
     });
   }
 
-  async syntheticFocusGroup(topicOrCategory: string, audienceSeedInfo: string, mustIncludeSegments?: string) {
-    return this.request('/api/mini-tools/synthetic-focus-group', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        topic_or_category: topicOrCategory,
-        audience_seed_info: audienceSeedInfo,
-        must_include_segments: mustIncludeSegments || ''
-      }),
-      credentials: 'include',
-    });
-  }
-
   // Health check
   async healthCheck() {
     return this.request('/api/health');
