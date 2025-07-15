@@ -320,7 +320,7 @@ const Dashboard: React.FC = () => {
                           <span className="font-medium">{activity.userName}</span>
                           <span className="text-gray-600"> {activity.action === 'shared' ? 'shared a' : 'favorited a'} response from </span>
                           <a 
-                            href={`https://rhythm90.io/app/team-shared${activity.sharedSlug ? `/${activity.sharedSlug}` : ''}`}
+                            href={activity.sharedSlug ? `/app/team-shared/${activity.sharedSlug}` : `/app/team-shared`}
                             className="font-medium text-blue-600 hover:text-blue-800"
                           >
                             {activity.toolName}

@@ -98,13 +98,31 @@ export const toggleFavorite = async (env: any, responseId: string, userId: strin
     }
 
     const now = new Date().toISOString();
+    let sharedSlug = existing.shared_slug;
 
-    // Update the favorite status
+    // Generate slug if favoriting and no slug exists
+    if (isFavorite && !existing.shared_slug) {
+      sharedSlug = generateSharedSlug();
+      
+      // Ensure slug is unique
+      let attempts = 0;
+      while (attempts < 10) {
+        const existingSlug = await env.DB.prepare(`
+          SELECT id FROM ai_saved_responses WHERE shared_slug = ?
+        `).bind(sharedSlug).first();
+        
+        if (!existingSlug) break;
+        sharedSlug = generateSharedSlug();
+        attempts++;
+      }
+    }
+
+    // Update the favorite status and slug
     const result = await env.DB.prepare(`
       UPDATE ai_saved_responses 
-      SET is_favorite = ?, updated_at = ?
+      SET is_favorite = ?, shared_slug = ?, updated_at = ?
       WHERE id = ? AND user_id = ?
-    `).bind(isFavorite ? 1 : 0, now, responseId, userId).run();
+    `).bind(isFavorite ? 1 : 0, sharedSlug, now, responseId, userId).run();
 
     if (result.success) {
       // Log the action
@@ -157,20 +175,25 @@ export const setShareStatus = async (env: any, responseId: string, userId: strin
     const now = new Date().toISOString();
     let sharedSlug = null;
 
-    // Generate slug if making public
-    if (isSharedPublic) {
-      sharedSlug = generateSharedSlug();
-      
-      // Ensure slug is unique
-      let attempts = 0;
-      while (attempts < 10) {
-        const existingSlug = await env.DB.prepare(`
-          SELECT id FROM ai_saved_responses WHERE shared_slug = ?
-        `).bind(sharedSlug).first();
-        
-        if (!existingSlug) break;
+    // Generate slug if making public OR team shared OR favorited (for dashboard links)
+    if (isSharedPublic || isSharedTeam || existing.is_favorite) {
+      // If there's already a slug, keep it
+      if (existing.shared_slug) {
+        sharedSlug = existing.shared_slug;
+      } else {
         sharedSlug = generateSharedSlug();
-        attempts++;
+        
+        // Ensure slug is unique
+        let attempts = 0;
+        while (attempts < 10) {
+          const existingSlug = await env.DB.prepare(`
+            SELECT id FROM ai_saved_responses WHERE shared_slug = ?
+          `).bind(sharedSlug).first();
+          
+          if (!existingSlug) break;
+          sharedSlug = generateSharedSlug();
+          attempts++;
+        }
       }
     }
 
