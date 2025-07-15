@@ -197,4 +197,6 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
       )}
     </div>
   );
-}; 
+};
+
+export default SavedResponseActions; 
