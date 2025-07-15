@@ -14,6 +14,9 @@ import CreativeTensionFinder from './pages/mini-tools/CreativeTensionFinder';
 import PersonaGenerator from './pages/mini-tools/PersonaGenerator';
 import JourneyBuilder from './pages/mini-tools/JourneyBuilder';
 import TestLearnScale from './pages/mini-tools/TestLearnScale';
+import AgileSprintPlanner from './pages/mini-tools/AgileSprintPlanner';
+import ConnectedMediaMatrix from './pages/mini-tools/ConnectedMediaMatrix';
+import SyntheticFocusGroup from './pages/mini-tools/SyntheticFocusGroup';
 import Community from './pages/Community';
 import Settings from './pages/Settings';
 import TeamBenchmarking from './pages/TeamBenchmarking';
@@ -44,6 +47,9 @@ function App() {
               <Route path="mini-tools/persona-generator" element={<PersonaGenerator />} />
               <Route path="mini-tools/journey-builder" element={<JourneyBuilder />} />
               <Route path="mini-tools/test-learn-scale" element={<TestLearnScale />} />
+              <Route path="mini-tools/agile-sprint-planner" element={<AgileSprintPlanner />} />
+              <Route path="mini-tools/connected-media-matrix" element={<ConnectedMediaMatrix />} />
+              <Route path="mini-tools/synthetic-focus-group" element={<SyntheticFocusGroup />} />
               <Route path="community" element={<Community />} />
               <Route path="settings" element={<Settings />} />
               <Route path="team-benchmarking" element={<TeamBenchmarking />} />

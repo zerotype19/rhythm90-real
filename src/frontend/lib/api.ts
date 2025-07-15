@@ -188,6 +188,42 @@ class ApiClient {
     });
   }
 
+  async agileSprintPlanner(challengeStatement: string, timeHorizon: string, teamSizeRoles: string) {
+    return this.request('/api/mini-tools/agile-sprint-planner', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        challenge_statement: challengeStatement,
+        time_horizon: timeHorizon,
+        team_size_roles: teamSizeRoles
+      }),
+      credentials: 'include',
+    });
+  }
+
+  async connectedMediaMatrix(audienceSnapshot: string, primaryConversionAction: string, seasonalOrContextualTriggers?: string) {
+    return this.request('/api/mini-tools/connected-media-matrix', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        audience_snapshot: audienceSnapshot,
+        primary_conversion_action: primaryConversionAction,
+        seasonal_or_contextual_triggers: seasonalOrContextualTriggers || ''
+      }),
+      credentials: 'include',
+    });
+  }
+
+  async syntheticFocusGroup(topicOrCategory: string, audienceSeedInfo: string, mustIncludeSegments?: string) {
+    return this.request('/api/mini-tools/synthetic-focus-group', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        topic_or_category: topicOrCategory,
+        audience_seed_info: audienceSeedInfo,
+        must_include_segments: mustIncludeSegments || ''
+      }),
+      credentials: 'include',
+    });
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/api/health');

@@ -1,7 +1,7 @@
 import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
-import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handleJourneyBuilder, handleTestLearnScale, lastMiniToolDebugLog } from './ai';
+import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 
@@ -81,6 +81,18 @@ export default {
 
       if (path === '/api/mini-tools/test-learn-scale' && request.method === 'POST') {
         return await handleTestLearnScale(request, env);
+      }
+
+      if (path === '/api/mini-tools/agile-sprint-planner' && request.method === 'POST') {
+        return await handleAgileSprintPlanner(request, env);
+      }
+
+      if (path === '/api/mini-tools/connected-media-matrix' && request.method === 'POST') {
+        return await handleConnectedMediaMatrix(request, env);
+      }
+
+      if (path === '/api/mini-tools/synthetic-focus-group' && request.method === 'POST') {
+        return await handleSyntheticFocusGroup(request, env);
       }
 
       // AI Debugger: Play Builder last log

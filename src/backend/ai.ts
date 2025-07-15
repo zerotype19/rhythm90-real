@@ -1187,4 +1187,377 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
   }
 }
 
+export async function handleAgileSprintPlanner(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { challenge_statement, time_horizon, team_size_roles } = body;
+    if (!challenge_statement || !time_horizon || !team_size_roles) {
+      return errorResponse('Challenge statement, time horizon, and team size/roles are required', 400);
+    }
+
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Agile Sprint Planner assistant. Outline an agile sprint plan for a marketing challenge.'
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Challenge Statement: ${challenge_statement}
+Time Horizon: ${time_horizon}
+Team Size/Roles: ${team_size_roles}
+
+Instructions:
+Return:
+- sprint_objective
+- team_roster_and_responsibilities
+- sprint_cadence
+- rituals_and_artifacts (daily stand-up agenda, end-of-sprint retro, etc.)
+- deliverables_per_sprint
+- rapid_testing_validation_methods
+- definition_of_done (DoD) checklist
+
+Response format:
+{
+  "sprint_objective": "...",
+  "team_roster_and_responsibilities": "...",
+  "sprint_cadence": "...",
+  "rituals_and_artifacts": "...",
+  "deliverables_per_sprint": "...",
+  "rapid_testing_validation_methods": "...",
+  "definition_of_done": [ ... ]
+}
+
+Return ONLY raw JSON — no markdown, no comments, no code fences.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        sprint_objective: parsed.sprint_objective || '',
+        team_roster_and_responsibilities: parsed.team_roster_and_responsibilities || '',
+        sprint_cadence: parsed.sprint_cadence || '',
+        rituals_and_artifacts: parsed.rituals_and_artifacts || '',
+        deliverables_per_sprint: parsed.deliverables_per_sprint || '',
+        rapid_testing_validation_methods: parsed.rapid_testing_validation_methods || '',
+        definition_of_done: Array.isArray(parsed.definition_of_done) ? parsed.definition_of_done : []
+      };
+    } catch (err) {
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let sprint_objective = '', team_roster_and_responsibilities = '', sprint_cadence = '', rituals_and_artifacts = '', deliverables_per_sprint = '', rapid_testing_validation_methods = '', definition_of_done: string[] = [];
+      
+      // Extract fields
+      const objectiveMatch = aiResponse.match(/"sprint_objective":\s*"([^"]+)"/);
+      if (objectiveMatch) sprint_objective = objectiveMatch[1];
+      
+      const rosterMatch = aiResponse.match(/"team_roster_and_responsibilities":\s*"([^"]+)"/);
+      if (rosterMatch) team_roster_and_responsibilities = rosterMatch[1];
+      
+      const cadenceMatch = aiResponse.match(/"sprint_cadence":\s*"([^"]+)"/);
+      if (cadenceMatch) sprint_cadence = cadenceMatch[1];
+      
+      const ritualsMatch = aiResponse.match(/"rituals_and_artifacts":\s*"([^"]+)"/);
+      if (ritualsMatch) rituals_and_artifacts = ritualsMatch[1];
+      
+      const deliverablesMatch = aiResponse.match(/"deliverables_per_sprint":\s*"([^"]+)"/);
+      if (deliverablesMatch) deliverables_per_sprint = deliverablesMatch[1];
+      
+      const testingMatch = aiResponse.match(/"rapid_testing_validation_methods":\s*"([^"]+)"/);
+      if (testingMatch) rapid_testing_validation_methods = testingMatch[1];
+      
+      // Extract definition of done
+      const dodMatch = aiResponse.match(/"definition_of_done":\s*\[([\s\S]*?)\]/);
+      if (dodMatch) {
+        const dodText = dodMatch[1];
+        definition_of_done = dodText.match(/"([^"]+)"/g)?.map(d => d.replace(/"/g, '')) || [];
+      }
+      
+      // If we extracted any data, return it structured
+      if (sprint_objective || team_roster_and_responsibilities || sprint_cadence || rituals_and_artifacts || deliverables_per_sprint || rapid_testing_validation_methods || definition_of_done.length) {
+        backendPayload = {
+          sprint_objective,
+          team_roster_and_responsibilities,
+          sprint_cadence,
+          rituals_and_artifacts,
+          deliverables_per_sprint,
+          rapid_testing_validation_methods,
+          definition_of_done
+        };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'agile-sprint-planner',
+      input_payload: body,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Agile Sprint Planner error:', error);
+    return errorResponse('Failed to generate sprint plan', 500);
+  }
+}
+
+export async function handleConnectedMediaMatrix(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { audience_snapshot, primary_conversion_action, seasonal_or_contextual_triggers } = body;
+    if (!audience_snapshot || !primary_conversion_action) {
+      return errorResponse('Audience snapshot and primary conversion action are required', 400);
+    }
+
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Connected-Media Moment Matrix assistant. Create a moment-based media plan.'
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Audience Snapshot: ${audience_snapshot}
+Primary Conversion Action: ${primary_conversion_action}
+Seasonal/Contextual Triggers: ${seasonal_or_contextual_triggers || 'None specified'}
+
+Instructions:
+Return a table:
+- moment_or_trigger
+- audience_mindset
+- channel_format_ranked
+- creative_or_offer_cue
+- primary_kpi
+- measurement_approach
+
+Response format:
+{
+  "moment_matrix": [
+    { "moment_or_trigger": "...", "audience_mindset": "...", "channel_format_ranked": "...", "creative_or_offer_cue": "...", "primary_kpi": "...", "measurement_approach": "..." },
+    ...
+  ]
+}
+
+Return ONLY raw JSON — no markdown, no comments, no code fences.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        moment_matrix: Array.isArray(parsed.moment_matrix) ? parsed.moment_matrix : []
+      };
+    } catch (err) {
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let moment_matrix: any[] = [];
+      
+      // Extract moment matrix
+      const matrixMatch = aiResponse.match(/"moment_matrix":\s*\[([\s\S]*?)\]/);
+      if (matrixMatch) {
+        const matrixText = matrixMatch[1];
+        const rowMatches = matrixText.match(/\{[^}]+\}/g);
+        if (rowMatches) {
+          moment_matrix = rowMatches.map(row => {
+            const moment_or_trigger = row.match(/"moment_or_trigger":\s*"([^"]+)"/)?.[1] || '';
+            const audience_mindset = row.match(/"audience_mindset":\s*"([^"]+)"/)?.[1] || '';
+            const channel_format_ranked = row.match(/"channel_format_ranked":\s*"([^"]+)"/)?.[1] || '';
+            const creative_or_offer_cue = row.match(/"creative_or_offer_cue":\s*"([^"]+)"/)?.[1] || '';
+            const primary_kpi = row.match(/"primary_kpi":\s*"([^"]+)"/)?.[1] || '';
+            const measurement_approach = row.match(/"measurement_approach":\s*"([^"]+)"/)?.[1] || '';
+            return { moment_or_trigger, audience_mindset, channel_format_ranked, creative_or_offer_cue, primary_kpi, measurement_approach };
+          });
+        }
+      }
+      
+      // If we extracted any data, return it structured
+      if (moment_matrix.length > 0) {
+        backendPayload = { moment_matrix };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'connected-media-matrix',
+      input_payload: body,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Connected Media Matrix error:', error);
+    return errorResponse('Failed to generate media matrix', 500);
+  }
+}
+
+export async function handleSyntheticFocusGroup(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { topic_or_category, audience_seed_info, must_include_segments } = body;
+    if (!topic_or_category || !audience_seed_info) {
+      return errorResponse('Topic/category and audience seed info are required', 400);
+    }
+
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Synthetic Focus Group assistant. Create a synthetic focus group of five personas and enter Ask Mode.'
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Topic/Category: ${topic_or_category}
+Audience Seed Info: ${audience_seed_info}
+Must Include Segments: ${must_include_segments || 'None specified'}
+
+Instructions:
+Section A – Persona Line-Up:
+For each persona:
+- name, age, location, quick bio
+- core_motivations_values
+- pain_points_objections
+- decision_drivers_triggers
+- media_content_habits
+
+Section B – Ask Mode:
+Respond:
+"All five personas are present. Address your question to a name (e.g., 'Karen, why…?') or to 'the group.' When finished, say 'exit group.'"
+
+Response format:
+{
+  "persona_lineup": [ { "name": "...", "age": "...", "location": "...", "bio": "...", "motivations": "...", "pain_points": "...", "triggers": "...", "media_habits": "..." }, ... ],
+  "ask_mode_message": "All five personas are present. Address your question to a name or to 'the group.' When finished, say 'exit group.'"
+}
+
+Return ONLY raw JSON — no markdown, no comments, no code fences.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        persona_lineup: Array.isArray(parsed.persona_lineup) ? parsed.persona_lineup : [],
+        ask_mode_message: parsed.ask_mode_message || 'All five personas are present. Address your question to a name or to \'the group.\' When finished, say \'exit group.\''
+      };
+    } catch (err) {
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let persona_lineup: any[] = [], ask_mode_message = 'All five personas are present. Address your question to a name or to \'the group.\' When finished, say \'exit group.\'';
+      
+      // Extract persona lineup
+      const lineupMatch = aiResponse.match(/"persona_lineup":\s*\[([\s\S]*?)\]/);
+      if (lineupMatch) {
+        const lineupText = lineupMatch[1];
+        const personaMatches = lineupText.match(/\{[^}]+\}/g);
+        if (personaMatches) {
+          persona_lineup = personaMatches.map(persona => {
+            const name = persona.match(/"name":\s*"([^"]+)"/)?.[1] || '';
+            const age = persona.match(/"age":\s*"([^"]+)"/)?.[1] || '';
+            const location = persona.match(/"location":\s*"([^"]+)"/)?.[1] || '';
+            const bio = persona.match(/"bio":\s*"([^"]+)"/)?.[1] || '';
+            const motivations = persona.match(/"motivations":\s*"([^"]+)"/)?.[1] || '';
+            const pain_points = persona.match(/"pain_points":\s*"([^"]+)"/)?.[1] || '';
+            const triggers = persona.match(/"triggers":\s*"([^"]+)"/)?.[1] || '';
+            const media_habits = persona.match(/"media_habits":\s*"([^"]+)"/)?.[1] || '';
+            return { name, age, location, bio, motivations, pain_points, triggers, media_habits };
+          });
+        }
+      }
+      
+      // Extract ask mode message
+      const askModeMatch = aiResponse.match(/"ask_mode_message":\s*"([^"]+)"/);
+      if (askModeMatch) {
+        ask_mode_message = askModeMatch[1];
+      }
+      
+      // If we extracted any data, return it structured
+      if (persona_lineup.length > 0 || ask_mode_message) {
+        backendPayload = { persona_lineup, ask_mode_message };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'synthetic-focus-group',
+      input_payload: body,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Synthetic Focus Group error:', error);
+    return errorResponse('Failed to generate focus group', 500);
+  }
+}
+
 export { lastMiniToolDebugLog }; 

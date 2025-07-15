@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import AppLayout from '../components/AppLayout';
-import { FaLanguage, FaCrosshairs, FaLightbulb, FaUser, FaRoute, FaChartLine } from 'react-icons/fa';
+import { FaLanguage, FaCrosshairs, FaLightbulb, FaUser, FaRoute, FaChartLine, FaRocket, FaBroadcastTower, FaUsers } from 'react-icons/fa';
 
 function MiniTools() {
   const tools = [
@@ -39,6 +39,24 @@ function MiniTools() {
       description: 'Design an experimentation plan with hypotheses + KPIs.',
       slug: 'test-learn-scale',
       icon: <FaChartLine className="w-8 h-8 text-orange-500" />
+    },
+    {
+      name: 'Agile Sprint / War-Room Planner',
+      description: 'Outline an agile sprint plan for a marketing challenge.',
+      slug: 'agile-sprint-planner',
+      icon: <FaRocket className="w-8 h-8 text-red-500" />
+    },
+    {
+      name: 'Connected-Media Moment Matrix',
+      description: 'Create a moment-based media plan.',
+      slug: 'connected-media-matrix',
+      icon: <FaBroadcastTower className="w-8 h-8 text-teal-500" />
+    },
+    {
+      name: 'Synthetic Focus Group',
+      description: 'Create a synthetic focus group of five personas and enter Ask Mode.',
+      slug: 'synthetic-focus-group',
+      icon: <FaUsers className="w-8 h-8 text-pink-500" />
     }
   ];
 
