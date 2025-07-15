@@ -63,10 +63,18 @@ export const saveResponse = async (env: any, params: SaveResponseParams): Promis
         SELECT * FROM ai_saved_responses WHERE id = ?
       `).bind(id).first();
       
+      // Convert numeric boolean values to actual booleans
+      const processedRecord = savedRecord ? {
+        ...savedRecord,
+        is_favorite: Boolean(savedRecord.is_favorite),
+        is_shared_public: Boolean(savedRecord.is_shared_public),
+        is_shared_team: Boolean(savedRecord.is_shared_team)
+      } : null;
+      
       return { 
         success: true, 
         message: 'Response saved successfully',
-        data: savedRecord as SavedResponse
+        data: processedRecord as SavedResponse
       };
     } else {
       return { success: false, message: 'Failed to save response' };
@@ -107,10 +115,18 @@ export const toggleFavorite = async (env: any, responseId: string, userId: strin
         SELECT * FROM ai_saved_responses WHERE id = ?
       `).bind(responseId).first();
       
+      // Convert numeric boolean values to actual booleans
+      const processedRecord = updatedRecord ? {
+        ...updatedRecord,
+        is_favorite: Boolean(updatedRecord.is_favorite),
+        is_shared_public: Boolean(updatedRecord.is_shared_public),
+        is_shared_team: Boolean(updatedRecord.is_shared_team)
+      } : null;
+      
       return { 
         success: true, 
         message: isFavorite ? 'Added to favorites' : 'Removed from favorites',
-        data: updatedRecord as SavedResponse
+        data: processedRecord as SavedResponse
       };
     } else {
       return { success: false, message: 'Failed to update favorite status' };
@@ -181,10 +197,18 @@ export const setShareStatus = async (env: any, responseId: string, userId: strin
         SELECT * FROM ai_saved_responses WHERE id = ?
       `).bind(responseId).first();
       
+      // Convert numeric boolean values to actual booleans
+      const processedRecord = updatedRecord ? {
+        ...updatedRecord,
+        is_favorite: Boolean(updatedRecord.is_favorite),
+        is_shared_public: Boolean(updatedRecord.is_shared_public),
+        is_shared_team: Boolean(updatedRecord.is_shared_team)
+      } : null;
+      
       return { 
         success: true, 
         message: 'Share status updated successfully',
-        data: updatedRecord as SavedResponse
+        data: processedRecord as SavedResponse
       };
     } else {
       return { success: false, message: 'Failed to update share status' };
@@ -204,10 +228,18 @@ export const getUserHistory = async (env: any, userId: string): Promise<{ succes
       ORDER BY created_at DESC
     `).bind(userId).all();
 
+    // Convert numeric boolean values to actual booleans
+    const processedResults = responses.results.map((row: any) => ({
+      ...row,
+      is_favorite: Boolean(row.is_favorite),
+      is_shared_public: Boolean(row.is_shared_public),
+      is_shared_team: Boolean(row.is_shared_team)
+    }));
+
     return { 
       success: true, 
       message: 'User history retrieved successfully',
-      data: responses.results as SavedResponse[]
+      data: processedResults as SavedResponse[]
     };
   } catch (error) {
     console.error('Error getting user history:', error);
@@ -224,10 +256,18 @@ export const getTeamSharedHistory = async (env: any, teamId: string): Promise<{ 
       ORDER BY created_at DESC
     `).bind(teamId).all();
 
+    // Convert numeric boolean values to actual booleans
+    const processedResults = responses.results.map((row: any) => ({
+      ...row,
+      is_favorite: Boolean(row.is_favorite),
+      is_shared_public: Boolean(row.is_shared_public),
+      is_shared_team: Boolean(row.is_shared_team)
+    }));
+
     return { 
       success: true, 
       message: 'Team shared history retrieved successfully',
-      data: responses.results as SavedResponse[]
+      data: processedResults as SavedResponse[]
     };
   } catch (error) {
     console.error('Error getting team shared history:', error);
@@ -310,10 +350,18 @@ export const getTeamSharedHistoryEnhanced = async (
       .bind(...params, limit, offset)
       .all();
 
+    // Convert numeric boolean values to actual booleans
+    const processedResults = responses.results.map((row: any) => ({
+      ...row,
+      is_favorite: Boolean(row.is_favorite),
+      is_shared_public: Boolean(row.is_shared_public),
+      is_shared_team: Boolean(row.is_shared_team)
+    }));
+
     return { 
       success: true, 
       message: 'Team shared history retrieved successfully',
-      data: responses.results as (SavedResponse & { user_name?: string; user_email?: string })[],
+      data: processedResults as (SavedResponse & { user_name?: string; user_email?: string })[],
       total
     };
   } catch (error) {
@@ -357,10 +405,18 @@ export const getPublicShared = async (env: any, sharedSlug: string): Promise<{ s
       return { success: false, message: 'Shared response not found' };
     }
 
+    // Convert numeric boolean values to actual booleans
+    const processedResponse = {
+      ...response,
+      is_favorite: Boolean(response.is_favorite),
+      is_shared_public: Boolean(response.is_shared_public),
+      is_shared_team: Boolean(response.is_shared_team)
+    };
+
     return { 
       success: true, 
       message: 'Public shared response retrieved successfully',
-      data: response as SavedResponse
+      data: processedResponse as SavedResponse
     };
   } catch (error) {
     console.error('Error getting public shared response:', error);
