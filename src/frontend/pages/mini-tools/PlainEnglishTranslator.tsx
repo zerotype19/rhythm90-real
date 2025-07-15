@@ -110,7 +110,7 @@ function PlainEnglishTranslator() {
         )}
 
         {/* Action buttons for saving/favoriting/sharing - moved to bottom */}
-        <div className="bg-gray-50 rounded-lg p-6">
+        <div className="bg-gray-50 rounded-lg p-2 mt-3">
           <SavedResponseActions
             toolName="Plain English Translator"
             responseData={output}
