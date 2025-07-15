@@ -250,6 +250,67 @@ class ApiClient {
   async healthCheck() {
     return this.request('/api/health');
   }
+
+  // Saved Responses
+  /**
+   * Save a response (requires summary, tool_name, response_blob, optional team_id)
+   */
+  async saveResponse({ summary, tool_name, response_blob, team_id }: { summary: string; tool_name: string; response_blob: string; team_id?: string }) {
+    return this.request('/api/saved-responses/save', {
+      method: 'POST',
+      body: JSON.stringify({ summary, tool_name, response_blob, team_id }),
+      credentials: 'include',
+    });
+  }
+
+  /**
+   * Toggle favorite on a saved response
+   */
+  async toggleFavorite(response_id: string, is_favorite: boolean) {
+    return this.request('/api/saved-responses/favorite', {
+      method: 'POST',
+      body: JSON.stringify({ response_id, is_favorite }),
+      credentials: 'include',
+    });
+  }
+
+  /**
+   * Set share status (public/team) on a saved response
+   */
+  async setShareStatus(response_id: string, is_shared_public: boolean, is_shared_team: boolean) {
+    return this.request('/api/saved-responses/share', {
+      method: 'POST',
+      body: JSON.stringify({ response_id, is_shared_public, is_shared_team }),
+      credentials: 'include',
+    });
+  }
+
+  /**
+   * Get user history (saved responses)
+   */
+  async getUserHistory(user_id: string) {
+    return this.request(`/api/saved-responses/user/${user_id}`, {
+      credentials: 'include',
+    });
+  }
+
+  /**
+   * Get team shared history
+   */
+  async getTeamSharedHistory(team_id: string) {
+    return this.request(`/api/saved-responses/team/${team_id}`, {
+      credentials: 'include',
+    });
+  }
+
+  /**
+   * Get a public shared response by slug
+   */
+  async getSharedPublic(slug: string) {
+    return this.request(`/api/saved-responses/public/${slug}`, {
+      credentials: 'include',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE); 

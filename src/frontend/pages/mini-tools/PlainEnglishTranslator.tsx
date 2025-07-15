@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../../components/AppLayout';
+import SavedResponseActions from '../../components/SavedResponseActions';
 import { FaLanguage, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
 
@@ -38,6 +39,15 @@ function PlainEnglishTranslator() {
 
     return (
       <div className="space-y-6">
+        {/* Action buttons for saving/favoriting/sharing */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <SavedResponseActions
+            toolName="Plain English Translator"
+            responseData={output}
+            summary={`Plain English translation of: "${originalText.substring(0, 100)}${originalText.length > 100 ? '...' : ''}"`}
+          />
+        </div>
+
         {/* Plain English Rewrite */}
         {output.plain_english_rewrite && (
           <div className="bg-white rounded-lg shadow p-6">
