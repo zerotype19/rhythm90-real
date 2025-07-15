@@ -81,13 +81,15 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     LIMIT 5
   `).bind(user.id).all();
 
-  // Team activity (last 5 shared items, all team members)
+  // Team activity (last 5 shared or favorited items, all team members)
   const team = await env.DB.prepare(`
     SELECT 
       asr.id,
       asr.tool_name,
       asr.summary,
       asr.shared_slug,
+      asr.is_favorite,
+      asr.is_shared_team,
       asr.created_at as timestamp,
       u.name as user_name,
       u.id as user_id
@@ -95,7 +97,7 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     JOIN team_members tm ON asr.user_id = tm.user_id
     JOIN users u ON asr.user_id = u.id
     WHERE tm.team_id = ?
-      AND asr.is_shared_team = 1
+      AND (asr.is_shared_team = 1 OR asr.is_favorite = 1)
     ORDER BY asr.created_at DESC
     LIMIT 5
   `).bind(teamId).all();
@@ -132,7 +134,7 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     teamActivity: team.results?.map((activity: any) => ({
       id: activity.id || crypto.randomUUID(),
       userName: activity.user_name || 'Unknown User',
-      action: 'shared',
+      action: activity.is_shared_team ? 'shared' : 'favorited',
       toolName: activity.tool_name || 'Unknown Tool',
       summary: activity.summary || '',
       sharedSlug: activity.shared_slug || '',

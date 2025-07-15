@@ -277,24 +277,17 @@ const Dashboard: React.FC = () => {
                       <div className="flex-1">
                         <p className="text-gray-900">
                           <span className="font-medium">{activity.userName}</span>
-                          <span className="text-gray-600"> shared a response from </span>
-                          <span className="font-medium text-blue-600">{activity.toolName}</span>
+                          <span className="text-gray-600"> {activity.action === 'shared' ? 'shared a' : 'favorited a'} response from </span>
+                          <a 
+                            href={`https://rhythm90.io/app/team-shared${activity.sharedSlug ? `/${activity.sharedSlug}` : ''}`}
+                            className="font-medium text-blue-600 hover:text-blue-800"
+                          >
+                            {activity.toolName}
+                          </a>
                         </p>
-                        {activity.summary && (
-                          <p className="text-sm text-gray-600 mt-1 truncate">
-                            "{activity.summary.length > 60 ? activity.summary.substring(0, 60) + '...' : activity.summary}"
-                          </p>
-                        )}
                         <p className="text-sm text-gray-500">{formatTimestamp(activity.timestamp)}</p>
                       </div>
-                      {activity.sharedSlug && (
-                        <a 
-                          href={`/app/team-shared/${activity.sharedSlug}`}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          View
-                        </a>
-                      )}
+
                     </div>
                   ))}
                 </div>
