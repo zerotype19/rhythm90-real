@@ -49,7 +49,9 @@ interface ApiResponse<T> {
 // Parse AI response to hide prompts and show only the user-facing content
 const parseAIResponse = (responseBlob: string): string => {
   try {
+    console.log('Parsing response blob:', responseBlob);
     const parsed = JSON.parse(responseBlob);
+    console.log('Parsed response:', parsed);
     
     // If it's a string, just return it
     if (typeof parsed === 'string') {
@@ -98,12 +100,14 @@ const parseAIResponse = (responseBlob: string): string => {
       });
       
       html += '</div>';
+      console.log('Generated HTML:', html);
       return html;
     }
     
     // Fallback to pretty-printed JSON
     return `<pre class="text-sm bg-gray-50 p-4 rounded overflow-x-auto">${JSON.stringify(parsed, null, 2)}</pre>`;
-  } catch {
+  } catch (error) {
+    console.error('Error parsing response blob:', error);
     // If it's not valid JSON, return as plain text
     return `<div class="whitespace-pre-wrap text-gray-700">${responseBlob}</div>`;
   }
@@ -269,6 +273,11 @@ function TeamSharedPage() {
         console.error('Invalid date string:', dateString);
         return 'Invalid Date';
       }
+      
+      // Check if it's a future date (which might be a test date)
+      const now = new Date();
+      const isFuture = date > now;
+      console.log('Is future date:', isFuture);
       
       const formatted = date.toLocaleDateString('en-US', {
         year: 'numeric',
@@ -500,6 +509,16 @@ function TeamSharedPage() {
                         dangerouslySetInnerHTML={{ __html: parseAIResponse(response.response_blob) }}
                       />
                     </div>
+                  </div>
+                )}
+                
+                {/* Debug info for slug view */}
+                {slug && (
+                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <h4 className="font-semibold text-yellow-800 mb-2">Debug Info</h4>
+                    <pre className="text-xs text-yellow-700 overflow-x-auto">
+                      {JSON.stringify(response, null, 2)}
+                    </pre>
                   </div>
                 )}
                 
