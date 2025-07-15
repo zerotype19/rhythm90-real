@@ -267,10 +267,16 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
     const { ritual_type, team_type, top_challenges, focus_areas, additional_context } = body;
     if (!ritual_type) return errorResponse('Ritual type is required', 400);
 
+    // Validate ritual type
+    const validRitualTypes = ['Kickoff', 'Pulse Check', 'R&R', 'Review & Renew'];
+    if (!validRitualTypes.includes(ritual_type)) {
+      return errorResponse(`Invalid ritual type. Must be one of: ${validRitualTypes.join(', ')}`, 400);
+    }
+
     // --- Prompt Assembly ---
     const RITUAL_GUIDE_SYSTEM_MESSAGE = {
       role: 'system',
-      content: `You are a Rhythm90 Ritual Guide assistant.\n\nYour job is to help teams plan and run effective quarterly rituals using the Rhythm90 framework.\n\nA great ritual plan should:\n- Provide a clear agenda tailored to the ritual type (e.g., Kickoff, Midpoint, Close & Call).\n- Include specific discussion prompts or questions that surface signals and align the team.\n- Highlight key roles and how they contribute.\n- Suggest preparation tips or materials if relevant.\n- Offer an outcome summary: what success looks like for this meeting.\n- Connect to team type, top challenges, focus areas, or category context if provided.`
+      content: `You are a Rhythm90 Ritual Guide assistant.\n\nYour job is to help teams run effective quarterly rituals using the Rhythm90 framework.\n\nA great ritual plan should:\n- Provide a clear, stepwise agenda tailored to the ritual type.\n- Include sharp discussion prompts that surface live signals, help prioritize, and align the team.\n- Highlight roles and how they contribute.\n- Suggest preparation materials or data.\n- Define success in terms of team-level learning, clarity, and forward motion.\n- Connect to team type, business context, top challenges, and focus areas if provided.`
     };
     let contextBlock = 'Context:';
     if (ritual_type) contextBlock += `\nRitual Type: ${ritual_type}`;
@@ -278,7 +284,7 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
     if (top_challenges) contextBlock += `\nTop Challenges: ${top_challenges}`;
     if (focus_areas) contextBlock += `\nFocus Areas: ${focus_areas}`;
     if (additional_context) contextBlock += `\nAdditional Context: ${additional_context}`;
-    const userPrompt = `Help us generate a ritual plan. Please provide:\n1. Agenda (step-by-step, tailored to the ritual type)\n2. Discussion Prompts (specific questions to surface signals, align plays, and focus the team)\n3. Roles & Contributions (who leads, who supports, who reports back)\n4. Preparation Tips (what materials or data teams should prep, if any)\n5. Success Definition (what success looks like for this ritual and how it moves the quarter forward)\n\nFormat your response as JSON with fields: agenda, discussion_prompts, roles_contributions, preparation_tips, success_definition.\n\nIncorporate the Additional Context into all sections. Provide category-specific insights when possible.\nTailor the plan to the Ritual Type and Team Type provided.`;
+    const userPrompt = `Help us generate a ritual plan. Please provide:\n1. Agenda (detailed, step-by-step, tailored to the ritual type)\n2. Discussion Prompts (specific questions to surface signals, align plays, and focus the team)\n3. Roles & Contributions (who leads, who supports, who reports back)\n4. Preparation Tips (what materials or data teams should prep, including prior signals or plays)\n5. Success Definition (what success looks like, emphasizing both team learning and forward progress)\n\nIncorporate the Additional Context into all sections. Provide category-specific insights when possible.\nTailor the plan to the Ritual Type and Team Type provided.\n\nFormat your response as JSON with these exact field names:\nagenda, discussion_prompts, roles_contributions, preparation_tips, success_definition.\n\nEnsure agenda and discussion_prompts are arrays, even if only one item.\nInclude both individual and collective learning in success_definition.`;
     const messages = [
       RITUAL_GUIDE_SYSTEM_MESSAGE,
       { role: 'user', content: contextBlock },
@@ -286,7 +292,13 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
     ];
 
     // --- AI Call ---
-    const aiResponse = await callOpenAI(messages, env);
+    let aiResponse: string;
+    try {
+      aiResponse = await callOpenAI(messages, env);
+        } catch (error) {
+      console.log('OpenAI call failed:', error);
+      throw error; // Re-throw the error instead of using mock response
+    }
 
     // --- Output Structuring ---
     let backendPayload: any = {};
@@ -295,8 +307,8 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
       // Try to parse as JSON
       const parsed = JSON.parse(aiResponse);
       backendPayload = {
-        agenda: parsed.agenda || [],
-        discussion_prompts: parsed.discussion_prompts || [],
+        agenda: Array.isArray(parsed.agenda) ? parsed.agenda : (parsed.agenda ? [parsed.agenda] : []),
+        discussion_prompts: Array.isArray(parsed.discussion_prompts) ? parsed.discussion_prompts : (parsed.discussion_prompts ? [parsed.discussion_prompts] : []),
         roles_contributions: parsed.roles_contributions || '',
         preparation_tips: parsed.preparation_tips || '',
         success_definition: parsed.success_definition || ''
@@ -304,23 +316,29 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
     } catch (err) {
       // Try to extract sections from text if not JSON
       let agenda: string[] = [], discussion_prompts: string[] = [], roles_contributions = '', preparation_tips = '', success_definition = '';
-      // Use regex or simple splits to extract sections
+      
+      // Use regex to extract sections
       const agendaMatch = aiResponse.match(/Agenda\s*[:\-]?\s*([\s\S]*?)(?=Discussion Prompts|Roles|Preparation|Success|$)/i);
       if (agendaMatch) {
         const lines = agendaMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
         agenda = lines;
       }
+      
       const promptsMatch = aiResponse.match(/Discussion Prompts\s*[:\-]?\s*([\s\S]*?)(?=Roles|Preparation|Success|$)/i);
       if (promptsMatch) {
         const lines = promptsMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
         discussion_prompts = lines;
       }
+      
       const rolesMatch = aiResponse.match(/Roles[^:]*:\s*([\s\S]*?)(?=Preparation|Success|$)/i);
       if (rolesMatch) roles_contributions = rolesMatch[1].trim();
+      
       const prepMatch = aiResponse.match(/Preparation[^:]*:\s*([\s\S]*?)(?=Success|$)/i);
       if (prepMatch) preparation_tips = prepMatch[1].trim();
+      
       const successMatch = aiResponse.match(/Success[^:]*:\s*([\s\S]*)/i);
       if (successMatch) success_definition = successMatch[1].trim();
+      
       // If at least one field is found, return structured
       if (agenda.length || discussion_prompts.length || roles_contributions || preparation_tips || success_definition) {
         backendPayload = {
