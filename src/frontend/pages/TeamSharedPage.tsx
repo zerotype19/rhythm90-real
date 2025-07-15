@@ -562,13 +562,8 @@ function TeamSharedPage() {
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Summary</h3>
-                  <p className="text-gray-700">{selectedResponse.summary}</p>
-                </div>
-
-                <div className="mb-4">
                   <h3 className="font-semibold text-gray-900 mb-2">Full Response</h3>
-                  <div className="bg-gray-50 rounded-md p-4 overflow-x-auto">
+                  <div className="bg-gray-50 rounded-md p-4 overflow-x-auto max-h-[60vh] overflow-y-auto">
                     <div 
                       className="text-sm text-gray-700 whitespace-pre-wrap break-words"
                       dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
