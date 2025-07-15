@@ -1484,16 +1484,25 @@ export async function handleSyntheticFocusGroup(request: Request, env: Env): Pro
 
     const userMessage = {
       role: 'user',
-      content: `Topic: ${topic_or_category}
-Audience: ${audience_seed_info}
-Segments: ${must_include_segments || 'None'}
+      content: `Create a focus group of EXACTLY 5 diverse personas for: ${topic_or_category}
 
-Create EXACTLY 5 personas. Each persona needs: name, age, location, bio, motivations, pain_points, triggers, media_habits.
+Target audience: ${audience_seed_info}
+Required segments: ${must_include_segments || 'None'}
 
-Format:
-{"persona_lineup":[{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."}],"ask_mode_message":"All five personas are present. Address your question to a name or to 'the group.' When finished, say 'exit group.'"}
+You MUST create exactly 5 personas. No more, no less. Each persona needs:
+- name (unique first name)
+- age (realistic age)
+- location (city, state)
+- bio (2-3 sentences about their background)
+- motivations (what drives them)
+- pain_points (their challenges/concerns)
+- triggers (what influences their decisions)
+- media_habits (how they consume information)
 
-Return ONLY raw JSON.`
+Return this exact JSON structure with all 5 personas filled in:
+{"persona_lineup":[{"name":"Persona1","age":"Age1","location":"Location1","bio":"Bio1","motivations":"Motivations1","pain_points":"PainPoints1","triggers":"Triggers1","media_habits":"MediaHabits1"},{"name":"Persona2","age":"Age2","location":"Location2","bio":"Bio2","motivations":"Motivations2","pain_points":"PainPoints2","triggers":"Triggers2","media_habits":"MediaHabits2"},{"name":"Persona3","age":"Age3","location":"Location3","bio":"Bio3","motivations":"Motivations3","pain_points":"PainPoints3","triggers":"Triggers3","media_habits":"MediaHabits3"},{"name":"Persona4","age":"Age4","location":"Location4","bio":"Bio4","motivations":"Motivations4","pain_points":"PainPoints4","triggers":"Triggers4","media_habits":"MediaHabits4"},{"name":"Persona5","age":"Age5","location":"Location5","bio":"Bio5","motivations":"Motivations5","pain_points":"PainPoints5","triggers":"Triggers5","media_habits":"MediaHabits5"}],"ask_mode_message":"All five personas are present. Address your question to a name or to 'the group.' When finished, say 'exit group.'"}
+
+Replace Persona1, Age1, etc. with real values. Return ONLY raw JSON.`
     };
 
     const messages = [systemMessage, userMessage];
@@ -1735,13 +1744,20 @@ export async function handleFocusGroupAsk(request: Request, env: Env): Promise<R
 ${personaDescriptions}
 
 When a question is asked:
-- If addressed to a specific person (e.g., "Karen, what do you think?"), respond as that person
-- If addressed to "the group", have multiple personas respond in a conversational format
-- If no specific person is mentioned, have the most relevant persona(s) respond
+- If addressed to a specific person (e.g., "Karen, what do you think?"), respond as that person only
+- If addressed to "the group", have 3-4 relevant personas respond
+- If no specific person is mentioned, have 2-3 most relevant personas respond
 - Keep responses authentic to each persona's background and characteristics
-- Use the persona names when responding
+- Format responses clearly with each person's name on a new line
 
-Format group responses as a natural conversation between the participants.`
+For group responses, format like this:
+**Maria:** [Maria's response]
+
+**David:** [David's response]
+
+**Sarah:** [Sarah's response]
+
+Keep responses concise (1-2 sentences each) and conversational.`
     };
 
     const userMessage = {

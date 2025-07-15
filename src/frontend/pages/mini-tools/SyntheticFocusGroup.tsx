@@ -178,11 +178,13 @@ function SyntheticFocusGroup() {
                 <h4 className="font-medium text-gray-900 mb-2">
                   Focus Group Response ({askResponse.focus_group_size} participants):
                 </h4>
-                <div className="bg-white rounded-md p-3 border-l-4 border-pink-500">
-                  <p className="text-gray-800">{askResponse.answer}</p>
+                <div className="bg-white rounded-md p-4 border-l-4 border-pink-500">
+                  <div className="text-gray-800 whitespace-pre-wrap leading-relaxed">
+                    {askResponse.answer}
+                  </div>
                 </div>
-                <div className="mt-2 text-xs text-gray-600">
-                  Participants: {askResponse.persona_names?.join(', ')}
+                <div className="mt-3 text-xs text-gray-600">
+                  <span className="font-medium">Participants:</span> {askResponse.persona_names?.join(', ')}
                 </div>
               </div>
             )}
