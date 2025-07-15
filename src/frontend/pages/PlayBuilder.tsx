@@ -50,8 +50,6 @@ function PlayBuilder() {
   const renderOutput = () => {
     if (!output) return null;
 
-    // --- Robust Sectioned Output Parsing ---
-    // Handles both **Section Name:** and 1. Section Name:
     const sectionOrder = [
       'Hypothesis',
       'How-to-Run Summary',
@@ -81,7 +79,7 @@ function PlayBuilder() {
     if (sections.length === 0) {
       const numberedSectionRegex = /(?:^|\n)(\d+)\.\s*([^:]+):\n([\s\S]*?)(?=(?:\n\d+\.|$))/g;
       while ((match = numberedSectionRegex.exec(output)) !== null) {
-        sections.push({ title: match[2].trim(), content: match[3].trim() });
+        sections.push({ title: match[2].trim(), content: match[3].trim(), number: match[1] });
       }
     }
 
@@ -99,27 +97,55 @@ function PlayBuilder() {
 
     // Render sections in order, only if present
     return (
-      <div className="space-y-6">
-        {sectionOrder.map((section) => {
+      <div className="space-y-4">
+        {sectionOrder.map((section, idx) => {
           const sec = sections.find(s => s.title.toLowerCase() === section.toLowerCase());
           if (!sec) return null;
+          // Find the number if present (for numbered sections)
+          const number = sec.number || (sections.length === sectionOrder.length ? (idx + 1).toString() : undefined);
           return (
-            <div key={section} className="bg-gray-50 rounded-lg border-l-4 shadow-sm p-4 flex items-start">
-              <div className="mt-1">{sectionIcons[section]}</div>
-              <div className="ml-3 flex-1">
-                <h3 className="font-bold text-base mb-2 flex items-center">{section}</h3>
-                <div className="prose prose-sm text-gray-800 whitespace-pre-line">{sec.content}</div>
+            <div key={section} className="bg-white rounded-md shadow-sm p-3">
+              <div className="flex items-center mb-1">
+                {sectionIcons[section]}
+                <span className="font-bold text-sm text-gray-900 mr-1">{number ? number + '.' : ''}</span>
+                <span className="font-bold text-sm text-gray-900">{section}</span>
+              </div>
+              <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
+                {/* Enhance readability: bold sub-headlines like **Timeframe:** */}
+                {sec.content.split(/\n/).map((line, i) => {
+                  // Bold sub-headlines (e.g., **Timeframe:**)
+                  const subHeadlineMatch = line.match(/^\-?\s*\*\*(.+?):\*\*\s*(.*)$/);
+                  if (subHeadlineMatch) {
+                    return (
+                      <div key={i} className="mb-1">
+                        <span className="font-semibold text-gray-900">{subHeadlineMatch[1]}:</span> <span>{subHeadlineMatch[2]}</span>
+                      </div>
+                    );
+                  }
+                  // Bulleted list
+                  if (line.trim().startsWith('- ')) {
+                    return <div key={i} className="ml-2 mb-1">{line}</div>;
+                  }
+                  // Numbered list
+                  if (line.trim().match(/^\d+\./)) {
+                    return <div key={i} className="ml-2 mb-1">{line}</div>;
+                  }
+                  // Default
+                  return <div key={i} className="mb-1">{line}</div>;
+                })}
               </div>
             </div>
           );
         })}
         {/* Render any extra sections not in the standard order */}
         {sections.filter(s => !sectionOrder.map(x => x.toLowerCase()).includes(s.title.toLowerCase())).map((sec, idx) => (
-          <div key={sec.title + idx} className="bg-gray-50 rounded-lg border-l-4 shadow-sm p-4 flex items-start">
-            <div className="mt-1"><FaLightbulb className="text-yellow-500 mr-2" /></div>
-            <div className="ml-3 flex-1">
-              <h3 className="font-bold text-base mb-2 flex items-center">{sec.title}</h3>
-              <div className="prose prose-sm text-gray-800 whitespace-pre-line">{sec.content}</div>
+          <div key={sec.title + idx} className="bg-white rounded-md shadow-sm p-3">
+            <div className="flex items-center mb-1">
+              <FaLightbulb className="text-yellow-500 mr-2" />
+              <span className="font-bold text-sm text-gray-900">{sec.title}</span>
+            </div>
+            <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
+              {sec.content.split(/\n/).map((line, i) => <div key={i} className="mb-1">{line}</div>)}
             </div>
           </div>
         ))}
