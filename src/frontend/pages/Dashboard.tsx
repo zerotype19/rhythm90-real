@@ -277,12 +277,14 @@ const Dashboard: React.FC = () => {
                       <div className="flex-1">
                         <p className="text-gray-900">
                           <span className="font-medium">{activity.userName}</span>
-                          <span className="text-gray-600"> shared </span>
+                          <span className="text-gray-600"> shared a response from </span>
                           <span className="font-medium text-blue-600">{activity.toolName}</span>
-                          {activity.summary && (
-                            <span className="text-gray-600">: {activity.summary}</span>
-                          )}
                         </p>
+                        {activity.summary && (
+                          <p className="text-sm text-gray-600 mt-1 truncate">
+                            "{activity.summary.length > 60 ? activity.summary.substring(0, 60) + '...' : activity.summary}"
+                          </p>
+                        )}
                         <p className="text-sm text-gray-500">{formatTimestamp(activity.timestamp)}</p>
                       </div>
                       {activity.sharedSlug && (
