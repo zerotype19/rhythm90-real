@@ -105,7 +105,9 @@ function RitualGuide() {
         key: 'preparation_tips',
         label: 'Preparation Tips',
         icon: <FaLightbulb className="text-yellow-500 mr-2" />,
-        content: structured.preparation_tips,
+        content: structured.preparation_tips && Array.isArray(structured.preparation_tips)
+          ? structured.preparation_tips.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>)
+          : structured.preparation_tips,
       },
       {
         key: 'success_definition',
