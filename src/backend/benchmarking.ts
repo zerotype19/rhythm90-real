@@ -40,8 +40,8 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
       FROM ai_saved_responses 
       WHERE team_id = ? 
       AND tool_name = 'Play Builder'
-      AND created_at >= ? 
-      AND created_at <= ?
+      AND DATE(created_at) >= ? 
+      AND DATE(created_at) <= ?
     `).bind(teamId, periodStart, periodEnd).first();
     
     const playsCount = playsResult?.count || 0;
@@ -61,8 +61,8 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
       FROM ai_saved_responses 
       WHERE team_id = ? 
       AND tool_name = 'Signal Lab'
-      AND created_at >= ? 
-      AND created_at <= ?
+      AND DATE(created_at) >= ? 
+      AND DATE(created_at) <= ?
     `).bind(teamId, periodStart, periodEnd).first();
     
     const signalsCount = signalsResult?.count || 0;
@@ -82,8 +82,8 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
       FROM ai_saved_responses 
       WHERE team_id = ? 
       AND tool_name = 'Ritual Guide'
-      AND created_at >= ? 
-      AND created_at <= ?
+      AND DATE(created_at) >= ? 
+      AND DATE(created_at) <= ?
     `).bind(teamId, periodStart, periodEnd).first();
     
     const ritualsCount = ritualsResult?.count || 0;
@@ -103,8 +103,8 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
       FROM ai_saved_responses 
       WHERE team_id = ? 
       AND (is_shared_team = 1 OR is_shared_public = 1)
-      AND created_at >= ? 
-      AND created_at <= ?
+      AND DATE(created_at) >= ? 
+      AND DATE(created_at) <= ?
     `).bind(teamId, periodStart, periodEnd).first();
     
     const sharedCount = sharedResult?.count || 0;
@@ -123,8 +123,8 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
       SELECT COUNT(DISTINCT user_id) as count 
       FROM ai_saved_responses 
       WHERE team_id = ? 
-      AND created_at >= ? 
-      AND created_at <= ?
+      AND DATE(created_at) >= ? 
+      AND DATE(created_at) <= ?
     `).bind(teamId, periodStart, periodEnd).first();
     
     const engagementCount = engagementResult?.count || 0;
