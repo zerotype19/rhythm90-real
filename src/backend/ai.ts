@@ -269,7 +269,7 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
     if (!ritual_type) return errorResponse('Ritual type is required', 400);
 
     // Validate ritual type
-    const validRitualTypes = ['Kickoff', 'Pulse Check', 'R&R', 'Review & Renew'];
+    const validRitualTypes = ['kickoff', 'pulse_check', 'rr'];
     if (!validRitualTypes.includes(ritual_type)) {
       return errorResponse(`Invalid ritual type. Must be one of: ${validRitualTypes.join(', ')}`, 400);
     }
@@ -280,9 +280,9 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
       content: `You are a Rhythm90 Ritual Guide assistant helping teams plan effective quarterly rituals.
 
 The official Rhythm90 rituals are:
-- Kickoff: To align on 1–3 focused plays, define success outcomes, assign owners, and set the business context for the quarter.
-- Pulse Check: To review in-flight plays, surface blockers, check early signals, and adjust priorities or support.
-- R&R (Review & Renew): To reflect on what ran, what was learned, and what should happen next, including adjustments to plays or approach.
+- kickoff: To align on 1–3 focused plays, define success outcomes, assign owners, and set the business context for the quarter.
+- pulse_check: To review in-flight plays, surface blockers, check early signals, and adjust priorities or support.
+- rr: To reflect on what ran, what was learned, and what should happen next, including adjustments to plays or approach.
 
 Your job is to:
 - Provide a clear, stepwise agenda tailored to the ritual type.

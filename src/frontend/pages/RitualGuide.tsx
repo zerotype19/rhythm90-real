@@ -12,8 +12,19 @@ function RitualGuide() {
   const [output, setOutput] = useState('');
   const [structured, setStructured] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   const handleGenerate = async () => {
+    // Clear previous validation error
+    setValidationError('');
+    
+    // Validate ritual type
+    const validRitualTypes = ['kickoff', 'pulse_check', 'rr'];
+    if (!validRitualTypes.includes(ritualType)) {
+      setValidationError(`"${ritualType}" is not a valid Rhythm90 ritual. Please select Kickoff, Pulse Check, or R&R.`);
+      return;
+    }
+    
     setIsLoading(true);
     try {
       const payload = {
@@ -125,14 +136,20 @@ function RitualGuide() {
                 </label>
                 <select
                   value={ritualType}
-                  onChange={(e) => setRitualType(e.target.value)}
+                  onChange={(e) => {
+                    setRitualType(e.target.value);
+                    // Clear validation error when user selects a valid option
+                    setValidationError('');
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="kickoff">Kickoff</option>
-                  <option value="midpoint">Midpoint</option>
-                  <option value="close_call">Close & Call</option>
-                  <option value="custom">Custom</option>
+                  <option value="pulse_check">Pulse Check</option>
+                  <option value="rr">R&R (Review & Renew)</option>
                 </select>
+                {validationError && (
+                  <p className="mt-1 text-sm text-red-600">{validationError}</p>
+                )}
               </div>
               
               <div>
