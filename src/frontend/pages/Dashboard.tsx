@@ -66,10 +66,14 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       console.log('Dashboard: Fetching dashboard overview data');
-      const response = await apiClient.get('/api/dashboard/overview');
+      const response = await apiClient.getDashboardOverview();
       console.log('Dashboard: Overview response:', response);
       
-      setDashboardData(response);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      setDashboardData(response.data);
       setError(null);
     } catch (err) {
       console.error('Dashboard: Error fetching dashboard data:', err);
@@ -82,8 +86,13 @@ const Dashboard: React.FC = () => {
   const handleAddAnnouncement = async (formData: { title: string; summary: string; body?: string }) => {
     try {
       console.log('Dashboard: Creating announcement:', formData);
-      await apiClient.post('/api/dashboard/announcements', formData);
+      const response = await apiClient.createDashboardAnnouncement(formData);
       console.log('Dashboard: Announcement created successfully');
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
       setShowAddModal(false);
       fetchDashboardData();
     } catch (err) {
@@ -95,8 +104,13 @@ const Dashboard: React.FC = () => {
   const handleEditAnnouncement = async (id: string, formData: { title: string; summary: string; body?: string }) => {
     try {
       console.log('Dashboard: Updating announcement:', id, formData);
-      await apiClient.patch(`/api/dashboard/announcements/${id}`, formData);
+      const response = await apiClient.updateDashboardAnnouncement(id, formData);
       console.log('Dashboard: Announcement updated successfully');
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
       setShowEditModal(false);
       setEditingAnnouncement(null);
       fetchDashboardData();
@@ -111,8 +125,13 @@ const Dashboard: React.FC = () => {
     
     try {
       console.log('Dashboard: Deleting announcement:', id);
-      await apiClient.delete(`/api/dashboard/announcements/${id}`);
+      const response = await apiClient.deleteDashboardAnnouncement(id);
       console.log('Dashboard: Announcement deleted successfully');
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
       fetchDashboardData();
     } catch (err) {
       console.error('Dashboard: Error deleting announcement:', err);

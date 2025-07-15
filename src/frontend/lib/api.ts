@@ -437,6 +437,42 @@ class ApiClient {
       credentials: 'include',
     });
   }
+
+  // Dashboard API
+  async getDashboardOverview() {
+    return this.request('/api/dashboard/overview', {
+      credentials: 'include',
+    });
+  }
+
+  async getDashboardAnnouncements() {
+    return this.request('/api/dashboard/announcements', {
+      credentials: 'include',
+    });
+  }
+
+  async createDashboardAnnouncement(payload: { title: string; summary: string; body?: string }) {
+    return this.request('/api/dashboard/announcements', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async updateDashboardAnnouncement(id: string, payload: { title: string; summary: string; body?: string }) {
+    return this.request(`/api/dashboard/announcements/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async deleteDashboardAnnouncement(id: string) {
+    return this.request(`/api/dashboard/announcements/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE); 
