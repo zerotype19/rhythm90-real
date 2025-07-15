@@ -4,7 +4,7 @@ import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handlePersonaAsk, handleFocusGroupAsk, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
-import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getPublicShared } from './savedResponses';
+import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared } from './savedResponses';
 import { verifyAuth } from './auth';
 
 export default {
@@ -238,12 +238,44 @@ export default {
         
         if (!teamMember?.team_id) return errorResponse('User must belong to a team', 400);
         
-        const result = await getTeamSharedHistory(env, teamMember.team_id);
+        // Check if this is an enhanced request with query parameters
+        const url = new URL(request.url);
+        const hasFilters = url.searchParams.has('tool_name') || 
+                          url.searchParams.has('date_from') || 
+                          url.searchParams.has('date_to') || 
+                          url.searchParams.has('favorites_only') || 
+                          url.searchParams.has('search') || 
+                          url.searchParams.has('limit') || 
+                          url.searchParams.has('offset');
         
-        if (result.success) {
-          return jsonResponse(result);
+        if (hasFilters) {
+          // Enhanced request with filtering
+          const options = {
+            tool_name: url.searchParams.get('tool_name') || undefined,
+            date_from: url.searchParams.get('date_from') || undefined,
+            date_to: url.searchParams.get('date_to') || undefined,
+            favorites_only: url.searchParams.get('favorites_only') === 'true',
+            search: url.searchParams.get('search') || undefined,
+            limit: parseInt(url.searchParams.get('limit') || '20'),
+            offset: parseInt(url.searchParams.get('offset') || '0')
+          };
+          
+          const result = await getTeamSharedHistoryEnhanced(env, teamMember.team_id, options);
+          
+          if (result.success) {
+            return jsonResponse(result);
+          } else {
+            return errorResponse(result.message, 400);
+          }
         } else {
-          return errorResponse(result.message, 400);
+          // Original simple request
+          const result = await getTeamSharedHistory(env, teamMember.team_id);
+          
+          if (result.success) {
+            return jsonResponse(result);
+          } else {
+            return errorResponse(result.message, 400);
+          }
         }
       }
 
@@ -257,6 +289,26 @@ export default {
           return jsonResponse(result);
         } else {
           return errorResponse(result.message, 404);
+        }
+      }
+
+      if (path === '/api/saved-responses/tool-names' && request.method === 'GET') {
+        const user = await verifyAuth(request, env);
+        if (!user) return errorResponse('Unauthorized', 401);
+        
+        // Get user's team_id from team_members table
+        const teamMember = await env.DB.prepare(`
+          SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+        `).bind(user.id).first();
+        
+        if (!teamMember?.team_id) return errorResponse('User must belong to a team', 400);
+        
+        const result = await getAvailableToolNames(env, teamMember.team_id);
+        
+        if (result.success) {
+          return jsonResponse(result);
+        } else {
+          return errorResponse(result.message, 400);
         }
       }
 

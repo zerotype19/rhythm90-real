@@ -215,7 +215,7 @@ export const getUserHistory = async (env: any, userId: string): Promise<{ succes
   }
 };
 
-// Get team shared responses
+// Get team shared responses (original function for backward compatibility)
 export const getTeamSharedHistory = async (env: any, teamId: string): Promise<{ success: boolean; message: string; data?: SavedResponse[] }> => {
   try {
     const responses = await env.DB.prepare(`
@@ -231,6 +231,114 @@ export const getTeamSharedHistory = async (env: any, teamId: string): Promise<{ 
     };
   } catch (error) {
     console.error('Error getting team shared history:', error);
+    return { success: false, message: 'Internal server error' };
+  }
+};
+
+// Get team shared responses with enhanced filtering and pagination
+export const getTeamSharedHistoryEnhanced = async (
+  env: any, 
+  teamId: string, 
+  options: {
+    tool_name?: string;
+    date_from?: string;
+    date_to?: string;
+    favorites_only?: boolean;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<{ success: boolean; message: string; data?: SavedResponse[]; total?: number }> => {
+  try {
+    const {
+      tool_name,
+      date_from,
+      date_to,
+      favorites_only = false,
+      search,
+      limit = 20,
+      offset = 0
+    } = options;
+
+    // Build the WHERE clause dynamically
+    let whereConditions = ['team_id = ?', 'is_shared_team = 1'];
+    let params: any[] = [teamId];
+
+    if (tool_name) {
+      whereConditions.push('tool_name = ?');
+      params.push(tool_name);
+    }
+
+    if (date_from) {
+      whereConditions.push('created_at >= ?');
+      params.push(date_from);
+    }
+
+    if (date_to) {
+      whereConditions.push('created_at <= ?');
+      params.push(date_to);
+    }
+
+    if (favorites_only) {
+      whereConditions.push('is_favorite = 1');
+    }
+
+    if (search) {
+      whereConditions.push('(summary LIKE ? OR tool_name LIKE ?)');
+      const searchPattern = `%${search}%`;
+      params.push(searchPattern, searchPattern);
+    }
+
+    const whereClause = whereConditions.join(' AND ');
+
+    // Get total count for pagination
+    const countQuery = `SELECT COUNT(*) as total FROM ai_saved_responses WHERE ${whereClause}`;
+    const countResult = await env.DB.prepare(countQuery).bind(...params).first();
+    const total = countResult?.total || 0;
+
+    // Get paginated results
+    const dataQuery = `
+      SELECT * FROM ai_saved_responses 
+      WHERE ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+    
+    const responses = await env.DB.prepare(dataQuery)
+      .bind(...params, limit, offset)
+      .all();
+
+    return { 
+      success: true, 
+      message: 'Team shared history retrieved successfully',
+      data: responses.results as SavedResponse[],
+      total
+    };
+  } catch (error) {
+    console.error('Error getting team shared history:', error);
+    return { success: false, message: 'Internal server error' };
+  }
+};
+
+// Get available tool names for filtering
+export const getAvailableToolNames = async (env: any, teamId: string): Promise<{ success: boolean; message: string; data?: string[] }> => {
+  try {
+    const result = await env.DB.prepare(`
+      SELECT DISTINCT tool_name 
+      FROM ai_saved_responses 
+      WHERE team_id = ? AND is_shared_team = 1
+      ORDER BY tool_name
+    `).bind(teamId).all();
+
+    const toolNames = result.results.map((row: any) => row.tool_name);
+    
+    return { 
+      success: true, 
+      message: 'Tool names retrieved successfully',
+      data: toolNames
+    };
+  } catch (error) {
+    console.error('Error getting tool names:', error);
     return { success: false, message: 'Internal server error' };
   }
 };

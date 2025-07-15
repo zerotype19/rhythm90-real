@@ -304,6 +304,45 @@ class ApiClient {
   }
 
   /**
+   * Get team shared history with enhanced filtering and pagination
+   */
+  async getTeamSharedHistoryEnhanced(options: {
+    tool_name?: string;
+    date_from?: string;
+    date_to?: string;
+    favorites_only?: boolean;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  } = {}) {
+    const params = new URLSearchParams();
+    
+    if (options.tool_name) params.append('tool_name', options.tool_name);
+    if (options.date_from) params.append('date_from', options.date_from);
+    if (options.date_to) params.append('date_to', options.date_to);
+    if (options.favorites_only) params.append('favorites_only', 'true');
+    if (options.search) params.append('search', options.search);
+    if (options.limit) params.append('limit', options.limit.toString());
+    if (options.offset) params.append('offset', options.offset.toString());
+    
+    const queryString = params.toString();
+    const endpoint = `/api/saved-responses/team/me${queryString ? `?${queryString}` : ''}`;
+    
+    return this.request(endpoint, {
+      credentials: 'include',
+    });
+  }
+
+  /**
+   * Get available tool names for filtering
+   */
+  async getAvailableToolNames() {
+    return this.request('/api/saved-responses/tool-names', {
+      credentials: 'include',
+    });
+  }
+
+  /**
    * Get a public shared response by slug
    */
   async getPublicShared(slug: string) {
