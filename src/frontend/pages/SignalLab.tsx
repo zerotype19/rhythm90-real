@@ -1,30 +1,36 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import { apiClient } from '../lib/api';
+import { FaLightbulb, FaClipboardList, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
 
 function SignalLab() {
   const [observation, setObservation] = useState('');
   const [context, setContext] = useState('');
   const [output, setOutput] = useState('');
-  const [interpretation, setInterpretation] = useState('');
-  const [confidence, setConfidence] = useState(0);
+  const [structured, setStructured] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInterpret = async () => {
     if (!observation.trim()) return;
-
     setIsLoading(true);
     try {
       const response = await apiClient.interpretSignal(observation, context);
       if (response.data) {
-        if (response.data.output) {
-          setOutput(response.data.output);
-          setInterpretation('');
-          setConfidence(0);
-        } else {
-          setInterpretation(response.data.interpretation);
-          setConfidence(response.data.confidence);
+        // Try to parse structured fields
+        if (
+          response.data.possible_meaning !== undefined ||
+          response.data.possible_causes !== undefined ||
+          response.data.challenge_or_confirmation !== undefined ||
+          response.data.suggested_next_exploration !== undefined
+        ) {
+          setStructured(response.data);
           setOutput('');
+        } else if (response.data.output) {
+          setOutput(response.data.output);
+          setStructured(null);
+        } else {
+          setOutput(JSON.stringify(response.data, null, 2));
+          setStructured(null);
         }
       }
     } catch (error) {
@@ -32,6 +38,58 @@ function SignalLab() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper to render structured output
+  const renderStructured = () => {
+    if (!structured) return null;
+    const sections = [
+      {
+        key: 'possible_meaning',
+        label: 'Possible Meaning',
+        icon: <FaLightbulb className="text-yellow-500 mr-2" />,
+        content: structured.possible_meaning,
+      },
+      {
+        key: 'possible_causes',
+        label: 'Possible Causes',
+        icon: <FaClipboardList className="text-blue-500 mr-2" />,
+        content: structured.possible_causes && Array.isArray(structured.possible_causes)
+          ? structured.possible_causes.filter(Boolean).map((c: string, i: number) => <li key={i}>{c}</li>)
+          : structured.possible_causes,
+      },
+      {
+        key: 'challenge_or_confirmation',
+        label: 'Challenge or Confirmation',
+        icon: <FaCheckCircle className="text-emerald-500 mr-2" />,
+        content: structured.challenge_or_confirmation,
+      },
+      {
+        key: 'suggested_next_exploration',
+        label: 'Suggested Next Exploration',
+        icon: <FaArrowRight className="text-orange-500 mr-2" />,
+        content: structured.suggested_next_exploration && Array.isArray(structured.suggested_next_exploration)
+          ? structured.suggested_next_exploration.filter(Boolean).map((c: string, i: number) => <li key={i}>{c}</li>)
+          : structured.suggested_next_exploration,
+      },
+    ];
+    return (
+      <div className="space-y-4">
+        {sections.map((section) =>
+          section.content && section.content.length > 0 ? (
+            <div key={section.key} className="bg-white rounded-md shadow-sm p-3">
+              <div className="flex items-center mb-1">
+                {section.icon}
+                <span className="font-bold text-sm text-gray-900">{section.label}</span>
+              </div>
+              <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
+                {Array.isArray(section.content) ? <ul className="list-disc ml-5">{section.content}</ul> : section.content}
+              </div>
+            </div>
+          ) : null
+        )}
+      </div>
+    );
   };
 
   return (
@@ -84,35 +142,11 @@ function SignalLab() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Interpretation</h2>
-            {output ? (
-              <div className="prose max-w-none">
+            {structured ? (
+              renderStructured()
+            ) : output ? (
+              <div className="prose max-w-none text-xs">
                 <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
-              </div>
-            ) : interpretation ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Interpretation
-                  </label>
-                  <div className="p-3 bg-gray-50 rounded-md">
-                    <p className="text-gray-900">{interpretation}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confidence Level
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-red-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${confidence}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm text-gray-600">{confidence}%</span>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="text-center text-gray-500 py-8">
