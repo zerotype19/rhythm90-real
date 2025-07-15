@@ -55,9 +55,9 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
         team_id: teamId,
       });
       
-      if (res.data?.id) {
-        setCurrentResponseId(res.data.id);
-        return res.data.id;
+      if (res.data?.data?.id) {
+        setCurrentResponseId(res.data.data.id);
+        return res.data.data.id;
       }
       return null;
     } catch (e) {
@@ -104,8 +104,8 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
         team_id: teamId,
       });
       
-      if (res.data?.id) {
-        setCurrentResponseId(res.data.id);
+      if (res.data?.data?.id) {
+        setCurrentResponseId(res.data.data.id);
         setShowSave(false);
         setSaveSummary('');
         onStatusChange && onStatusChange();
@@ -147,8 +147,8 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
         shareType === 'team'
       );
       
-      if (shareType === 'public' && res.data?.shared_slug) {
-        setPublicLink(`${window.location.origin}/shared/${res.data.shared_slug}`);
+      if (shareType === 'public' && res.data?.data?.shared_slug) {
+        setPublicLink(`${window.location.origin}/shared/${res.data.data.shared_slug}`);
       } else {
         setPublicLink(null);
       }
