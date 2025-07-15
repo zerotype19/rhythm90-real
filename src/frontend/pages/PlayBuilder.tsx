@@ -51,6 +51,31 @@ function PlayBuilder() {
   // Helper to render structured output
   const renderStructured = () => {
     if (!structured) return null;
+    
+    // Helper to format nested objects
+    const formatNestedContent = (content: any, sectionKey: string) => {
+      if (Array.isArray(content)) {
+        return content.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>);
+      } else if (typeof content === 'object' && content !== null) {
+        // Handle nested objects like how_to_run_summary, owner_role, what_success_looks_like
+        const items = [];
+        for (const [key, value] of Object.entries(content)) {
+          if (value) {
+            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            items.push(
+              <div key={key} className="mb-2">
+                <span className="font-semibold text-gray-900">{formattedKey}:</span> <span>{String(value)}</span>
+              </div>
+            );
+          }
+        }
+        return items;
+      } else if (typeof content === 'string') {
+        return content;
+      }
+      return null;
+    };
+
     const sections = [
       {
         key: 'hypothesis',
@@ -68,9 +93,7 @@ function PlayBuilder() {
         key: 'signals_to_watch',
         label: 'Signals to Watch',
         icon: <FaChartLine className="text-green-500 mr-2" />,
-        content: structured.signals_to_watch && Array.isArray(structured.signals_to_watch)
-          ? structured.signals_to_watch.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>)
-          : structured.signals_to_watch,
+        content: structured.signals_to_watch,
       },
       {
         key: 'owner_role',
@@ -88,30 +111,32 @@ function PlayBuilder() {
         key: 'next_recommendation',
         label: 'Next Recommendation',
         icon: <FaArrowRight className="text-orange-500 mr-2" />,
-        content: structured.next_recommendation && Array.isArray(structured.next_recommendation)
-          ? structured.next_recommendation.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>)
-          : structured.next_recommendation,
+        content: structured.next_recommendation,
       },
     ];
+    
     return (
       <div className="space-y-4">
-        {sections.map((section) =>
-          section.content && (Array.isArray(section.content) ? section.content.length > 0 : section.content.length > 0) ? (
+        {sections.map((section) => {
+          const formattedContent = formatNestedContent(section.content, section.key);
+          if (!formattedContent) return null;
+          
+          return (
             <div key={section.key} className="bg-white rounded-md shadow-sm p-3">
               <div className="flex items-center mb-1">
                 {section.icon}
                 <span className="font-bold text-sm text-gray-900">{section.label}</span>
               </div>
               <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
-                {Array.isArray(section.content) ? (
+                {Array.isArray(formattedContent) ? (
                   <ul className={`ml-5 space-y-1 ${['signals_to_watch', 'next_recommendation'].includes(section.key) ? 'list-disc' : 'list-none'}`}>
-                    {section.content}
+                    {formattedContent}
                   </ul>
-                ) : section.content}
+                ) : formattedContent}
               </div>
             </div>
-          ) : null
-        )}
+          );
+        })}
       </div>
     );
   };
