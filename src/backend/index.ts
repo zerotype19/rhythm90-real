@@ -161,7 +161,7 @@ export default {
         
         const result = await saveResponse(env, {
           user_id: user.id,
-          team_id: user.team_id,
+          team_id: body.team_id,
           tool_name: body.tool_name,
           summary: body.summary,
           response_blob: body.response_blob
