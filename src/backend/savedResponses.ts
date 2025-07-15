@@ -56,7 +56,7 @@ export const saveResponse = async (env: any, params: SaveResponseParams): Promis
 
     if (result.success) {
       // Log the action
-      await logAIUsage(env, user_id, 'save_response', { tool_name, summary });
+      await logAIUsage(env.DB, user_id, 'save_response');
       
       // Return the created record
       const savedRecord = await env.DB.prepare(`
@@ -100,10 +100,7 @@ export const toggleFavorite = async (env: any, responseId: string, userId: strin
 
     if (result.success) {
       // Log the action
-      await logAIUsage(env, userId, 'toggle_favorite', { 
-        tool_name: existing.tool_name, 
-        is_favorite: isFavorite 
-      });
+      await logAIUsage(env.DB, userId, 'toggle_favorite');
       
       // Return the updated record
       const updatedRecord = await env.DB.prepare(`
@@ -177,12 +174,7 @@ export const setShareStatus = async (env: any, responseId: string, userId: strin
 
     if (result.success) {
       // Log the action
-      await logAIUsage(env, userId, 'set_share_status', { 
-        tool_name: existing.tool_name, 
-        is_shared_public: isSharedPublic,
-        is_shared_team: isSharedTeam,
-        shared_slug: sharedSlug
-      });
+      await logAIUsage(env.DB, userId, 'set_share_status');
       
       // Return the updated record
       const updatedRecord = await env.DB.prepare(`

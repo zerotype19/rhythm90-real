@@ -168,7 +168,7 @@ export default {
         });
         
         if (result.success) {
-          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          return jsonResponse(result);
         } else {
           return errorResponse(result.message, 400);
         }
@@ -186,7 +186,7 @@ export default {
         const result = await toggleFavorite(env, body.response_id, user.id, body.is_favorite);
         
         if (result.success) {
-          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          return jsonResponse(result);
         } else {
           return errorResponse(result.message, 400);
         }
@@ -204,7 +204,7 @@ export default {
         const result = await setShareStatus(env, body.response_id, user.id, body.is_shared_public, body.is_shared_team, user.team_id);
         
         if (result.success) {
-          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          return jsonResponse(result);
         } else {
           return errorResponse(result.message, 400);
         }
@@ -217,7 +217,7 @@ export default {
         const result = await getUserHistory(env, user.id);
         
         if (result.success) {
-          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          return jsonResponse(result);
         } else {
           return errorResponse(result.message, 400);
         }
@@ -231,7 +231,7 @@ export default {
         const result = await getTeamSharedHistory(env, user.team_id);
         
         if (result.success) {
-          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          return jsonResponse(result);
         } else {
           return errorResponse(result.message, 400);
         }
@@ -244,7 +244,7 @@ export default {
         const result = await getPublicShared(env, slug);
         
         if (result.success) {
-          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          return jsonResponse(result);
         } else {
           return errorResponse(result.message, 404);
         }
