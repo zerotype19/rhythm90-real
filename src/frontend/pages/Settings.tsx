@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
-import { api } from '../lib/api';
+import { apiClient } from '../lib/api';
 
 interface AccountSettings {
   id: string;
@@ -71,9 +71,9 @@ function Settings() {
     
     try {
       const [accountRes, teamRes, billingRes] = await Promise.all([
-        api.getAccountSettings(),
-        api.getTeamSettings(),
-        api.getBillingInfo()
+        apiClient.getAccountSettings(),
+        apiClient.getTeamSettings(),
+        apiClient.getBillingInfo()
       ]);
 
       if (accountRes.data) {
@@ -119,7 +119,7 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await api.updateAccountSettings(accountForm);
+      const response = await apiClient.updateAccountSettings(accountForm);
       if (response.data) {
         showSuccess('Account settings updated successfully');
         if (accountSettings) {
@@ -142,7 +142,7 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await api.updateTeamName(teamForm);
+      const response = await apiClient.updateTeamName(teamForm);
       if (response.data) {
         showSuccess('Team name updated successfully');
         if (teamSettings) {
@@ -168,13 +168,13 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await api.inviteTeamMember(inviteForm);
+      const response = await apiClient.inviteTeamMember(inviteForm);
       if (response.data) {
         showSuccess('Invitation sent successfully');
         setInviteForm({ email: '' });
         setShowInviteForm(false);
         // Reload team settings to get updated member list
-        const teamRes = await api.getTeamSettings();
+        const teamRes = await apiClient.getTeamSettings();
         if (teamRes.data) {
           setTeamSettings(teamRes.data);
         }
@@ -198,11 +198,11 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await api.removeTeamMember({ member_id: memberId });
+      const response = await apiClient.removeTeamMember({ member_id: memberId });
       if (response.data) {
         showSuccess('Member removed successfully');
         // Reload team settings
-        const teamRes = await api.getTeamSettings();
+        const teamRes = await apiClient.getTeamSettings();
         if (teamRes.data) {
           setTeamSettings(teamRes.data);
         }
@@ -222,11 +222,11 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await api.setMemberRole({ member_id: memberId, role });
+      const response = await apiClient.setMemberRole({ member_id: memberId, role });
       if (response.data) {
         showSuccess('Member role updated successfully');
         // Reload team settings
-        const teamRes = await api.getTeamSettings();
+        const teamRes = await apiClient.getTeamSettings();
         if (teamRes.data) {
           setTeamSettings(teamRes.data);
         }
@@ -247,11 +247,11 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await api.updateSubscription(billingForm);
+      const response = await apiClient.updateSubscription(billingForm);
       if (response.data) {
         showSuccess('Subscription updated successfully');
         // Reload billing info
-        const billingRes = await api.getBillingInfo();
+        const billingRes = await apiClient.getBillingInfo();
         if (billingRes.data) {
           setBillingInfo(billingRes.data);
         }
@@ -275,11 +275,11 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await api.cancelSubscription();
+      const response = await apiClient.cancelSubscription();
       if (response.data) {
         showSuccess('Subscription cancelled successfully');
         // Reload billing info
-        const billingRes = await api.getBillingInfo();
+        const billingRes = await apiClient.getBillingInfo();
         if (billingRes.data) {
           setBillingInfo(billingRes.data);
         }
