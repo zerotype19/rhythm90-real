@@ -796,6 +796,7 @@ export async function handlePersonaGenerator(request: Request, env: Env): Promis
     // if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { audience_seed, user_id } = body;
+    console.log(`[DEBUG] PersonaGenerator called with user_id: ${user_id}`);
     if (!audience_seed) return errorResponse('Audience seed is required', 400);
     if (!user_id) return errorResponse('User ID is required', 400);
 
@@ -1578,7 +1579,8 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
 }
 
 // In-memory session store for persona context (in production, use KV store)
-const personaSessions = new Map<string, { persona: any; timestamp: number }>();
+// Using a global variable to persist across requests in the same worker instance
+let personaSessions = new Map<string, { persona: any; timestamp: number }>();
 
 // Clean up expired sessions (older than 1 hour)
 function cleanupExpiredSessions() {
