@@ -166,14 +166,9 @@ function TeamSharedPage() {
       // If we have a slug, we need to get the specific shared item
       if (slug) {
         const response = await apiClient.getPublicShared(slug);
-        console.log('Public shared response:', response);
-        console.log('Response.data:', response.data);
-        console.log('Response.data.success:', response.data?.success);
-        console.log('Response.data.data:', response.data?.data);
         
         // Handle the actual API response structure: { success: true, message: "...", data: {...} }
         if (response.data && response.data.success && response.data.data) {
-          console.log('Setting response data:', response.data.data);
           setResponses([response.data.data]);
           setTotalCount(1);
         } else {
@@ -191,24 +186,6 @@ function TeamSharedPage() {
       
       // Handle the actual API response structure: { success: true, message: "...", data: {...} }
       if (response.data && response.data.success && response.data.data) {
-        console.log('Team shared responses:', response.data.data);
-        // Log each response object to see all fields
-        response.data.data.forEach((response, index) => {
-          console.log(`Response ${index}:`, {
-            id: response.id,
-            tool_name: response.tool_name,
-            summary: response.summary,
-            is_favorite: response.is_favorite,
-            is_shared_public: response.is_shared_public,
-            is_shared_team: response.is_shared_team,
-            user_email: response.user_email,
-            user_name: response.user_name,
-            created_at: response.created_at,
-            // Log all other fields
-            allFields: Object.keys(response),
-            allValues: Object.values(response)
-          });
-        });
         setResponses(response.data.data);
         setTotalCount(response.data.total || response.data.data.length);
       } else {
@@ -263,31 +240,20 @@ function TeamSharedPage() {
 
   const formatDate = (dateString: string) => {
     try {
-      console.log('Formatting date:', dateString);
       const date = new Date(dateString);
-      console.log('Parsed date:', date);
-      console.log('Date.getTime():', date.getTime());
-      console.log('isNaN(date.getTime()):', isNaN(date.getTime()));
       
       if (isNaN(date.getTime())) {
         console.error('Invalid date string:', dateString);
         return 'Invalid Date';
       }
       
-      // Check if it's a future date (which might be a test date)
-      const now = new Date();
-      const isFuture = date > now;
-      console.log('Is future date:', isFuture);
-      
-      const formatted = date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       });
-      console.log('Formatted date:', formatted);
-      return formatted;
     } catch (error) {
       console.error('Error formatting date:', error, 'Date string:', dateString);
       return 'Invalid Date';
@@ -503,24 +469,16 @@ function TeamSharedPage() {
                 {slug && response.response_blob && (
                   <div className="mb-3">
                     <h4 className="font-semibold text-gray-900 mb-2">Response Content</h4>
-                    <div className="bg-gray-50 rounded-md p-4 overflow-x-auto">
+                    <div className="bg-gray-50 rounded-md p-4 overflow-x-auto max-h-[60vh] overflow-y-auto">
                       <div 
-                        className="text-sm text-gray-700"
+                        className="text-sm text-gray-700 whitespace-pre-wrap break-words"
                         dangerouslySetInnerHTML={{ __html: parseAIResponse(response.response_blob) }}
                       />
                     </div>
                   </div>
                 )}
                 
-                {/* Debug info for slug view */}
-                {slug && (
-                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                    <h4 className="font-semibold text-yellow-800 mb-2">Debug Info</h4>
-                    <pre className="text-xs text-yellow-700 overflow-x-auto">
-                      {JSON.stringify(response, null, 2)}
-                    </pre>
-                  </div>
-                )}
+
                 
                 {/* Metadata - Stacked for mobile */}
                 <div className="mb-3">
