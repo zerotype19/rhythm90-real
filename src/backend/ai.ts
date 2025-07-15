@@ -1,5 +1,5 @@
 import { Env, GeneratePlayRequest, GeneratePlayResponse, InterpretSignalRequest, InterpretSignalResponse, GenerateRitualPromptsRequest, GenerateRitualPromptsResponse } from './types';
-import { callOpenAI, jsonResponse, errorResponse } from './utils';
+import { callOpenAI, jsonResponse, errorResponse, logAIUsage } from './utils';
 import { verifyAuth } from './auth';
 
 const SYSTEM_MESSAGE = {
@@ -147,6 +147,9 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
     // Log full OpenAI response
     console.log('[AI DEBUG] PlayBuilder Raw OpenAI Response:', aiResponse);
     
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'play_builder');
+    
     // --- Output Structuring ---
     let backendPayload: any = {};
     let warning = undefined;
@@ -264,6 +267,9 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
 
     // --- AI Call ---
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'signal_lab');
 
     // --- Output Structuring ---
     let backendPayload: any = {};
@@ -427,6 +433,10 @@ Additional Refinements:
       console.log('OpenAI call failed:', error);
       throw error; // Re-throw the error instead of using mock response
     }
+    
+    // Log AI usage (using anonymous if no user)
+    const userId = 'anonymous'; // Since auth is bypassed for testing
+    await logAIUsage(env.DB, userId, 'ritual_guide');
 
     // --- Output Structuring ---
     let backendPayload: any = {};
@@ -538,6 +548,9 @@ export async function handlePlainEnglishTranslator(request: Request, env: Env): 
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage (using anonymous since auth is bypassed)
+    await logAIUsage(env.DB, 'anonymous', 'mini_tool_plain_english_translator');
 
     // Parse response
     let backendPayload: any = {};
@@ -833,6 +846,9 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user_id, 'mini_tool_persona_generator');
 
     // Parse response
     let backendPayload: any = {};
@@ -1507,6 +1523,9 @@ Replace Persona1, Age1, etc. with real values. Return ONLY raw JSON.`
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, userId, 'mini_tool_synthetic_focus_group');
 
     // Parse response
     let backendPayload: any = {};
@@ -1767,6 +1786,9 @@ Keep responses concise (1-2 sentences each) and conversational.`
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user_id, 'mini_tool_focus_group_ask');
 
     // Parse response
     let backendPayload: any = {};
@@ -1854,6 +1876,9 @@ Answer the following question as ${persona.name}, staying in character and true 
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user_id, 'mini_tool_persona_ask');
 
     // Parse response
     let backendPayload: any = {};

@@ -192,6 +192,24 @@ export const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
 };
 
+// AI Usage Logging
+export async function logAIUsage(db: any, userId: string, toolName: string): Promise<void> {
+  try {
+    const logId = crypto.randomUUID();
+    const timestamp = new Date().toISOString();
+    
+    await db.prepare(`
+      INSERT INTO ai_usage_logs (id, user_id, tool_name, timestamp)
+      VALUES (?, ?, ?, ?)
+    `).bind(logId, userId, toolName, timestamp).run();
+    
+    console.log(`[AI_USAGE_LOG] Logged usage: ${toolName} for user ${userId}`);
+  } catch (error) {
+    // Don't block the main flow if logging fails
+    console.error('[AI_USAGE_LOG] Failed to log AI usage:', error);
+  }
+}
+
 // Response helpers
 export function jsonResponse(data: any, status: number = 200): Response {
   return new Response(JSON.stringify(data), {
