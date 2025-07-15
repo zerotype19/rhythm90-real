@@ -5,14 +5,14 @@ import { FaUser, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
 
 function PersonaGenerator() {
-  const [input, setInput] = useState('');
+  const [audienceSeed, setAudienceSeed] = useState('');
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleGenerate = async () => {
-    if (!input.trim()) {
-      setError('Please enter some input.');
+    if (!audienceSeed.trim()) {
+      setError('Please enter an audience seed.');
       return;
     }
 
@@ -21,7 +21,7 @@ function PersonaGenerator() {
     setOutput(null);
 
     try {
-      const response = await apiClient.personaGenerator(input);
+      const response = await apiClient.personaGenerator(audienceSeed);
 
       if (response.data) {
         setOutput(response.data);
@@ -38,12 +38,78 @@ function PersonaGenerator() {
 
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Generated Output</h3>
-          <div className="bg-gray-50 rounded-md p-4">
-            <pre className="text-gray-800 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>
+        {/* Persona Sheet */}
+        {output.persona_sheet && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Persona Sheet</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Basic Info</h4>
+                  <div className="bg-gray-50 rounded-md p-3">
+                    <p><strong>Name:</strong> {output.persona_sheet.name}</p>
+                    <p><strong>Age:</strong> {output.persona_sheet.age}</p>
+                    <p><strong>Location:</strong> {output.persona_sheet.location}</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
+                  <div className="bg-gray-50 rounded-md p-3">
+                    <p className="text-gray-800">{output.persona_sheet.bio}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Motivations & Values</h4>
+                <div className="bg-gray-50 rounded-md p-3">
+                  <p className="text-gray-800">{output.persona_sheet.motivations}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Pain Points & Objections</h4>
+                <div className="bg-gray-50 rounded-md p-3">
+                  <p className="text-gray-800">{output.persona_sheet.pain_points}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Decision Drivers & Triggers</h4>
+                <div className="bg-gray-50 rounded-md p-3">
+                  <p className="text-gray-800">{output.persona_sheet.triggers}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Media & Content Habits</h4>
+                <div className="bg-gray-50 rounded-md p-3">
+                  <p className="text-gray-800">{output.persona_sheet.media_habits}</p>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Ask Mode Message */}
+        {output.ask_mode_message && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ask Mode</h3>
+            <div className="bg-purple-50 rounded-md p-4">
+              <p className="text-purple-900 font-medium">{output.ask_mode_message}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Raw Output (for debugging) */}
+        {output.status === 'not_implemented' && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Debug Output</h3>
+            <div className="bg-gray-50 rounded-md p-4">
+              <pre className="text-gray-800 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -75,15 +141,18 @@ function PersonaGenerator() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Input Data
+                  Audience Seed
                 </label>
                 <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Enter your input here..."
+                  value={audienceSeed}
+                  onChange={(e) => setAudienceSeed(e.target.value)}
+                  placeholder="e.g., 'urban young adults, ages 18–25, into gaming and social media'"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  rows={8}
+                  rows={4}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Describe your target audience to generate a detailed persona.
+                </p>
               </div>
 
               {error && (
@@ -94,7 +163,7 @@ function PersonaGenerator() {
 
               <button
                 onClick={handleGenerate}
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !audienceSeed.trim()}
                 className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
                 {isLoading ? 'Generating...' : 'Generate Persona'}

@@ -157,26 +157,33 @@ class ApiClient {
     });
   }
 
-  async personaGenerator(input: string) {
+  async personaGenerator(audienceSeed: string) {
     return this.request('/api/mini-tools/persona-generator', {
       method: 'POST',
-      body: JSON.stringify({ input }),
+      body: JSON.stringify({ audience_seed: audienceSeed }),
       credentials: 'include',
     });
   }
 
-  async journeyBuilder(input: string) {
+  async journeyBuilder(productOrService: string, primaryObjective: string, keyBarrier?: string) {
     return this.request('/api/mini-tools/journey-builder', {
       method: 'POST',
-      body: JSON.stringify({ input }),
+      body: JSON.stringify({ 
+        product_or_service: productOrService,
+        primary_objective: primaryObjective,
+        key_barrier: keyBarrier || ''
+      }),
       credentials: 'include',
     });
   }
 
-  async testLearnScale(input: string) {
+  async testLearnScale(campaignOrProductContext: string, resourcesOrConstraints?: string) {
     return this.request('/api/mini-tools/test-learn-scale', {
       method: 'POST',
-      body: JSON.stringify({ input }),
+      body: JSON.stringify({ 
+        campaign_or_product_context: campaignOrProductContext,
+        resources_or_constraints: resourcesOrConstraints || ''
+      }),
       credentials: 'include',
     });
   }

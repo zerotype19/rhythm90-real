@@ -5,14 +5,16 @@ import { FaRoute, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
 
 function JourneyBuilder() {
-  const [input, setInput] = useState('');
+  const [productOrService, setProductOrService] = useState('');
+  const [primaryObjective, setPrimaryObjective] = useState('');
+  const [keyBarrier, setKeyBarrier] = useState('');
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleGenerate = async () => {
-    if (!input.trim()) {
-      setError('Please enter some input.');
+    if (!productOrService.trim() || !primaryObjective.trim()) {
+      setError('Please fill in all required fields.');
       return;
     }
 
@@ -21,7 +23,7 @@ function JourneyBuilder() {
     setOutput(null);
 
     try {
-      const response = await apiClient.journeyBuilder(input);
+      const response = await apiClient.journeyBuilder(productOrService, primaryObjective, keyBarrier);
 
       if (response.data) {
         setOutput(response.data);
@@ -38,12 +40,58 @@ function JourneyBuilder() {
 
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Generated Output</h3>
-          <div className="bg-gray-50 rounded-md p-4">
-            <pre className="text-gray-800 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>
+        {/* Journey Map */}
+        {output.journey_map && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Journey Map</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mindset & Need</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Barrier</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marketing Role</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channels</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KPI</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {output.journey_map.map((stage: any, index: number) => (
+                    <tr key={index}>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{stage.stage}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{stage.mindset}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{stage.barrier}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{stage.marketing_role}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{stage.channels}</td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{stage.kpi}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Stuck Stage */}
+        {output.stuck_stage && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Potential Bottleneck</h3>
+            <div className="bg-yellow-50 rounded-md p-4">
+              <p className="text-yellow-900 font-medium">Most blocked stage: {output.stuck_stage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Raw Output (for debugging) */}
+        {output.status === 'not_implemented' && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Debug Output</h3>
+            <div className="bg-gray-50 rounded-md p-4">
+              <pre className="text-gray-800 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -75,14 +123,40 @@ function JourneyBuilder() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Input Data
+                  Product or Service *
                 </label>
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Enter your input here..."
+                <input
+                  type="text"
+                  value={productOrService}
+                  onChange={(e) => setProductOrService(e.target.value)}
+                  placeholder="e.g., SaaS tool, consulting service, physical product"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  rows={8}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Primary Objective *
+                </label>
+                <input
+                  type="text"
+                  value={primaryObjective}
+                  onChange={(e) => setPrimaryObjective(e.target.value)}
+                  placeholder="e.g., increase conversions, reduce churn, expand market"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Key Barrier (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={keyBarrier}
+                  onChange={(e) => setKeyBarrier(e.target.value)}
+                  placeholder="e.g., high price point, complex onboarding, trust issues"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
 
@@ -94,7 +168,7 @@ function JourneyBuilder() {
 
               <button
                 onClick={handleGenerate}
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !productOrService.trim() || !primaryObjective.trim()}
                 className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
                 {isLoading ? 'Building...' : 'Build Journey'}

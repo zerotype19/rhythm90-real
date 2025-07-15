@@ -707,24 +707,69 @@ export async function handlePersonaGenerator(request: Request, env: Env): Promis
     // const user = await verifyAuth(request, env);
     // if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { input } = body;
-    if (!input) return errorResponse('Input is required', 400);
+    const { audience_seed } = body;
+    if (!audience_seed) return errorResponse('Audience seed is required', 400);
 
-    // For now, return scaffolding response
-    const backendPayload = {
-      status: 'not_implemented',
-      message: 'Backend scaffolding ready.'
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Persona Generator assistant. Build a synthetic persona sheet and enter Ask Mode.'
     };
+
+    const userMessage = {
+      role: 'user',
+      content: `Audience Seed: ${audience_seed}
+
+Instructions:
+1. Generate a Persona Sheet:
+- Name, age, location, quick bio
+- Core motivations & values
+- Key pain points / objections
+- Decision drivers & triggers
+- Preferred media/content habits
+
+2. Enter Ask Mode:
+Respond: "Persona ready. Ask me anything."
+
+The AI continues answering as the persona until the user says "exit persona."
+
+Response format:
+{
+  "persona_sheet": { "name": "...", "age": "...", "location": "...", "bio": "...", "motivations": "...", "pain_points": "...", "triggers": "...", "media_habits": "..." },
+  "ask_mode_message": "Persona ready. Ask me anything."
+}
+
+Return ONLY raw JSON — no markdown, no comments, no code fences.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        persona_sheet: parsed.persona_sheet || {},
+        ask_mode_message: parsed.ask_mode_message || 'Persona ready. Ask me anything.'
+      };
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { raw_response: aiResponse };
+      warning = 'AI response could not be parsed; returning raw text only.';
+    }
 
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'persona-generator',
       input_payload: body,
-      prompt: 'Scaffolding - no AI call yet',
-      openai_response: 'Not implemented',
-      parse_status: 'scaffolding',
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
       backend_payload: backendPayload,
-      warning: 'Backend scaffolding only',
+      warning,
       timestamp: new Date().toISOString()
     };
 
@@ -744,24 +789,72 @@ export async function handleJourneyBuilder(request: Request, env: Env): Promise<
     // const user = await verifyAuth(request, env);
     // if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { input } = body;
-    if (!input) return errorResponse('Input is required', 400);
+    const { product_or_service, primary_objective, key_barrier } = body;
+    if (!product_or_service || !primary_objective) {
+      return errorResponse('Product/service and primary objective are required', 400);
+    }
 
-    // For now, return scaffolding response
-    const backendPayload = {
-      status: 'not_implemented',
-      message: 'Backend scaffolding ready.'
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Journey Builder assistant. Map a customer journey with actionable marketing guidance.'
     };
+
+    const userMessage = {
+      role: 'user',
+      content: `Product/Service: ${product_or_service}
+Primary Objective: ${primary_objective}
+Key Barrier: ${key_barrier || 'None specified'}
+
+Instructions:
+Return a table:
+- Stage (Awareness, Consideration, Conversion, Onboarding, Advocacy)
+- Audience Mindset & Need
+- Main Barrier or Friction
+- Marketing Role (message, content, experience)
+- Suggested Channels/Formats
+- Success KPI
+
+Response format:
+{
+  "journey_map": [
+    { "stage": "...", "mindset": "...", "barrier": "...", "marketing_role": "...", "channels": "...", "kpi": "..." },
+    ...
+  ],
+  "stuck_stage": "Stage name (if any single stage is most blocked)"
+}
+
+Return ONLY raw JSON — no markdown, no comments, no code fences.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        journey_map: Array.isArray(parsed.journey_map) ? parsed.journey_map : [],
+        stuck_stage: parsed.stuck_stage || ''
+      };
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { raw_response: aiResponse };
+      warning = 'AI response could not be parsed; returning raw text only.';
+    }
 
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'journey-builder',
       input_payload: body,
-      prompt: 'Scaffolding - no AI call yet',
-      openai_response: 'Not implemented',
-      parse_status: 'scaffolding',
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
       backend_payload: backendPayload,
-      warning: 'Backend scaffolding only',
+      warning,
       timestamp: new Date().toISOString()
     };
 
@@ -781,24 +874,73 @@ export async function handleTestLearnScale(request: Request, env: Env): Promise<
     // const user = await verifyAuth(request, env);
     // if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { input } = body;
-    if (!input) return errorResponse('Input is required', 400);
+    const { campaign_or_product_context, resources_or_constraints } = body;
+    if (!campaign_or_product_context) {
+      return errorResponse('Campaign or product context is required', 400);
+    }
 
-    // For now, return scaffolding response
-    const backendPayload = {
-      status: 'not_implemented',
-      message: 'Backend scaffolding ready.'
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Test-Learn-Scale assistant. Design an experimentation plan.'
     };
+
+    const userMessage = {
+      role: 'user',
+      content: `Campaign/Product Context: ${campaign_or_product_context}
+Resources/Constraints: ${resources_or_constraints || 'None specified'}
+
+Instructions:
+Return:
+- core_hypotheses: [ ... ]
+- test_design_table: [
+    { hypothesis, tactic, target_sample, primary_kpi, success_threshold, timeframe },
+    ...
+  ]
+- learning_application: "How learnings scale into always-on"
+- risk_mitigation_tips: [ ... ]
+
+Response format:
+{
+  "core_hypotheses": [ ... ],
+  "test_design_table": [ { ... }, ... ],
+  "learning_application": "...",
+  "risk_mitigation_tips": [ ... ]
+}
+
+Return ONLY raw JSON — no markdown, no comments, no code fences.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        core_hypotheses: Array.isArray(parsed.core_hypotheses) ? parsed.core_hypotheses : [],
+        test_design_table: Array.isArray(parsed.test_design_table) ? parsed.test_design_table : [],
+        learning_application: parsed.learning_application || '',
+        risk_mitigation_tips: Array.isArray(parsed.risk_mitigation_tips) ? parsed.risk_mitigation_tips : []
+      };
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { raw_response: aiResponse };
+      warning = 'AI response could not be parsed; returning raw text only.';
+    }
 
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'test-learn-scale',
       input_payload: body,
-      prompt: 'Scaffolding - no AI call yet',
-      openai_response: 'Not implemented',
-      parse_status: 'scaffolding',
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
       backend_payload: backendPayload,
-      warning: 'Backend scaffolding only',
+      warning,
       timestamp: new Date().toISOString()
     };
 
