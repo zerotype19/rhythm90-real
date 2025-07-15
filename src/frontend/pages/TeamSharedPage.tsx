@@ -174,6 +174,24 @@ function TeamSharedPage() {
       }>;
       
       if (typedResponse.data && Array.isArray(typedResponse.data.data)) {
+        console.log('Team shared responses:', typedResponse.data.data);
+        // Log each response object to see all fields
+        typedResponse.data.data.forEach((response, index) => {
+          console.log(`Response ${index}:`, {
+            id: response.id,
+            tool_name: response.tool_name,
+            summary: response.summary,
+            is_favorite: response.is_favorite,
+            is_shared_public: response.is_shared_public,
+            is_shared_team: response.is_shared_team,
+            user_email: response.user_email,
+            user_name: response.user_name,
+            created_at: response.created_at,
+            // Log all other fields
+            allFields: Object.keys(response),
+            allValues: Object.values(response)
+          });
+        });
         setResponses(typedResponse.data.data);
         setTotalCount(typedResponse.data.total || 0);
       } else {
@@ -445,7 +463,6 @@ function TeamSharedPage() {
                       </>
                     )}
                   </div>
-                  
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2 ml-4">
                     {/* Favorite Button */}
@@ -460,7 +477,6 @@ function TeamSharedPage() {
                       <FaHeart className={`w-3 h-3 mr-1 ${response.is_favorite ? 'fill-current' : ''}`} />
                       {response.is_favorite ? 'Favorited' : 'Favorite'}
                     </button>
-                    
                     {/* View Button */}
                     <button
                       onClick={() => {
