@@ -29,6 +29,8 @@ const PLAY_BUILDER_SYSTEM_MESSAGE = {
 
 // In-memory store for last Play Builder debug log
 export let lastPlayBuilderDebugLog: any = null;
+// --- New: In-memory store for last Signal Lab debug log ---
+export let lastSignalLabDebugLog: any = null;
 
 function buildTeamSessionContext(team_type?: string, session_purpose?: string, challenges?: string | string[]): any | null {
   if (!team_type && !session_purpose && !challenges) return null;
@@ -162,33 +164,90 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
     const body: InterpretSignalRequest = await request.json();
-    const { observation, context, team_type, session_purpose, challenges } = body;
+    const { observation, context } = body;
     if (!observation) return errorResponse('Observation is required', 400);
+
+    // --- Prompt Assembly ---
+    const SIGNAL_LAB_SYSTEM_MESSAGE = {
+      role: 'system',
+      content: `You are a Rhythm90 Signal Lab assistant.\n\nYour job is to help teams interpret signals — unexpected outcomes, surprising data, or emerging patterns — using the Rhythm90 framework.\n\nA good signal interpretation should:\n- Describe what the signal might indicate (possible meaning).\n- Suggest 2-3 possible causes or contributing factors.\n- Offer 1-2 suggestions for what the team might explore or test next.\n- Highlight if the signal challenges or confirms existing assumptions.\n- Connect to the team’s business or category context if provided.`
+    };
+    let contextBlock = `Context:\nObservation: ${observation}`;
+    if (context) contextBlock += `\nAdditional Context: ${context}`;
+    const userPrompt = `Help us interpret this signal. Please provide:\n1. Possible Meaning (what might this signal indicate?)\n2. Possible Causes (2-3 potential drivers or contributing factors)\n3. Challenge or Confirmation (does this challenge or confirm existing assumptions?)\n4. Suggested Next Exploration (1-2 ideas for what the team might explore or test next)`;
     const messages = [
-      SYSTEM_MESSAGE,
-      MODULE_CONTEXTS.signal,
+      SIGNAL_LAB_SYSTEM_MESSAGE,
+      { role: 'user', content: contextBlock },
+      { role: 'user', content: userPrompt }
     ];
-    const teamSessionMsg = buildTeamSessionContext(team_type, session_purpose, challenges);
-    if (teamSessionMsg) messages.push(teamSessionMsg);
-    let userPrompt = `Observation: ${observation}`;
-    if (context) userPrompt += `\nContext: ${context}`;
-    userPrompt += `\n\nPlease provide:\n1. A clear interpretation of what this observation means\n2. A confidence level (0-100) in your interpretation\n\nFormat your response as JSON with "interpretation" and "confidence" fields.`;
-    messages.push({ role: 'user', content: userPrompt });
+
+    // --- AI Call ---
     const aiResponse = await callOpenAI(messages, env);
+
+    // --- Output Structuring ---
+    let backendPayload: any = {};
+    let warning = undefined;
     try {
+      // Try to parse as JSON
       const parsed = JSON.parse(aiResponse);
-      const response: InterpretSignalResponse = {
-        interpretation: parsed.interpretation || 'Failed to interpret signal',
-        confidence: parsed.confidence || 50
+      backendPayload = {
+        possible_meaning: parsed.possible_meaning || '',
+        possible_causes: parsed.possible_causes || [],
+        challenge_or_confirmation: parsed.challenge_or_confirmation || '',
+        suggested_next_exploration: parsed.suggested_next_exploration || []
       };
-      return jsonResponse(response);
-    } catch (parseError) {
-      const response: InterpretSignalResponse = {
-        interpretation: aiResponse,
-        confidence: 50
-      };
-      return jsonResponse(response);
+    } catch (err) {
+      // Try to extract sections from text if not JSON
+      let possible_meaning = '', challenge_or_confirmation = '', possible_causes: string[] = [], suggested_next_exploration: string[] = [];
+      // Use regex or simple splits to extract sections
+      const meaningMatch = aiResponse.match(/Possible Meaning\s*[:\-]?\s*([\s\S]*?)(?=Possible Causes|Challenge or Confirmation|Suggested Next Exploration|$)/i);
+      if (meaningMatch) possible_meaning = meaningMatch[1].trim();
+      const causesMatch = aiResponse.match(/Possible Causes\s*[:\-]?\s*([\s\S]*?)(?=Challenge or Confirmation|Suggested Next Exploration|$)/i);
+      if (causesMatch) {
+        // Try to split into array
+        const lines = causesMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
+        possible_causes = lines;
+      }
+      const challengeMatch = aiResponse.match(/Challenge or Confirmation\s*[:\-]?\s*([\s\S]*?)(?=Suggested Next Exploration|$)/i);
+      if (challengeMatch) challenge_or_confirmation = challengeMatch[1].trim();
+      const nextMatch = aiResponse.match(/Suggested Next Exploration\s*[:\-]?\s*([\s\S]*)/i);
+      if (nextMatch) {
+        const lines = nextMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
+        suggested_next_exploration = lines;
+      }
+      // If at least one field is found, return structured
+      if (possible_meaning || possible_causes.length || challenge_or_confirmation || suggested_next_exploration.length) {
+        backendPayload = {
+          possible_meaning,
+          possible_causes,
+          challenge_or_confirmation,
+          suggested_next_exploration
+        };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Fallback: pass raw response
+        backendPayload = {
+          possible_meaning: '',
+          possible_causes: [],
+          challenge_or_confirmation: '',
+          suggested_next_exploration: [],
+          raw_response: aiResponse
+        };
+        warning = 'AI response could not be parsed; raw response returned.';
+      }
     }
+
+    // --- Debugger Log ---
+    lastSignalLabDebugLog = {
+      prompt: messages,
+      openai_response: aiResponse,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    // --- Return structured payload ---
+    return jsonResponse(backendPayload);
   } catch (error) {
     console.error('Interpret signal error:', error);
     return errorResponse('Failed to interpret signal', 500);

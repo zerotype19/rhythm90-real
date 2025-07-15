@@ -2,7 +2,7 @@ import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts } from './ai';
-import { lastPlayBuilderDebugLog } from './ai';
+import { lastPlayBuilderDebugLog, lastSignalLabDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 
 export default {
@@ -64,6 +64,14 @@ export default {
           return jsonResponse(lastPlayBuilderDebugLog);
         } else {
           return jsonResponse({ error: 'No Play Builder debug log found.' }, 404);
+        }
+      }
+      // AI Debugger: Signal Lab last log
+      if (path === '/api/debug/last-signal' && request.method === 'GET') {
+        if (typeof lastSignalLabDebugLog !== 'undefined' && lastSignalLabDebugLog) {
+          return jsonResponse(lastSignalLabDebugLog);
+        } else {
+          return jsonResponse({ error: 'No Signal Lab debug log found.' }, 404);
         }
       }
 
