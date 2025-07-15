@@ -349,9 +349,8 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body: GenerateRitualPromptsRequest = await request.json();
     const { ritual_type, team_type, top_challenges, focus_areas, additional_context } = body;
     if (!ritual_type) return errorResponse('Ritual type is required', 400);
@@ -434,9 +433,8 @@ Additional Refinements:
       throw error; // Re-throw the error instead of using mock response
     }
     
-    // Log AI usage (using anonymous if no user)
-    const userId = 'anonymous'; // Since auth is bypassed for testing
-    await logAIUsage(env.DB, userId, 'ritual_guide');
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'ritual_guide');
 
     // --- Output Structuring ---
     let backendPayload: any = {};
@@ -529,9 +527,8 @@ export async function handlePlainEnglishTranslator(request: Request, env: Env): 
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { original_text } = body;
     if (!original_text) return errorResponse('Original text is required', 400);
@@ -549,8 +546,8 @@ export async function handlePlainEnglishTranslator(request: Request, env: Env): 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
     
-    // Log AI usage (using anonymous since auth is bypassed)
-    await logAIUsage(env.DB, 'anonymous', 'mini_tool_plain_english_translator');
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'mini_tool_plain_english_translator');
 
     // Parse response
     let backendPayload: any = {};
@@ -636,9 +633,8 @@ export async function handleGetToByGenerator(request: Request, env: Env): Promis
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { audience_description, behavioral_or_emotional_insight, brand_product_role } = body;
     if (!audience_description || !behavioral_or_emotional_insight || !brand_product_role) {
@@ -657,6 +653,9 @@ export async function handleGetToByGenerator(request: Request, env: Env): Promis
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'mini_tool_get_to_by_generator');
 
     // Parse response
     let backendPayload: any = {};
@@ -721,9 +720,8 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { problem_or_strategy_summary } = body;
     if (!problem_or_strategy_summary) return errorResponse('Problem or strategy summary is required', 400);
@@ -740,6 +738,9 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'mini_tool_creative_tension_finder');
 
     // Parse response
     let backendPayload: any = {};
@@ -804,14 +805,12 @@ export async function handlePersonaGenerator(request: Request, env: Env): Promis
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { audience_seed, user_id } = body;
-    console.log(`[DEBUG] PersonaGenerator called with user_id: ${user_id}`);
+    const { audience_seed } = body;
+    console.log(`[DEBUG] PersonaGenerator called with user_id: ${user.id}`);
     if (!audience_seed) return errorResponse('Audience seed is required', 400);
-    if (!user_id) return errorResponse('User ID is required', 400);
 
     const systemMessage = {
       role: 'system',
@@ -848,7 +847,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     const aiResponse = await callOpenAI(messages, env);
     
     // Log AI usage
-    await logAIUsage(env.DB, user_id, 'mini_tool_persona_generator');
+    await logAIUsage(env.DB, user.id, 'mini_tool_persona_generator');
 
     // Parse response
     let backendPayload: any = {};
@@ -864,10 +863,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       
       // Store persona in session for Ask Mode
       if (parsed.persona_sheet && Object.keys(parsed.persona_sheet).length > 0) {
-        console.log(`[DEBUG] Storing persona for user ${user_id}:`, parsed.persona_sheet.name);
+        console.log(`[DEBUG] Storing persona for user ${user.id}:`, parsed.persona_sheet.name);
         // We'll store the persona in the response
       } else {
-        console.log(`[DEBUG] No persona sheet to store for user ${user_id}`);
+        console.log(`[DEBUG] No persona sheet to store for user ${user.id}`);
       }
     } catch (err) {
       // If JSON parsing failed, try to extract structured data from the raw response
@@ -910,10 +909,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         
         // Store persona in session for Ask Mode (even if extracted via fallback)
         if (Object.keys(persona_sheet).length > 0) {
-          console.log(`[DEBUG] Storing fallback persona for user ${user_id}:`, persona_sheet.name);
+          console.log(`[DEBUG] Storing fallback persona for user ${user.id}:`, persona_sheet.name);
           // We'll store the persona in the response
         } else {
-          console.log(`[DEBUG] No fallback persona to store for user ${user_id}`);
+          console.log(`[DEBUG] No fallback persona to store for user ${user.id}`);
         }
       } else {
         // Complete fallback: return raw response
@@ -938,7 +937,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     // Store persona in cookie if we have one
     let response = jsonResponse(backendPayload);
     if (backendPayload.persona_sheet && Object.keys(backendPayload.persona_sheet).length > 0) {
-      response = storePersonaSession(user_id, backendPayload.persona_sheet, response);
+      response = storePersonaSession(user.id, backendPayload.persona_sheet, response);
     }
     return response;
   } catch (error) {
@@ -952,9 +951,8 @@ export async function handleJourneyBuilder(request: Request, env: Env): Promise<
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { product_or_service, primary_objective, key_barrier } = body;
     if (!product_or_service || !primary_objective) {
@@ -995,6 +993,9 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'mini_tool_journey_builder');
 
     // Parse response
     let backendPayload: any = {};
@@ -1072,9 +1073,8 @@ export async function handleTestLearnScale(request: Request, env: Env): Promise<
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { campaign_or_product_context, resources_or_constraints } = body;
     if (!campaign_or_product_context) {
@@ -1122,6 +1122,9 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'mini_tool_test_learn_scale');
 
     // Parse response
     let backendPayload: any = {};
@@ -1231,9 +1234,8 @@ export async function handleAgileSprintPlanner(request: Request, env: Env): Prom
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { challenge_statement, time_horizon, team_size_roles } = body;
     if (!challenge_statement || !time_horizon || !team_size_roles) {
@@ -1277,6 +1279,9 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'mini_tool_agile_sprint_planner');
 
     // Parse response
     let backendPayload: any = {};
@@ -1369,9 +1374,8 @@ export async function handleConnectedMediaMatrix(request: Request, env: Env): Pr
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { audience_snapshot, primary_conversion_action, seasonal_or_contextual_triggers } = body;
     if (!audience_snapshot || !primary_conversion_action) {
@@ -1411,6 +1415,9 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
 
     const messages = [systemMessage, userMessage];
     const aiResponse = await callOpenAI(messages, env);
+    
+    // Log AI usage
+    await logAIUsage(env.DB, user.id, 'mini_tool_connected_media_matrix');
 
     // Parse response
     let backendPayload: any = {};
@@ -1481,17 +1488,13 @@ export async function handleSyntheticFocusGroup(request: Request, env: Env): Pro
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { topic_or_category, audience_seed_info, must_include_segments, user_id } = body;
+    const { topic_or_category, audience_seed_info, must_include_segments } = body;
     if (!topic_or_category || !audience_seed_info) {
       return errorResponse('Topic/category and audience seed info are required', 400);
     }
-    
-    // Generate a user ID if not provided (for testing without auth)
-    const userId = user_id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const systemMessage = {
       role: 'system',
@@ -1525,7 +1528,7 @@ Replace Persona1, Age1, etc. with real values. Return ONLY raw JSON.`
     const aiResponse = await callOpenAI(messages, env);
     
     // Log AI usage
-    await logAIUsage(env.DB, userId, 'mini_tool_synthetic_focus_group');
+    await logAIUsage(env.DB, user.id, 'mini_tool_synthetic_focus_group');
 
     // Parse response
     let backendPayload: any = {};
@@ -1599,7 +1602,7 @@ Replace Persona1, Age1, etc. with real values. Return ONLY raw JSON.`
     // Store focus group in cookie if we have one
     let response = jsonResponse(backendPayload);
     if (backendPayload.persona_lineup && Array.isArray(backendPayload.persona_lineup) && backendPayload.persona_lineup.length > 0) {
-      response = storeFocusGroupSession(userId, backendPayload, response);
+      response = storeFocusGroupSession(user.id, backendPayload, response);
     }
     return response;
   } catch (error) {
@@ -1732,20 +1735,19 @@ export async function handleFocusGroupAsk(request: Request, env: Env): Promise<R
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { question, user_id } = body;
-    if (!question || !user_id) {
-      return errorResponse('Question and user_id are required', 400);
+    const { question } = body;
+    if (!question) {
+      return errorResponse('Question is required', 400);
     }
 
     // Get focus group from session
-    console.log(`[DEBUG] FocusGroupAsk called with user_id: ${user_id}`);
-    const focusGroup = getFocusGroupSession(user_id, request);
+    console.log(`[DEBUG] FocusGroupAsk called with user_id: ${user.id}`);
+    const focusGroup = getFocusGroupSession(user.id, request);
     if (!focusGroup) {
-      console.log(`[DEBUG] No focus group found for user ${user_id}`);
+      console.log(`[DEBUG] No focus group found for user ${user.id}`);
       return errorResponse('No focus group found for this session. Please generate a focus group first.', 400);
     }
     console.log(`[DEBUG] Found focus group with ${focusGroup.persona_lineup?.length || 0} personas`);
@@ -1788,7 +1790,7 @@ Keep responses concise (1-2 sentences each) and conversational.`
     const aiResponse = await callOpenAI(messages, env);
     
     // Log AI usage
-    await logAIUsage(env.DB, user_id, 'mini_tool_focus_group_ask');
+    await logAIUsage(env.DB, user.id, 'mini_tool_focus_group_ask');
 
     // Parse response
     let backendPayload: any = {};
@@ -1838,20 +1840,19 @@ export async function handlePersonaAsk(request: Request, env: Env): Promise<Resp
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
-    // Temporarily bypass auth for testing
-    // const user = await verifyAuth(request, env);
-    // if (!user) return errorResponse('Unauthorized', 401);
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { question, user_id } = body;
-    if (!question || !user_id) {
-      return errorResponse('Question and user_id are required', 400);
+    const { question } = body;
+    if (!question) {
+      return errorResponse('Question is required', 400);
     }
 
     // Get persona from session
-    console.log(`[DEBUG] PersonaAsk called with user_id: ${user_id}`);
-    const persona = getPersonaSession(user_id, request);
+    console.log(`[DEBUG] PersonaAsk called with user_id: ${user.id}`);
+    const persona = getPersonaSession(user.id, request);
     if (!persona) {
-      console.log(`[DEBUG] No persona found for user ${user_id}`);
+      console.log(`[DEBUG] No persona found for user ${user.id}`);
       return errorResponse('No persona found for this session. Please generate a persona first.', 400);
     }
     console.log(`[DEBUG] Found persona: ${persona.name}`);
@@ -1878,7 +1879,7 @@ Answer the following question as ${persona.name}, staying in character and true 
     const aiResponse = await callOpenAI(messages, env);
     
     // Log AI usage
-    await logAIUsage(env.DB, user_id, 'mini_tool_persona_ask');
+    await logAIUsage(env.DB, user.id, 'mini_tool_persona_ask');
 
     // Parse response
     let backendPayload: any = {};

@@ -157,47 +157,43 @@ class ApiClient {
     });
   }
 
-  async personaGenerator(audienceSeed: string, userId: string) {
+  async personaGenerator(audienceSeed: string) {
     return this.request('/api/mini-tools/persona-generator', {
       method: 'POST',
       body: JSON.stringify({ 
-        audience_seed: audienceSeed,
-        user_id: userId
+        audience_seed: audienceSeed
       }),
       credentials: 'include',
     });
   }
 
-  async personaAsk(question: string, userId: string) {
+  async personaAsk(question: string) {
     return this.request('/api/mini-tools/persona-ask', {
       method: 'POST',
       body: JSON.stringify({ 
-        question: question,
-        user_id: userId
+        question: question
       }),
       credentials: 'include',
     });
   }
 
-  async syntheticFocusGroup(topicOrCategory: string, audienceSeedInfo: string, mustIncludeSegments?: string, userId?: string) {
+  async syntheticFocusGroup(topicOrCategory: string, audienceSeedInfo: string, mustIncludeSegments?: string) {
     return this.request('/api/mini-tools/synthetic-focus-group', {
       method: 'POST',
       body: JSON.stringify({ 
         topic_or_category: topicOrCategory,
         audience_seed_info: audienceSeedInfo,
-        must_include_segments: mustIncludeSegments,
-        user_id: userId
+        must_include_segments: mustIncludeSegments
       }),
       credentials: 'include',
     });
   }
 
-  async focusGroupAsk(question: string, userId: string) {
+  async focusGroupAsk(question: string) {
     return this.request('/api/mini-tools/focus-group-ask', {
       method: 'POST',
       body: JSON.stringify({ 
-        question: question,
-        user_id: userId
+        question: question
       }),
       credentials: 'include',
     });

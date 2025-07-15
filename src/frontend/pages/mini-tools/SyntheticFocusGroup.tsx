@@ -18,8 +18,7 @@ function SyntheticFocusGroup() {
   const [isAsking, setIsAsking] = useState(false);
   const [askError, setAskError] = useState('');
   
-  // Generate a simple user ID for session management
-  const [userId] = useState(() => `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+
 
   const handleGenerate = async () => {
     if (!topicOrCategory.trim() || !audienceSeedInfo.trim()) {
@@ -33,7 +32,7 @@ function SyntheticFocusGroup() {
     setAskResponse(null); // Clear previous ask responses
 
     try {
-      const response = await apiClient.syntheticFocusGroup(topicOrCategory, audienceSeedInfo, mustIncludeSegments, userId);
+      const response = await apiClient.syntheticFocusGroup(topicOrCategory, audienceSeedInfo, mustIncludeSegments);
 
       if (response.data) {
         setOutput(response.data);
@@ -66,7 +65,7 @@ function SyntheticFocusGroup() {
     setAskResponse(null);
 
     try {
-      const response = await apiClient.focusGroupAsk(askQuestion, userId);
+      const response = await apiClient.focusGroupAsk(askQuestion);
 
       if (response.data) {
         setAskResponse(response.data);

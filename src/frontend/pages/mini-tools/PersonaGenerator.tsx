@@ -16,8 +16,7 @@ function PersonaGenerator() {
   const [isAsking, setIsAsking] = useState(false);
   const [askError, setAskError] = useState('');
   
-  // Generate a simple user ID for session management
-  const [userId] = useState(() => `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+
 
   const handleGenerate = async () => {
     if (!audienceSeed.trim()) {
@@ -31,7 +30,7 @@ function PersonaGenerator() {
     setAskResponse(null); // Clear previous ask responses
 
     try {
-      const response = await apiClient.personaGenerator(audienceSeed, userId);
+      const response = await apiClient.personaGenerator(audienceSeed);
 
       if (response.data) {
         setOutput(response.data);
@@ -59,7 +58,7 @@ function PersonaGenerator() {
     setAskResponse(null);
 
     try {
-      const response = await apiClient.personaAsk(askQuestion, userId);
+      const response = await apiClient.personaAsk(askQuestion);
 
       if (response.data) {
         setAskResponse(response.data);
