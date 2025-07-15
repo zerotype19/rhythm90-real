@@ -100,6 +100,13 @@ const HistoryPage: React.FC = () => {
   const [selectedResponse, setSelectedResponse] = useState<SavedResponse | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [availableTools, setAvailableTools] = useState<string[]>([]);
+  
+  // Share modal state
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareType, setShareType] = useState<'public' | 'team' | null>(null);
+  const [publicLink, setPublicLink] = useState<string | null>(null);
+  const [shareError, setShareError] = useState('');
 
   // Fetch user's saved responses
   useEffect(() => {
@@ -191,6 +198,55 @@ const HistoryPage: React.FC = () => {
     } catch (err) {
       console.error('Error toggling share:', err);
     }
+  };
+
+  // Handle share from modal
+  const handleShare = async () => {
+    if (!selectedResponse || !shareType) return;
+    
+    setShareError('');
+    setSharing(true);
+    
+    try {
+      const response = await apiClient.setShareStatus(
+        selectedResponse.id,
+        shareType === 'public',
+        shareType === 'team'
+      );
+      
+      if (shareType === 'public' && response.data?.data?.shared_slug) {
+        setPublicLink(`${window.location.origin}/shared/${response.data.data.shared_slug}`);
+      } else {
+        setPublicLink(null);
+      }
+      
+      // Update the response in the list
+      setResponses(prev => prev.map(r => 
+        r.id === selectedResponse.id ? { 
+          ...r, 
+          is_shared_public: shareType === 'public', 
+          is_shared_team: shareType === 'team',
+          shared_slug: response.data?.data?.shared_slug
+        } : r
+      ));
+      
+      setShowShareModal(false);
+      setShareType(null);
+    } catch (err) {
+      setShareError('Failed to share response');
+      console.error('Error sharing:', err);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // Open share modal
+  const openShareModal = (response: SavedResponse) => {
+    setSelectedResponse(response);
+    setShareType(null);
+    setPublicLink(null);
+    setShareError('');
+    setShowShareModal(true);
   };
 
   // Format date
@@ -327,11 +383,14 @@ const HistoryPage: React.FC = () => {
                           Favorite
                         </span>
                       )}
-                      {response.is_shared_public === true && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {response.is_shared_public && (
+                        <button
+                          onClick={() => openShareModal(response)}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors"
+                        >
                           <FaGlobe className="w-3 h-3 mr-1" />
                           Public
-                        </span>
+                        </button>
                       )}
                       {response.is_shared_team && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -353,14 +412,26 @@ const HistoryPage: React.FC = () => {
                       Saved on {formatDate(response.created_at)}
                     </p>
                     
-                    {/* View Button */}
-                    <button
-                      onClick={() => { setSelectedResponse(response); setShowViewModal(true); }}
-                      className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors ml-4"
-                    >
-                      <FaEye className="w-3 h-3 mr-1" />
-                      View
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 ml-4">
+                      {/* Share Button */}
+                      <button
+                        onClick={() => openShareModal(response)}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        <FaShare className="w-3 h-3 mr-1" />
+                        Share
+                      </button>
+                      
+                      {/* View Button */}
+                      <button
+                        onClick={() => { setSelectedResponse(response); setShowViewModal(true); }}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                      >
+                        <FaEye className="w-3 h-3 mr-1" />
+                        View
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -400,6 +471,90 @@ const HistoryPage: React.FC = () => {
                     dangerouslySetInnerHTML={{ __html: selectedResponse.response_blob }}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && selectedResponse && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-medium">Share Response</h3>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Share Type</h4>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="shareType"
+                      value="public"
+                      checked={shareType === 'public'}
+                      onChange={(e) => setShareType(e.target.value as 'public')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Public (anyone with the link can view)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="shareType"
+                      value="team"
+                      checked={shareType === 'team'}
+                      onChange={(e) => setShareType(e.target.value as 'team')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Team (only team members can view)</span>
+                  </label>
+                </div>
+              </div>
+              
+              {shareError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{shareError}</p>
+                </div>
+              )}
+              
+              {publicLink && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-600 mb-2">Public Link:</p>
+                  <a 
+                    href={publicLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 underline break-all"
+                  >
+                    {publicLink}
+                  </a>
+                </div>
+              )}
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleShare}
+                  disabled={!shareType || sharing}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sharing ? 'Sharing...' : 'Share'}
+                </button>
               </div>
             </div>
           </div>
