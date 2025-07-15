@@ -174,7 +174,7 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     };
     let contextBlock = `Context:\nObservation: ${observation}`;
     if (context) contextBlock += `\nAdditional Context: ${context}`;
-    const userPrompt = `Help us interpret this signal. Please provide:\n1. Possible Meaning (what might this signal indicate?)\n2. Possible Causes (2-3 potential drivers or contributing factors)\n3. Challenge or Confirmation (does this challenge or confirm existing assumptions?)\n4. Suggested Next Exploration (1-2 ideas for what the team might explore or test next)`;
+    const userPrompt = `Please return your answer with the following fields:\n1. Possible Meaning (what might this signal indicate?)\n2. Possible Causes (2-3 operational or audience-related drivers)\n3. Challenge or Confirmation (what business assumption does this challenge or confirm?)\n4. Suggested Next Exploration (1-2 ideas for what the team might explore or test next)\n\nFormat your response as JSON with fields: possible_meaning, possible_causes, challenge_or_confirmation, suggested_next_exploration.\n\nIn Possible Causes, include both operational and audience-related factors where applicable.\nIn Challenge or Confirmation, note what business assumption this signal impacts.\nIn Suggested Next Exploration, suggest how the learning might shape future plays.\nIncorporate the Additional Context into all sections. Provide category-specific insights when possible.`;
     const messages = [
       SIGNAL_LAB_SYSTEM_MESSAGE,
       { role: 'user', content: contextBlock },
