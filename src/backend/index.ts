@@ -4,7 +4,7 @@ import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handlePersonaAsk, handleFocusGroupAsk, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
-import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared } from './savedResponses';
+import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared, getTeamSharedBySlug } from './savedResponses';
 import { verifyAuth } from './auth';
 import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
 import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
@@ -347,6 +347,29 @@ export default {
         if (!slug) return errorResponse('Missing slug', 400);
         
         const result = await getPublicShared(env, slug);
+        
+        if (result.success) {
+          return jsonResponse(result);
+        } else {
+          return errorResponse(result.message, 404);
+        }
+      }
+
+      if (path.startsWith('/api/saved-responses/team-shared/') && request.method === 'GET') {
+        const user = await verifyAuth(request, env);
+        if (!user) return errorResponse('Unauthorized', 401);
+        
+        const slug = path.split('/').pop();
+        if (!slug) return errorResponse('Missing slug', 400);
+        
+        // Get user's team_id from team_members table
+        const teamMember = await env.DB.prepare(`
+          SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+        `).bind(user.id).first();
+        
+        if (!teamMember?.team_id) return errorResponse('User must belong to a team', 400);
+        
+        const result = await getTeamSharedBySlug(env, slug, teamMember.team_id);
         
         if (result.success) {
           return jsonResponse(result);

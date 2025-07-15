@@ -165,7 +165,7 @@ function TeamSharedPage() {
       
       // If we have a slug, we need to get the specific shared item
       if (slug) {
-        const response = await apiClient.getPublicShared(slug);
+        const response = await apiClient.getTeamSharedBySlug(slug);
         
         // Handle the actual API response structure: { success: true, message: "...", data: {...} }
         if (response.data && response.data.success && response.data.data) {

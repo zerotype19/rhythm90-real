@@ -351,6 +351,15 @@ class ApiClient {
     });
   }
 
+  /**
+   * Get a team shared response by slug
+   */
+  async getTeamSharedBySlug(slug: string) {
+    return this.request(`/api/saved-responses/team-shared/${slug}`, {
+      credentials: 'include',
+    });
+  }
+
   // Settings API
   async getAccountSettings() {
     return this.request('/api/settings/account', {

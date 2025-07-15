@@ -445,4 +445,35 @@ export const getPublicShared = async (env: any, sharedSlug: string): Promise<{ s
     console.error('Error getting public shared response:', error);
     return { success: false, message: 'Internal server error' };
   }
+};
+
+// Get team shared response by slug (for team members)
+export const getTeamSharedBySlug = async (env: any, sharedSlug: string, teamId: string): Promise<{ success: boolean; message: string; data?: SavedResponse }> => {
+  try {
+    const response = await env.DB.prepare(`
+      SELECT * FROM ai_saved_responses 
+      WHERE shared_slug = ? AND team_id = ? AND (is_shared_team = 1 OR is_favorite = 1)
+    `).bind(sharedSlug, teamId).first();
+
+    if (!response) {
+      return { success: false, message: 'Team shared response not found' };
+    }
+
+    // Convert numeric boolean values to actual booleans
+    const processedResponse = {
+      ...response,
+      is_favorite: Boolean(response.is_favorite),
+      is_shared_public: Boolean(response.is_shared_public),
+      is_shared_team: Boolean(response.is_shared_team)
+    };
+
+    return { 
+      success: true, 
+      message: 'Team shared response retrieved successfully',
+      data: processedResponse as SavedResponse
+    };
+  } catch (error) {
+    console.error('Error getting team shared response:', error);
+    return { success: false, message: 'Internal server error' };
+  }
 }; 
