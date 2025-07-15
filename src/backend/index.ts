@@ -144,6 +144,14 @@ export default {
         const user = await verifyAuth(request, env);
         if (!user) return errorResponse('Unauthorized', 401);
         const body = await request.json();
+        console.log('Save request body:', JSON.stringify(body, null, 2));
+        console.log('Required fields check:', {
+          hasSummary: !!body.summary,
+          summaryType: typeof body.summary,
+          summaryLength: body.summary?.length,
+          hasResponseBlob: !!body.response_blob,
+          hasToolName: !!body.tool_name
+        });
         if (!body.summary || typeof body.summary !== 'string' || body.summary.length > 140) {
           return errorResponse('Summary is required and must be <= 140 chars', 400);
         }

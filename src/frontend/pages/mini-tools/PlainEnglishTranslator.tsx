@@ -39,15 +39,6 @@ function PlainEnglishTranslator() {
 
     return (
       <div className="space-y-6">
-        {/* Action buttons for saving/favoriting/sharing */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <SavedResponseActions
-            toolName="Plain English Translator"
-            responseData={output}
-            summary={`Plain English translation of: "${originalText.substring(0, 100)}${originalText.length > 100 ? '...' : ''}"`}
-          />
-        </div>
-
         {/* Plain English Rewrite */}
         {output.plain_english_rewrite && (
           <div className="bg-white rounded-lg shadow p-6">
@@ -115,6 +106,15 @@ function PlainEnglishTranslator() {
             </div>
           </div>
         )}
+
+        {/* Action buttons for saving/favoriting/sharing - moved to bottom */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <SavedResponseActions
+            toolName="Plain English Translator"
+            responseData={output}
+            summary={`Plain English translation of: "${originalText.substring(0, 100)}${originalText.length > 100 ? '...' : ''}"`}
+          />
+        </div>
       </div>
     );
   };

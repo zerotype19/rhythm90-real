@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { apiClient } from '../lib/api';
+import { FaStar, FaSave, FaShare, FaHeart } from 'react-icons/fa';
 
 interface SavedResponseActionsProps {
   responseId?: string;
   toolName: string;
-  responseBlob: any;
+  responseData: any;
   teamId?: string;
   summary?: string;
   isFavorite?: boolean;
@@ -16,7 +17,7 @@ interface SavedResponseActionsProps {
 export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
   responseId,
   toolName,
-  responseBlob,
+  responseData,
   teamId,
   summary,
   isFavorite = false,
@@ -64,7 +65,7 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
       const res = await apiClient.saveResponse({
         summary: saveSummary,
         tool_name: toolName,
-        response_blob: JSON.stringify(responseBlob),
+        response_blob: JSON.stringify(responseData),
         team_id: teamId,
       });
       setShowSave(false);
@@ -108,34 +109,43 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
   };
 
   return (
-    <div className="flex gap-2 items-center">
+    <div className="flex gap-3 items-center justify-end pt-4 border-t border-gray-200">
+      {/* Save */}
+      <button
+        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+        onClick={() => setShowSave(true)}
+        title="Save"
+      >
+        <FaSave className="w-4 h-4" />
+        <span>Save</span>
+      </button>
+      
       {/* Favorite */}
       {responseId && (
         <button
-          className={`text-xl ${favorite ? 'text-yellow-400' : 'text-gray-400'} hover:text-yellow-500`}
+          className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+            favorite 
+              ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' 
+              : 'text-gray-600 hover:text-yellow-600 hover:bg-yellow-50'
+          }`}
           onClick={handleFavorite}
           disabled={favoriting}
           title={favorite ? 'Unfavorite' : 'Favorite'}
         >
-          ⭐
+          <FaHeart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />
+          <span>{favorite ? 'Favorited' : 'Favorite'}</span>
         </button>
       )}
-      {/* Save */}
-      <button
-        className="text-xl text-gray-400 hover:text-blue-500"
-        onClick={() => setShowSave(true)}
-        title="Save"
-      >
-        💾
-      </button>
+      
       {/* Share */}
       {responseId && (
         <button
-          className="text-xl text-gray-400 hover:text-green-500"
+          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
           onClick={() => setShowShare(true)}
           title="Share"
         >
-          🔗
+          <FaShare className="w-4 h-4" />
+          <span>Share</span>
         </button>
       )}
 
