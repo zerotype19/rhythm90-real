@@ -37,7 +37,7 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
     // 1. Plays created (count)
     const playsResult = await env.DB.prepare(`
       SELECT COUNT(*) as count 
-      FROM saved_responses 
+      FROM ai_saved_responses 
       WHERE team_id = ? 
       AND tool_name = 'Play Builder'
       AND created_at >= ? 
@@ -58,7 +58,7 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
     // 2. Signals logged (count)
     const signalsResult = await env.DB.prepare(`
       SELECT COUNT(*) as count 
-      FROM saved_responses 
+      FROM ai_saved_responses 
       WHERE team_id = ? 
       AND tool_name = 'Signal Lab'
       AND created_at >= ? 
@@ -79,7 +79,7 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
     // 3. Rituals completed (count)
     const ritualsResult = await env.DB.prepare(`
       SELECT COUNT(*) as count 
-      FROM saved_responses 
+      FROM ai_saved_responses 
       WHERE team_id = ? 
       AND tool_name = 'Ritual Guide'
       AND created_at >= ? 
@@ -100,7 +100,7 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
     // 4. Shared responses (count)
     const sharedResult = await env.DB.prepare(`
       SELECT COUNT(*) as count 
-      FROM saved_responses 
+      FROM ai_saved_responses 
       WHERE team_id = ? 
       AND (is_shared_team = 1 OR is_shared_public = 1)
       AND created_at >= ? 
@@ -121,7 +121,7 @@ export const calculateTeamMetrics = async (env: Env, teamId: string, periodStart
     // 5. Team engagement (unique users active)
     const engagementResult = await env.DB.prepare(`
       SELECT COUNT(DISTINCT user_id) as count 
-      FROM saved_responses 
+      FROM ai_saved_responses 
       WHERE team_id = ? 
       AND created_at >= ? 
       AND created_at <= ?
