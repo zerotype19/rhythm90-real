@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import { apiClient } from '../lib/api';
-import { FaLightbulb, FaClipboardList, FaCheckCircle } from 'react-icons/fa';
+import { FaLightbulb, FaClipboardList, FaCheckCircle, FaChartLine, FaUserTie, FaArrowRight } from 'react-icons/fa';
 
 const TEAM_TYPE_OPTIONS = [
   'B2B', 'B2C', 'SaaS', 'DTC', 'Agency', 'Other'
@@ -49,76 +49,48 @@ function PlayBuilder() {
   // Helper to render output
   const renderOutput = () => {
     if (!output) return null;
-    let parsed: any = null;
-    // Try JSON parse first
-    try {
-      parsed = JSON.parse(output);
-    } catch (e) {
-      parsed = null;
-    }
-    // If JSON and has hypothesis/suggestions
-    if (parsed && (parsed.hypothesis || parsed.suggestions)) {
-      return (
-        <div className="space-y-6 text-xs">
-          {parsed.hypothesis && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <FaLightbulb aria-label="Hypothesis" className="inline text-yellow-400" /> Hypothesis
-              </label>
-              <div className="p-2 bg-gray-50 rounded-md border border-gray-100">
-                <p className="text-gray-900">{parsed.hypothesis}</p>
-              </div>
-            </div>
-          )}
-          {parsed.hypothesis && parsed.suggestions && (
-            <hr className="my-2 border-gray-200" />
-          )}
-          {parsed.suggestions && Array.isArray(parsed.suggestions) && (
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <FaClipboardList aria-label="Testing Suggestions" className="inline text-blue-400" /> Testing Suggestions
-              </label>
-              <ul className="space-y-2 bg-gray-50 rounded-md p-2 border border-gray-100">
-                {parsed.suggestions.map((suggestion: string, index: number) => (
-                  <li key={index} className="flex items-start space-x-2">
-                    <FaCheckCircle aria-label="Suggestion" className="text-green-500 mt-0.5" />
-                    <span className="text-gray-900">{suggestion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      );
-    }
-    // Try to parse new multi-section output (numbered sections)
-    const sectionRegex = /(?:^|\n)(\d+)\.\s*([^\n]+)\n([\s\S]*?)(?=(?:\n\d+\.|$))/g;
+
+    // --- New: Sectioned Output Parsing ---
+    // Parse sections by **Section Name:**
+    const sectionRegex = /\*\*(.+?):\*\*\n([\s\S]*?)(?=(\n\*\*|$))/g;
     const sections: { title: string; content: string }[] = [];
     let match;
     while ((match = sectionRegex.exec(output)) !== null) {
-      sections.push({ title: match[2].trim(), content: match[3].trim() });
+      sections.push({ title: match[1].trim(), content: match[2].trim() });
     }
+    // Section order and icons
+    const sectionOrder = [
+      'Hypothesis',
+      'How-to-Run Summary',
+      'Signals to Watch',
+      'Owner Role',
+      'What Success Looks Like',
+      'Next Recommendation',
+    ];
+    const sectionIcons: Record<string, JSX.Element> = {
+      'Hypothesis': <FaLightbulb className="text-yellow-500 mr-2" />,
+      'How-to-Run Summary': <FaClipboardList className="text-blue-500 mr-2" />,
+      'Signals to Watch': <FaChartLine className="text-green-500 mr-2" />,
+      'Owner Role': <FaUserTie className="text-purple-500 mr-2" />,
+      'What Success Looks Like': <FaCheckCircle className="text-emerald-500 mr-2" />,
+      'Next Recommendation': <FaArrowRight className="text-orange-500 mr-2" />,
+    };
     if (sections.length > 0) {
-      // Map section titles to icons
-      const sectionIcons: Record<string, JSX.Element> = {
-        'Hypothesis': <FaLightbulb aria-label="Hypothesis" className="inline text-yellow-400" />,
-        'How-to-Run Summary': <FaClipboardList aria-label="How-to-Run" className="inline text-blue-400" />,
-        'Signals to Watch': <FaClipboardList aria-label="Signals" className="inline text-blue-400" />,
-        'Owner Role': <FaCheckCircle aria-label="Owner Role" className="inline text-green-500" />,
-        'What Success Looks Like': <FaCheckCircle aria-label="Success" className="inline text-green-500" />,
-      };
       return (
-        <div className="space-y-6 text-xs">
-          {sections.map((section, idx) => (
-            <div key={idx}>
-              <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
-                {sectionIcons[section.title] || null} {section.title}
-              </label>
-              <div className="p-2 bg-gray-50 rounded-md border border-gray-100 whitespace-pre-line">
-                <span className="text-gray-900">{section.content}</span>
+        <div className="space-y-6">
+          {sectionOrder.map((section) => {
+            const sec = sections.find(s => s.title === section);
+            if (!sec) return null;
+            return (
+              <div key={section} className="bg-gray-50 rounded-lg border-l-4 shadow-sm p-4 flex items-start">
+                <div className="mt-1">{sectionIcons[section]}</div>
+                <div className="ml-3 flex-1">
+                  <h3 className="font-bold text-base mb-2 flex items-center">{section}</h3>
+                  <div className="prose prose-sm text-gray-800 whitespace-pre-line">{sec.content}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       );
     }
