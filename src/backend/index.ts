@@ -6,6 +6,7 @@ import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared } from './savedResponses';
 import { verifyAuth } from './auth';
+import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -32,7 +33,39 @@ export default {
       }
       if (path === '/api/auth/logout' && request.method === 'POST') {
         return await handleLogout(request, env);
-    }
+      }
+
+      // Settings routes
+      if (path === '/api/settings/account' && request.method === 'GET') {
+        return await handleGetAccountSettings(request, env);
+      }
+      if (path === '/api/settings/account' && request.method === 'POST') {
+        return await handleUpdateAccountSettings(request, env);
+      }
+      if (path === '/api/settings/team' && request.method === 'GET') {
+        return await handleGetTeamSettings(request, env);
+      }
+      if (path === '/api/settings/team' && request.method === 'POST') {
+        return await handleUpdateTeamName(request, env);
+      }
+      if (path === '/api/settings/team/invite' && request.method === 'POST') {
+        return await handleInviteTeamMember(request, env);
+      }
+      if (path === '/api/settings/team/remove' && request.method === 'POST') {
+        return await handleRemoveTeamMember(request, env);
+      }
+      if (path === '/api/settings/team/set-role' && request.method === 'POST') {
+        return await handleSetMemberRole(request, env);
+      }
+      if (path === '/api/settings/billing' && request.method === 'GET') {
+        return await handleGetBillingInfo(request, env);
+      }
+      if (path === '/api/settings/billing' && request.method === 'POST') {
+        return await handleUpdateSubscription(request, env);
+      }
+      if (path === '/api/settings/billing/cancel' && request.method === 'POST') {
+        return await handleCancelSubscription(request, env);
+      }
 
       // Team routes
       if (path === '/api/teams' && request.method === 'POST') {
@@ -136,6 +169,16 @@ export default {
           return jsonResponse(lastMiniToolDebugLog);
         } else {
           return jsonResponse({ error: 'No Mini Tool debug log found.' }, 404);
+        }
+      }
+
+      // Settings Debugger: Last settings call
+      if (path === '/api/debug/last-settings-call' && request.method === 'GET') {
+        const debugLog = getLastSettingsDebugLog();
+        if (debugLog) {
+          return jsonResponse(debugLog);
+        } else {
+          return jsonResponse({ error: 'No settings debug log found.' }, 404);
         }
       }
 

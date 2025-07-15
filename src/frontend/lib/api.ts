@@ -350,6 +350,80 @@ class ApiClient {
       credentials: 'include',
     });
   }
+
+  // Settings API
+  async getAccountSettings() {
+    return this.request('/api/settings/account', {
+      credentials: 'include',
+    });
+  }
+
+  async updateAccountSettings(payload: { name: string }) {
+    return this.request('/api/settings/account', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async getTeamSettings() {
+    return this.request('/api/settings/team', {
+      credentials: 'include',
+    });
+  }
+
+  async updateTeamName(payload: { name: string }) {
+    return this.request('/api/settings/team', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async inviteTeamMember(payload: { email: string }) {
+    return this.request('/api/settings/team/invite', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async removeTeamMember(payload: { member_id: string }) {
+    return this.request('/api/settings/team/remove', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async setMemberRole(payload: { member_id: string; role: 'owner' | 'member' }) {
+    return this.request('/api/settings/team/set-role', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async getBillingInfo() {
+    return this.request('/api/settings/billing', {
+      credentials: 'include',
+    });
+  }
+
+  async updateSubscription(payload: { plan: string; seat_count?: number }) {
+    return this.request('/api/settings/billing', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async cancelSubscription() {
+    return this.request('/api/settings/billing/cancel', {
+      method: 'POST',
+      credentials: 'include',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE); 
