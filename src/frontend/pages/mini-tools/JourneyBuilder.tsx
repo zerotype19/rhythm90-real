@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../../components/AppLayout';
+import SavedResponseActions from '../../components/SavedResponseActions';
 import { FaRoute, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 
 function JourneyBuilder() {
   const [productOrService, setProductOrService] = useState('');
@@ -11,6 +13,7 @@ function JourneyBuilder() {
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
     if (!productOrService.trim() || !primaryObjective.trim()) {
@@ -92,6 +95,16 @@ function JourneyBuilder() {
             </div>
           </div>
         )}
+
+        {/* Action buttons for saving/favoriting/sharing */}
+        <div className="bg-gray-50 rounded-lg p-2 mt-3">
+          <SavedResponseActions
+            toolName="Journey Builder"
+            responseData={output}
+            teamId={currentTeam?.id}
+            summary={`Journey for: "${productOrService}" - ${primaryObjective}`}
+          />
+        </div>
       </div>
     );
   };

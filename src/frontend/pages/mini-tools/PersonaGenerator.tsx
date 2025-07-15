@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../../components/AppLayout';
+import SavedResponseActions from '../../components/SavedResponseActions';
 import { FaUser, FaArrowLeft, FaComments } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 
 function PersonaGenerator() {
   const [audienceSeed, setAudienceSeed] = useState('');
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { currentTeam } = useAuth();
   
   // Ask Mode state
   const [askQuestion, setAskQuestion] = useState('');
@@ -197,6 +200,16 @@ function PersonaGenerator() {
             </div>
           </div>
         )}
+
+        {/* Action buttons for saving/favoriting/sharing */}
+        <div className="bg-gray-50 rounded-lg p-2 mt-3">
+          <SavedResponseActions
+            toolName="Persona Generator"
+            responseData={output}
+            teamId={currentTeam?.id}
+            summary={`Persona for: "${audienceSeed.substring(0, 100)}${audienceSeed.length > 100 ? '...' : ''}"`}
+          />
+        </div>
       </div>
     );
   };

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../../components/AppLayout';
+import SavedResponseActions from '../../components/SavedResponseActions';
 import { FaCrosshairs, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 
 function GetToByGenerator() {
   const [audienceDescription, setAudienceDescription] = useState('');
@@ -11,6 +13,7 @@ function GetToByGenerator() {
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
     if (!audienceDescription.trim() || !behavioralOrEmotionalInsight.trim() || !brandProductRole.trim()) {
@@ -84,6 +87,16 @@ function GetToByGenerator() {
             </div>
           </div>
         )}
+
+        {/* Action buttons for saving/favoriting/sharing */}
+        <div className="bg-gray-50 rounded-lg p-2 mt-3">
+          <SavedResponseActions
+            toolName="Get/To/By Generator"
+            responseData={output}
+            teamId={currentTeam?.id}
+            summary={`Get/To/By for: "${audienceDescription.substring(0, 100)}${audienceDescription.length > 100 ? '...' : ''}"`}
+          />
+        </div>
       </div>
     );
   };

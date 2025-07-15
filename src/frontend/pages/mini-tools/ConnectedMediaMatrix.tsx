@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../../components/AppLayout';
+import SavedResponseActions from '../../components/SavedResponseActions';
 import { FaBroadcastTower, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 
 function ConnectedMediaMatrix() {
   const [audienceSnapshot, setAudienceSnapshot] = useState('');
@@ -11,6 +13,7 @@ function ConnectedMediaMatrix() {
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
     if (!audienceSnapshot.trim() || !primaryConversionAction.trim()) {
@@ -95,6 +98,16 @@ function ConnectedMediaMatrix() {
             </div>
           </div>
         )}
+
+        {/* Action buttons for saving/favoriting/sharing */}
+        <div className="bg-gray-50 rounded-lg p-2 mt-3">
+          <SavedResponseActions
+            toolName="Connected Media Matrix"
+            responseData={output}
+            teamId={currentTeam?.id}
+            summary={`Media matrix for: "${primaryConversionAction}"`}
+          />
+        </div>
       </div>
     );
   };
