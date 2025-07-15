@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../../components/AppLayout';
-import { FaUser, FaArrowLeft } from 'react-icons/fa';
+import { FaUser, FaArrowLeft, FaComments } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
 
 function PersonaGenerator() {
@@ -9,6 +9,15 @@ function PersonaGenerator() {
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Ask Mode state
+  const [askQuestion, setAskQuestion] = useState('');
+  const [askResponse, setAskResponse] = useState<any>(null);
+  const [isAsking, setIsAsking] = useState(false);
+  const [askError, setAskError] = useState('');
+  
+  // Generate a simple user ID for session management
+  const [userId] = useState(() => `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
   const handleGenerate = async () => {
     if (!audienceSeed.trim()) {
@@ -19,9 +28,10 @@ function PersonaGenerator() {
     setIsLoading(true);
     setError('');
     setOutput(null);
+    setAskResponse(null); // Clear previous ask responses
 
     try {
-      const response = await apiClient.personaGenerator(audienceSeed);
+      const response = await apiClient.personaGenerator(audienceSeed, userId);
 
       if (response.data) {
         setOutput(response.data);
@@ -30,6 +40,35 @@ function PersonaGenerator() {
       setError(err.response?.data?.error || 'Failed to generate persona');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAsk = async () => {
+    if (!askQuestion.trim()) {
+      setAskError('Please enter a question.');
+      return;
+    }
+
+    if (!output?.persona_sheet?.name) {
+      setAskError('Please generate a persona first.');
+      return;
+    }
+
+    setIsAsking(true);
+    setAskError('');
+    setAskResponse(null);
+
+    try {
+      const response = await apiClient.personaAsk(askQuestion, userId);
+
+      if (response.data) {
+        setAskResponse(response.data);
+        setAskQuestion(''); // Clear the question input
+      }
+    } catch (err: any) {
+      setAskError(err.response?.data?.error || 'Failed to get persona response');
+    } finally {
+      setIsAsking(false);
     }
   };
 
@@ -91,13 +130,62 @@ function PersonaGenerator() {
           </div>
         )}
 
-        {/* Ask Mode Message */}
-        {output.ask_mode_message && (
+        {/* Ask Mode Section */}
+        {output.persona_sheet && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Ask Mode</h3>
-            <div className="bg-purple-50 rounded-md p-4">
-              <p className="text-purple-900 font-medium">{output.ask_mode_message}</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <FaComments className="w-5 h-5 mr-2 text-purple-500" />
+              Ask Mode
+            </h3>
+            
+            {/* Ask Mode Message */}
+            {output.ask_mode_message && (
+              <div className="bg-purple-50 rounded-md p-4 mb-4">
+                <p className="text-purple-900 font-medium">{output.ask_mode_message}</p>
+              </div>
+            )}
+
+            {/* Ask Question Input */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ask {output.persona_sheet.name} a question:
+                </label>
+                <textarea
+                  value={askQuestion}
+                  onChange={(e) => setAskQuestion(e.target.value)}
+                  placeholder={`e.g., "Why do you prefer Instagram for product research?" or "What frustrates you most about shopping online?"`}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  rows={3}
+                />
+              </div>
+
+              {askError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{askError}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleAsk}
+                disabled={isAsking || !askQuestion.trim() || !output?.persona_sheet?.name}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              >
+                {isAsking ? 'Asking...' : `Ask ${output.persona_sheet.name}`}
+              </button>
             </div>
+
+            {/* Ask Response */}
+            {askResponse && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-md">
+                <h4 className="font-medium text-gray-900 mb-2">
+                  {askResponse.persona_name}'s Response:
+                </h4>
+                <div className="bg-white rounded-md p-3 border-l-4 border-purple-500">
+                  <p className="text-gray-800">{askResponse.answer}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

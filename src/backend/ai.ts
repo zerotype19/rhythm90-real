@@ -795,8 +795,9 @@ export async function handlePersonaGenerator(request: Request, env: Env): Promis
     // const user = await verifyAuth(request, env);
     // if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { audience_seed } = body;
+    const { audience_seed, user_id } = body;
     if (!audience_seed) return errorResponse('Audience seed is required', 400);
+    if (!user_id) return errorResponse('User ID is required', 400);
 
     const systemMessage = {
       role: 'system',
@@ -843,6 +844,11 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         persona_sheet: parsed.persona_sheet || {},
         ask_mode_message: parsed.ask_mode_message || 'Persona ready. Ask me anything.'
       };
+      
+      // Store persona in session for Ask Mode
+      if (parsed.persona_sheet && Object.keys(parsed.persona_sheet).length > 0) {
+        storePersonaSession(user_id, parsed.persona_sheet);
+      }
     } catch (err) {
       // If JSON parsing failed, try to extract structured data from the raw response
       parseStatus = 'fallback_used';
@@ -881,6 +887,11 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       if (Object.keys(persona_sheet).length > 0 || ask_mode_message) {
         backendPayload = { persona_sheet, ask_mode_message };
         warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+        
+        // Store persona in session for Ask Mode (even if extracted via fallback)
+        if (Object.keys(persona_sheet).length > 0) {
+          storePersonaSession(user_id, persona_sheet);
+        }
       } else {
         // Complete fallback: return raw response
         parseStatus = 'failed';
@@ -1557,6 +1568,118 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
   } catch (error) {
     console.error('Synthetic Focus Group error:', error);
     return errorResponse('Failed to generate focus group', 500);
+  }
+}
+
+// In-memory session store for persona context (in production, use KV store)
+const personaSessions = new Map<string, { persona: any; timestamp: number }>();
+
+// Clean up expired sessions (older than 1 hour)
+function cleanupExpiredSessions() {
+  const now = Date.now();
+  const oneHour = 60 * 60 * 1000;
+  for (const [key, value] of personaSessions.entries()) {
+    if (now - value.timestamp > oneHour) {
+      personaSessions.delete(key);
+    }
+  }
+}
+
+// Store persona in session
+function storePersonaSession(userId: string, persona: any) {
+  cleanupExpiredSessions();
+  personaSessions.set(userId, {
+    persona,
+    timestamp: Date.now()
+  });
+}
+
+// Get persona from session
+function getPersonaSession(userId: string): any | null {
+  cleanupExpiredSessions();
+  const session = personaSessions.get(userId);
+  return session ? session.persona : null;
+}
+
+export async function handlePersonaAsk(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { question, user_id } = body;
+    if (!question || !user_id) {
+      return errorResponse('Question and user_id are required', 400);
+    }
+
+    // Get persona from session
+    const persona = getPersonaSession(user_id);
+    if (!persona) {
+      return errorResponse('No persona found for this session. Please generate a persona first.', 400);
+    }
+
+    const systemMessage = {
+      role: 'system',
+      content: `You are ${persona.name}, ${persona.age}, from ${persona.location}. 
+
+Bio: ${persona.bio}
+Motivations: ${persona.motivations}
+Pain Points: ${persona.pain_points}
+Decision Drivers: ${persona.triggers}
+Media Habits: ${persona.media_habits}
+
+Answer the following question as ${persona.name}, staying in character and true to your persona. Be authentic and specific to your background, motivations, and experiences.`
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Question: ${question}`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      // For Ask Mode, we expect a simple text response, not JSON
+      backendPayload = {
+        answer: aiResponse.trim(),
+        persona_name: persona.name
+      };
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { 
+        answer: aiResponse.trim(),
+        persona_name: persona.name,
+        raw_response: aiResponse 
+      };
+      warning = 'Response parsing failed; returning raw text.';
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'persona-ask',
+      input_payload: body,
+      last_persona_snapshot: persona,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Persona Ask error:', error);
+    return errorResponse('Failed to get persona response', 500);
   }
 }
 

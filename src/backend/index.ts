@@ -1,7 +1,7 @@
 import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
-import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
+import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handlePersonaAsk, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 
@@ -73,6 +73,10 @@ export default {
 
       if (path === '/api/mini-tools/persona-generator' && request.method === 'POST') {
         return await handlePersonaGenerator(request, env);
+      }
+
+      if (path === '/api/mini-tools/persona-ask' && request.method === 'POST') {
+        return await handlePersonaAsk(request, env);
       }
 
       if (path === '/api/mini-tools/journey-builder' && request.method === 'POST') {

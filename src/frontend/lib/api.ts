@@ -157,10 +157,24 @@ class ApiClient {
     });
   }
 
-  async personaGenerator(audienceSeed: string) {
+  async personaGenerator(audienceSeed: string, userId: string) {
     return this.request('/api/mini-tools/persona-generator', {
       method: 'POST',
-      body: JSON.stringify({ audience_seed: audienceSeed }),
+      body: JSON.stringify({ 
+        audience_seed: audienceSeed,
+        user_id: userId
+      }),
+      credentials: 'include',
+    });
+  }
+
+  async personaAsk(question: string, userId: string) {
+    return this.request('/api/mini-tools/persona-ask', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        question: question,
+        user_id: userId
+      }),
       credentials: 'include',
     });
   }
