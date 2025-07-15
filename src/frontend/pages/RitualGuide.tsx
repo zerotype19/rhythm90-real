@@ -127,7 +127,7 @@ function RitualGuide() {
               </div>
               <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
                 {Array.isArray(section.content) ? (
-                  <ul className={`ml-5 space-y-1 ${section.key === 'preparation_tips' ? 'list-disc' : 'list-none'}`}>
+                  <ul className={`ml-5 space-y-1 ${['agenda', 'discussion_prompts', 'preparation_tips'].includes(section.key) ? 'list-disc' : 'list-none'}`}>
                     {section.content}
                   </ul>
                 ) : section.content}
