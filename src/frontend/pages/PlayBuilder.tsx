@@ -50,15 +50,8 @@ function PlayBuilder() {
   const renderOutput = () => {
     if (!output) return null;
 
-    // --- New: Sectioned Output Parsing ---
-    // Parse sections by **Section Name:**
-    const sectionRegex = /\*\*(.+?):\*\*\n([\s\S]*?)(?=(\n\*\*|$))/g;
-    const sections: { title: string; content: string }[] = [];
-    let match;
-    while ((match = sectionRegex.exec(output)) !== null) {
-      sections.push({ title: match[1].trim(), content: match[2].trim() });
-    }
-    // Section order and icons
+    // --- Robust Sectioned Output Parsing ---
+    // Handles both **Section Name:** and 1. Section Name:
     const sectionOrder = [
       'Hypothesis',
       'How-to-Run Summary',
@@ -75,32 +68,61 @@ function PlayBuilder() {
       'What Success Looks Like': <FaCheckCircle className="text-emerald-500 mr-2" />,
       'Next Recommendation': <FaArrowRight className="text-orange-500 mr-2" />,
     };
-    if (sections.length > 0) {
+
+    // Try to parse bolded sections (**Section Name:**)
+    const boldSectionRegex = /\*\*(.+?):\*\*\n([\s\S]*?)(?=(\n\*\*|$))/g;
+    let sections: { title: string; content: string }[] = [];
+    let match;
+    while ((match = boldSectionRegex.exec(output)) !== null) {
+      sections.push({ title: match[1].trim(), content: match[2].trim() });
+    }
+
+    // If not found, try numbered sections (1. Section Name:)
+    if (sections.length === 0) {
+      const numberedSectionRegex = /(?:^|\n)(\d+)\.\s*([^:]+):\n([\s\S]*?)(?=(?:\n\d+\.|$))/g;
+      while ((match = numberedSectionRegex.exec(output)) !== null) {
+        sections.push({ title: match[2].trim(), content: match[3].trim() });
+      }
+    }
+
+    // If still not found, fallback to output as a single block
+    if (sections.length === 0) {
       return (
-        <div className="space-y-6">
-          {sectionOrder.map((section) => {
-            const sec = sections.find(s => s.title === section);
-            if (!sec) return null;
-            return (
-              <div key={section} className="bg-gray-50 rounded-lg border-l-4 shadow-sm p-4 flex items-start">
-                <div className="mt-1">{sectionIcons[section]}</div>
-                <div className="ml-3 flex-1">
-                  <h3 className="font-bold text-base mb-2 flex items-center">{section}</h3>
-                  <div className="prose prose-sm text-gray-800 whitespace-pre-line">{sec.content}</div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="prose max-w-none text-xs">
+          <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <FaLightbulb aria-label="Output" className="inline text-yellow-400" /> Output
+          </label>
+          <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100">{output}</pre>
         </div>
       );
     }
-    // Fallback: show as preformatted text
+
+    // Render sections in order, only if present
     return (
-      <div className="prose max-w-none text-xs">
-        <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
-          <FaLightbulb aria-label="Output" className="inline text-yellow-400" /> Output
-        </label>
-        <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100">{output}</pre>
+      <div className="space-y-6">
+        {sectionOrder.map((section) => {
+          const sec = sections.find(s => s.title.toLowerCase() === section.toLowerCase());
+          if (!sec) return null;
+          return (
+            <div key={section} className="bg-gray-50 rounded-lg border-l-4 shadow-sm p-4 flex items-start">
+              <div className="mt-1">{sectionIcons[section]}</div>
+              <div className="ml-3 flex-1">
+                <h3 className="font-bold text-base mb-2 flex items-center">{section}</h3>
+                <div className="prose prose-sm text-gray-800 whitespace-pre-line">{sec.content}</div>
+              </div>
+            </div>
+          );
+        })}
+        {/* Render any extra sections not in the standard order */}
+        {sections.filter(s => !sectionOrder.map(x => x.toLowerCase()).includes(s.title.toLowerCase())).map((sec, idx) => (
+          <div key={sec.title + idx} className="bg-gray-50 rounded-lg border-l-4 shadow-sm p-4 flex items-start">
+            <div className="mt-1"><FaLightbulb className="text-yellow-500 mr-2" /></div>
+            <div className="ml-3 flex-1">
+              <h3 className="font-bold text-base mb-2 flex items-center">{sec.title}</h3>
+              <div className="prose prose-sm text-gray-800 whitespace-pre-line">{sec.content}</div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   };
