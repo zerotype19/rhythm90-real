@@ -1488,13 +1488,10 @@ export async function handleSyntheticFocusGroup(request: Request, env: Env): Pro
 Audience: ${audience_seed_info}
 Segments: ${must_include_segments || 'None'}
 
-Create 5 personas with: name, age, location, bio, motivations, pain_points, triggers, media_habits.
+Create EXACTLY 5 personas. Each persona needs: name, age, location, bio, motivations, pain_points, triggers, media_habits.
 
 Format:
-{
-  "persona_lineup": [{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."}],
-  "ask_mode_message": "All five personas are present. Address your question to a name or to 'the group.' When finished, say 'exit group.'"
-}
+{"persona_lineup":[{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."},{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."}],"ask_mode_message":"All five personas are present. Address your question to a name or to 'the group.' When finished, say 'exit group.'"}
 
 Return ONLY raw JSON.`
     };
@@ -1509,8 +1506,15 @@ Return ONLY raw JSON.`
 
     try {
       const parsed = JSON.parse(aiResponse);
+      const persona_lineup = Array.isArray(parsed.persona_lineup) ? parsed.persona_lineup : [];
+      
+      // Check if we got all 5 personas
+      if (persona_lineup.length < 5) {
+        warning = `Expected 5 personas but received ${persona_lineup.length}. AI response may have been truncated.`;
+      }
+      
       backendPayload = {
-        persona_lineup: Array.isArray(parsed.persona_lineup) ? parsed.persona_lineup : [],
+        persona_lineup,
         ask_mode_message: parsed.ask_mode_message || 'All five personas are present. Address your question to a name or to \'the group.\' When finished, say \'exit group.\''
       };
     } catch (err) {
@@ -1543,7 +1547,7 @@ Return ONLY raw JSON.`
       // If we extracted any data, return it structured
       if (persona_lineup.length > 0 || ask_mode_message) {
         backendPayload = { persona_lineup, ask_mode_message };
-        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+        warning = `AI response was not valid JSON; extracted ${persona_lineup.length} personas heuristically. Expected 5.`;
       } else {
         // Complete fallback: return raw response
         parseStatus = 'failed';
