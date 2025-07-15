@@ -485,6 +485,19 @@ const HistoryPage: React.FC = () => {
                     
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2 ml-4">
+                      {/* Favorite Button */}
+                      <button
+                        onClick={() => handleFavoriteToggle(response.id, !response.is_favorite)}
+                        className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-md transition-colors ${
+                          response.is_favorite 
+                            ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200' 
+                            : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                        }`}
+                      >
+                        <FaHeart className={`w-3 h-3 mr-1 ${response.is_favorite ? 'fill-current' : ''}`} />
+                        {response.is_favorite ? 'Favorited' : 'Favorite'}
+                      </button>
+                      
                       {/* Share Button */}
                       <button
                         onClick={() => openShareModal(response)}
