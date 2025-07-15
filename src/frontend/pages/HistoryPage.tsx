@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaSearch, FaStar, FaHeart, FaShare, FaEye, FaGlobe, FaUsers } from 'react-icons/fa';
+import { FaArrowLeft, FaSearch, FaStar, FaHeart, FaShare, FaEye, FaGlobe, FaUsers, FaTimes } from 'react-icons/fa';
 import { apiClient } from '../lib/api';
 import { SavedResponseActions } from '../components/SavedResponseActions';
 import AppLayout from '../components/AppLayout';
@@ -522,32 +522,33 @@ const HistoryPage: React.FC = () => {
 
       {/* View Modal */}
       {showViewModal && selectedResponse && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b">
-              <div className="flex items-center">
-                {getToolIcon(selectedResponse.tool_name)}
-                <h3 className="ml-2 text-lg font-medium">{selectedResponse.tool_name}</h3>
-              </div>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="prose max-w-none">
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Summary</h4>
-                  <p className="text-gray-900">{selectedResponse.summary}</p>
-                </div>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowViewModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-2">Full Response</h4>
+                  <h2 className="text-xl font-bold text-gray-900">{selectedResponse.tool_name}</h2>
+                  <p className="text-sm text-gray-500">{formatDate(selectedResponse.created_at)}</p>
+                </div>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <FaTimes className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <h3 className="font-semibold text-gray-900 mb-2">Full Response</h3>
+                <div className="bg-gray-50 rounded-md p-4 overflow-x-auto max-h-[60vh] overflow-y-auto">
                   <div 
-                    className="text-gray-900 whitespace-pre-wrap break-words overflow-x-auto"
+                    className="text-sm text-gray-700 whitespace-pre-wrap break-words"
                     dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
                   />
                 </div>
