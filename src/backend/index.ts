@@ -8,6 +8,7 @@ import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSh
 import { verifyAuth } from './auth';
 import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
 import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
+import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -372,6 +373,27 @@ export default {
         } else {
           return errorResponse(result.message, 400);
         }
+      }
+
+      // Dashboard routes
+      if (path === '/api/dashboard/overview' && request.method === 'GET') {
+        return await handleDashboardOverview(request, env, ctx);
+      }
+      if (path === '/api/dashboard/announcements' && request.method === 'GET') {
+        return await handleGetAnnouncements(request, env, ctx);
+      }
+      if (path === '/api/dashboard/announcements' && request.method === 'POST') {
+        return await handleCreateAnnouncement(request, env, ctx);
+      }
+      if (path.startsWith('/api/dashboard/announcements/') && request.method === 'PATCH') {
+        const id = path.split('/').pop();
+        if (!id) return errorResponse('Missing announcement id', 400);
+        return await handleUpdateAnnouncement(request, env, ctx, id);
+      }
+      if (path.startsWith('/api/dashboard/announcements/') && request.method === 'DELETE') {
+        const id = path.split('/').pop();
+        if (!id) return errorResponse('Missing announcement id', 400);
+        return await handleDeleteAnnouncement(request, env, ctx, id);
       }
 
       // Health check
