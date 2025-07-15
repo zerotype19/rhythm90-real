@@ -236,13 +236,13 @@ const HistoryPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Search */}
               <div className="relative">
-                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search responses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
                 />
               </div>
 
@@ -250,7 +250,7 @@ const HistoryPage: React.FC = () => {
               <select
                 value={selectedTool}
                 onChange={(e) => setSelectedTool(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
               >
                 <option value="all">All Tools</option>
                 {availableTools.map(tool => (
@@ -261,26 +261,26 @@ const HistoryPage: React.FC = () => {
               {/* Favorites Filter */}
               <button
                 onClick={() => setShowFavoritesOnly((v) => !v)}
-                className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`inline-flex items-center justify-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                   showFavoritesOnly 
                     ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                <FaHeart className={`w-4 h-4 mr-2 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                <FaHeart className={`w-3 h-3 mr-1 ${showFavoritesOnly ? 'fill-current' : ''}`} />
                 Favorites Only
               </button>
 
               {/* Shared Filter */}
               <button
                 onClick={() => setShowSharedOnly((v) => !v)}
-                className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`inline-flex items-center justify-center px-3 py-2 rounded-md text-xs font-medium transition-colors ${
                   showSharedOnly 
                     ? 'bg-blue-100 text-blue-800 border border-blue-300' 
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                <FaShare className="w-4 h-4 mr-2" />
+                <FaShare className="w-3 h-3 mr-1" />
                 Shared Only
               </button>
             </div>
@@ -313,27 +313,14 @@ const HistoryPage: React.FC = () => {
             <div className="space-y-4">
               {filteredResponses.map((response) => (
                 <div key={response.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      {/* Tool name */}
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {response.tool_name}
-                      </h3>
-                      
-                      {/* Summary */}
-                      <p className="text-gray-700 mb-3">
-                        {truncateSummary(response.summary)}
-                      </p>
-                      
-                      {/* Date */}
-                      <p className="text-sm text-gray-500">
-                        Saved on {formatDate(response.created_at)}
-                      </p>
-                    </div>
+                  {/* Title and Badges Row */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {response.tool_name}
+                    </h3>
                     
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 ml-4">
-                      {/* Badges */}
+                    {/* Badges - Right Aligned */}
+                    <div className="flex items-center gap-2">
                       {response.is_favorite && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           <FaHeart className="w-3 h-3 mr-1 fill-current" />
@@ -352,16 +339,28 @@ const HistoryPage: React.FC = () => {
                           Team
                         </span>
                       )}
-                      
-                      {/* View Button */}
-                      <button
-                        onClick={() => { setSelectedResponse(response); setShowViewModal(true); }}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                      >
-                        <FaEye className="w-4 h-4 mr-1" />
-                        View
-                      </button>
                     </div>
+                  </div>
+                  
+                  {/* Summary */}
+                  <p className="text-gray-700 mb-3">
+                    {truncateSummary(response.summary)}
+                  </p>
+                  
+                  {/* Date and View Button Row */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500 w-full">
+                      Saved on {formatDate(response.created_at)}
+                    </p>
+                    
+                    {/* View Button */}
+                    <button
+                      onClick={() => { setSelectedResponse(response); setShowViewModal(true); }}
+                      className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors ml-4"
+                    >
+                      <FaEye className="w-3 h-3 mr-1" />
+                      View
+                    </button>
                   </div>
                 </div>
               ))}
