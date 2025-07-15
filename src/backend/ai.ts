@@ -311,7 +311,7 @@ Your job is to:
 Format your response as JSON with these exact field names:
 agenda, discussion_prompts, roles_contributions, preparation_tips, success_definition.
 
-Ensure agenda and discussion_prompts are arrays, even if only one item.
+Ensure agenda, discussion_prompts, and preparation_tips are arrays, even if only one item.
 Explicitly call out signal-related prompts and blockers.
 Define success as collective team learning + individual clarity on next actions.
 Include domain-specific or category-specific examples when possible.
@@ -357,7 +357,7 @@ Additional Refinements:
         agenda: Array.isArray(parsed.agenda) ? parsed.agenda : (parsed.agenda ? [parsed.agenda] : []),
         discussion_prompts: Array.isArray(parsed.discussion_prompts) ? parsed.discussion_prompts : (parsed.discussion_prompts ? [parsed.discussion_prompts] : []),
         roles_contributions: parsed.roles_contributions || '',
-        preparation_tips: parsed.preparation_tips || '',
+        preparation_tips: Array.isArray(parsed.preparation_tips) ? parsed.preparation_tips : (parsed.preparation_tips ? [parsed.preparation_tips] : []),
         success_definition: parsed.success_definition || ''
       };
     } catch (err) {
