@@ -542,7 +542,7 @@ function TeamSharedPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
-                <div className="mb-4">
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">{selectedResponse.tool_name}</h2>
                     <p className="text-sm text-gray-500">{formatDate(selectedResponse.created_at)}</p>
@@ -550,6 +550,12 @@ function TeamSharedPage() {
                       <p className="text-sm text-gray-500">Shared by {selectedResponse.user_email}</p>
                     )}
                   </div>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FaTimes className="w-6 h-6" />
+                  </button>
                 </div>
 
                 <div className="mb-4">
