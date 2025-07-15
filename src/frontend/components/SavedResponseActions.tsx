@@ -163,7 +163,7 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
   };
 
   return (
-    <div className="flex gap-3 items-center justify-end pt-4 border-t border-gray-200">
+    <div className="flex gap-3 items-center justify-end pt-4">
       {/* Save */}
       <button
         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
