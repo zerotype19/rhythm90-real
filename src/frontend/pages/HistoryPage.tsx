@@ -332,73 +332,51 @@ const HistoryPage: React.FC = () => {
                   </div>
                 ) : (
                   filteredResponses.map((response) => (
-                    <div key={response.id} className="bg-white rounded-lg shadow p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          {/* Header */}
-                          <div className="flex items-center mb-3">
-                            <div className="flex items-center text-gray-600 mr-3">
-                              {getToolIcon(response.tool_name)}
-                              <span className="ml-2 text-sm font-medium">{response.tool_name}</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {response.is_favorite && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  <span className="mr-1">⭐</span>
-                                  Favorite
-                                </span>
-                              )}
-                              {response.is_shared_public && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  <span className="mr-1">🌐</span>
-                                  Public
-                                </span>
-                              )}
-                              {response.is_shared_team && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  <span className="mr-1">👥</span>
-                                  Team
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Summary */}
-                          <p className="text-gray-900 mb-3">
-                            {truncateSummary(response.summary)}
-                          </p>
-
-                          {/* Date */}
-                          <div className="text-sm text-gray-500">
-                            Saved on {formatDate(response.created_at)}
-                          </div>
+                    <div key={response.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow flex flex-col gap-2">
+                      {/* Tool name and badges row */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-gray-900 text-base">
+                            {/* Optionally add emoji for tool type */}
+                            {response.tool_name === 'Plain English Translator' && '🔤 '}
+                            {response.tool_name === 'Persona Generator' && '👤 '}
+                            {response.tool_name === 'Synthetic Focus Group' && '👥 '}
+                            {response.tool_name === 'Ritual Guide' && '📅 '}
+                            {response.tool_name === 'Play Builder' && '🎯 '}
+                            {response.tool_name === 'Signal Lab' && '📊 '}
+                            {response.tool_name}
+                          </span>
+                          {/* Badges */}
+                          {response.is_favorite && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 ml-1">
+                              ⭐ Favorite
+                            </span>
+                          )}
+                          {response.is_shared_public && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-1">
+                              🌐 Public
+                            </span>
+                          )}
+                          {response.is_shared_team && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-1">
+                              👥 Team
+                            </span>
+                          )}
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center space-x-2 ml-4">
-                          <button
-                            onClick={() => {
-                              setSelectedResponse(response);
-                              setShowViewModal(true);
-                            }}
-                            className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                          >
-                            <span className="mr-1">👁️</span>
-                            View
-                          </button>
-                          
-                          <SavedResponseActions
-                            responseId={response.id}
-                            toolName={response.tool_name}
-                            responseBlob={response.response_blob}
-                            currentTeamId={response.team_id}
-                            onStatusChange={() => {
-                              // Refresh the responses list
-                              window.location.reload();
-                            }}
-                          />
-                        </div>
+                        {/* View Button */}
+                        <button
+                          onClick={() => { setSelectedResponse(response); setShowViewModal(true); }}
+                          className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-100 text-gray-700 font-semibold text-xs hover:bg-gray-200 transition"
+                        >
+                          👁️ View
+                        </button>
                       </div>
+                      {/* Summary */}
+                      <div className="text-gray-700 text-sm mb-2">
+                        {truncateSummary(response.summary)}
+                      </div>
+                      {/* Date */}
+                      <div className="text-xs text-gray-400 mt-auto">Saved on {formatDate(response.created_at)}</div>
                     </div>
                   ))
                 )}
