@@ -533,10 +533,16 @@ function TeamSharedPage() {
 
         {/* Response Details Modal */}
         {showModal && selectedResponse && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowModal(false)}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
+                <div className="mb-4">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">{selectedResponse.tool_name}</h2>
                     <p className="text-sm text-gray-500">{formatDate(selectedResponse.created_at)}</p>
@@ -544,12 +550,6 @@ function TeamSharedPage() {
                       <p className="text-sm text-gray-500">Shared by {selectedResponse.user_email}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <FaTimes className="w-6 h-6" />
-                  </button>
                 </div>
 
                 <div className="mb-4">
@@ -572,12 +572,6 @@ function TeamSharedPage() {
                       Copy Public Link
                     </button>
                   )}
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  >
-                    Close
-                  </button>
                 </div>
               </div>
             </div>
