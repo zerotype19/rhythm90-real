@@ -1,5 +1,6 @@
 import { verifyAuth, getUserFromToken } from './auth';
 import { Env } from './types';
+import { jsonResponse, errorResponse } from './utils';
 
 // Utility: Only allow Kevin as admin
 function isKevin(email: string) {
@@ -19,7 +20,7 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
   try {
     const user = await verifyAuth(request, env);
     if (!user) {
-      return new Response('Unauthorized', { status: 401 });
+      return errorResponse('Unauthorized', 401);
     }
     
     // Get user's team_id from team_members table
@@ -28,7 +29,7 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
     `).bind(user.id).first();
     
     if (!teamMember?.team_id) {
-      return new Response('User must belong to a team', { status: 400 });
+      return errorResponse('User must belong to a team', 400);
     }
     
     const teamId = teamMember.team_id;
@@ -99,7 +100,7 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
 
   debugLog(env, 'Dashboard overview data', { stats, signals, personal, team, announcements });
 
-  return new Response(JSON.stringify({
+  return jsonResponse({
     stats: {
       totalSavedResponses: stats?.saved_responses || 0,
       totalTeamShared: stats?.saved_responses || 0, // This should be calculated separately
@@ -118,15 +119,10 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
       responseId: activity.response_id
     })) || [],
     announcements: announcements.results || [],
-  }), {
-    headers: { 'Content-Type': 'application/json' },
   });
   } catch (error) {
     console.error('Dashboard overview error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error', details: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return errorResponse('Internal server error', 500);
   }
 }
 
@@ -147,20 +143,18 @@ export async function handleGetAnnouncements(request: Request, env: Env, ctx: an
     FROM dashboard_announcements
     ORDER BY created_at DESC
   `).all();
-  return new Response(JSON.stringify({ announcements: rows.results }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return jsonResponse({ announcements: rows.results });
 }
 
 // POST /api/dashboard/announcements
 export async function handleCreateAnnouncement(request: Request, env: Env, ctx: any) {
   const user = await verifyAuth(request, env);
   if (!user) {
-    return new Response('Unauthorized', { status: 401 });
+    return errorResponse('Unauthorized', 401);
   }
   if (!isKevin(user.email)) {
     debugLog(env, 'Unauthorized announcement create attempt', { user });
-    return new Response('Unauthorized', { status: 403 });
+    return errorResponse('Unauthorized', 403);
   }
   const body = await request.json();
   const id = crypto.randomUUID();
@@ -169,20 +163,18 @@ export async function handleCreateAnnouncement(request: Request, env: Env, ctx: 
     VALUES (?, ?, ?, ?, datetime('now'), ?, ?)
   `).bind(id, body.title, body.summary || body.body, body.link || null, user.email, body.is_active ? 1 : 0).run();
   debugLog(env, 'Announcement created', { id, ...body });
-  return new Response(JSON.stringify({ success: true, id }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return jsonResponse({ success: true, id });
 }
 
 // PATCH /api/dashboard/announcements/:id
 export async function handleUpdateAnnouncement(request: Request, env: Env, ctx: any, id: string) {
   const user = await verifyAuth(request, env);
   if (!user) {
-    return new Response('Unauthorized', { status: 401 });
+    return errorResponse('Unauthorized', 401);
   }
   if (!isKevin(user.email)) {
     debugLog(env, 'Unauthorized announcement update attempt', { user });
-    return new Response('Unauthorized', { status: 403 });
+    return errorResponse('Unauthorized', 403);
   }
   const body = await request.json();
   await env.DB.prepare(`
@@ -191,26 +183,22 @@ export async function handleUpdateAnnouncement(request: Request, env: Env, ctx: 
     WHERE id = ?
   `).bind(body.title, body.summary || body.body, body.link || null, body.is_active ? 1 : 0, id).run();
   debugLog(env, 'Announcement updated', { id, ...body });
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return jsonResponse({ success: true });
 }
 
 // DELETE /api/dashboard/announcements/:id
 export async function handleDeleteAnnouncement(request: Request, env: Env, ctx: any, id: string) {
   const user = await verifyAuth(request, env);
   if (!user) {
-    return new Response('Unauthorized', { status: 401 });
+    return errorResponse('Unauthorized', 401);
   }
   if (!isKevin(user.email)) {
     debugLog(env, 'Unauthorized announcement delete attempt', { user });
-    return new Response('Unauthorized', { status: 403 });
+    return errorResponse('Unauthorized', 403);
   }
   await env.DB.prepare(`
     DELETE FROM dashboard_announcements WHERE id = ?
   `).bind(id).run();
   debugLog(env, 'Announcement deleted', { id });
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return jsonResponse({ success: true });
 } 
