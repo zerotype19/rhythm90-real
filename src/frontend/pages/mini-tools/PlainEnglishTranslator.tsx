@@ -4,12 +4,14 @@ import AppLayout from '../../components/AppLayout';
 import SavedResponseActions from '../../components/SavedResponseActions';
 import { FaLanguage, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 
 function PlainEnglishTranslator() {
   const [originalText, setOriginalText] = useState('');
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
     if (!originalText.trim()) {
@@ -112,6 +114,7 @@ function PlainEnglishTranslator() {
           <SavedResponseActions
             toolName="Plain English Translator"
             responseData={output}
+            teamId={currentTeam?.id}
             summary={`Plain English translation of: "${originalText.substring(0, 100)}${originalText.length > 100 ? '...' : ''}"`}
           />
         </div>

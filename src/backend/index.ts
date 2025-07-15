@@ -4,7 +4,7 @@ import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handlePersonaAsk, handleFocusGroupAsk, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
-import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getSharedPublic } from './savedResponses';
+import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getPublicShared } from './savedResponses';
 import { verifyAuth } from './auth';
 
 export default {
@@ -158,56 +158,96 @@ export default {
         if (!body.response_blob || !body.tool_name) {
           return errorResponse('Missing required fields', 400);
         }
-        const id = await saveResponse(env.DB, {
+        
+        const result = await saveResponse(env, {
           user_id: user.id,
-          team_id: body.team_id || null,
+          team_id: user.team_id,
           tool_name: body.tool_name,
           summary: body.summary,
-          response_blob: body.response_blob,
+          response_blob: body.response_blob
         });
-        return jsonResponse({ id });
+        
+        if (result.success) {
+          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          return errorResponse(result.message, 400);
+        }
       }
+
       if (path === '/api/saved-responses/favorite' && request.method === 'POST') {
         const user = await verifyAuth(request, env);
         if (!user) return errorResponse('Unauthorized', 401);
         const body = await request.json();
+        
         if (!body.response_id || typeof body.is_favorite !== 'boolean') {
           return errorResponse('Missing required fields', 400);
         }
-        await toggleFavorite(env.DB, user.id, body.response_id, body.is_favorite);
-        return jsonResponse({ ok: true });
+        
+        const result = await toggleFavorite(env, body.response_id, user.id, body.is_favorite);
+        
+        if (result.success) {
+          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          return errorResponse(result.message, 400);
+        }
       }
+
       if (path === '/api/saved-responses/share' && request.method === 'POST') {
         const user = await verifyAuth(request, env);
         if (!user) return errorResponse('Unauthorized', 401);
         const body = await request.json();
-        if (!body.response_id || (typeof body.is_shared_public !== 'boolean' && typeof body.is_shared_team !== 'boolean')) {
+        
+        if (!body.response_id || typeof body.is_shared_public !== 'boolean' || typeof body.is_shared_team !== 'boolean') {
           return errorResponse('Missing required fields', 400);
         }
-        const slug = await setShareStatus(env.DB, user.id, body.response_id, body.is_shared_public, body.is_shared_team);
-        return jsonResponse({ shared_slug: slug });
+        
+        const result = await setShareStatus(env, body.response_id, user.id, body.is_shared_public, body.is_shared_team, user.team_id);
+        
+        if (result.success) {
+          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          return errorResponse(result.message, 400);
+        }
       }
+
       if (path.startsWith('/api/saved-responses/user/') && request.method === 'GET') {
         const user = await verifyAuth(request, env);
         if (!user) return errorResponse('Unauthorized', 401);
-        const user_id = path.split('/').pop();
-        if (user.id !== user_id) return errorResponse('Forbidden', 403);
-        const results = await getUserHistory(env.DB, user_id);
-        return jsonResponse({ results: results.results });
+        
+        const result = await getUserHistory(env, user.id);
+        
+        if (result.success) {
+          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          return errorResponse(result.message, 400);
+        }
       }
+
       if (path.startsWith('/api/saved-responses/team/') && request.method === 'GET') {
         const user = await verifyAuth(request, env);
         if (!user) return errorResponse('Unauthorized', 401);
-        const team_id = path.split('/').pop();
-        // TODO: Optionally check user is a member of team_id
-        const results = await getTeamSharedHistory(env.DB, team_id);
-        return jsonResponse({ results: results.results });
+        if (!user.team_id) return errorResponse('User must belong to a team', 400);
+        
+        const result = await getTeamSharedHistory(env, user.team_id);
+        
+        if (result.success) {
+          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          return errorResponse(result.message, 400);
+        }
       }
+
       if (path.startsWith('/api/saved-responses/public/') && request.method === 'GET') {
         const slug = path.split('/').pop();
-        const result = await getSharedPublic(env.DB, slug);
-        if (!result) return errorResponse('Not found', 404);
-        return jsonResponse({ result });
+        if (!slug) return errorResponse('Missing slug', 400);
+        
+        const result = await getPublicShared(env, slug);
+        
+        if (result.success) {
+          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        } else {
+          return errorResponse(result.message, 404);
+        }
       }
 
       // Health check

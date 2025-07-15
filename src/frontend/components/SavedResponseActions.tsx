@@ -37,17 +37,52 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [shareError, setShareError] = useState('');
   const [favorite, setFavorite] = useState(isFavorite);
+  const [currentResponseId, setCurrentResponseId] = useState(responseId);
+
+  // Auto-save function for unsaved responses
+  const autoSave = async (action: 'favorite' | 'share'): Promise<string | null> => {
+    if (currentResponseId) return currentResponseId; // Already saved
+    
+    const autoSummary = action === 'favorite' 
+      ? `Favorited response from ${toolName}`
+      : `Shared response from ${toolName}`;
+    
+    try {
+      const res = await apiClient.saveResponse({
+        summary: autoSummary,
+        tool_name: toolName,
+        response_blob: JSON.stringify(responseData),
+        team_id: teamId,
+      });
+      
+      if (res.data?.id) {
+        setCurrentResponseId(res.data.id);
+        return res.data.id;
+      }
+      return null;
+    } catch (e) {
+      console.error('Auto-save failed:', e);
+      return null;
+    }
+  };
 
   // Handle favorite toggle
   const handleFavorite = async () => {
-    if (!responseId) return;
     setFavoriting(true);
     try {
+      // Auto-save if needed
+      const responseId = await autoSave('favorite');
+      if (!responseId) {
+        setSaveError('Failed to save response');
+        return;
+      }
+
+      // Toggle favorite
       await apiClient.toggleFavorite(responseId, !favorite);
       setFavorite(!favorite);
       onStatusChange && onStatusChange();
     } catch (e) {
-      // Optionally show error
+      setSaveError('Failed to toggle favorite');
     } finally {
       setFavoriting(false);
     }
@@ -68,9 +103,13 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
         response_blob: JSON.stringify(responseData),
         team_id: teamId,
       });
-      setShowSave(false);
-      setSaveSummary('');
-      onStatusChange && onStatusChange();
+      
+      if (res.data?.id) {
+        setCurrentResponseId(res.data.id);
+        setShowSave(false);
+        setSaveSummary('');
+        onStatusChange && onStatusChange();
+      }
     } catch (e) {
       setSaveError('Failed to save.');
     } finally {
@@ -81,18 +120,33 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
   // Handle share
   const handleShare = async () => {
     setShareError('');
-    if (!responseId) return;
     if (!shareType) {
       setShareError('Select share type.');
       return;
     }
+
+    // Check team requirement for team sharing
+    if (shareType === 'team' && !teamId) {
+      setShareError('You must belong to a team to share with team.');
+      return;
+    }
+
     setSharing(true);
     try {
+      // Auto-save if needed
+      const responseId = await autoSave('share');
+      if (!responseId) {
+        setShareError('Failed to save response');
+        return;
+      }
+
+      // Set share status
       const res = await apiClient.setShareStatus(
         responseId,
         shareType === 'public',
         shareType === 'team'
       );
+      
       if (shareType === 'public' && res.data?.shared_slug) {
         setPublicLink(`${window.location.origin}/shared/${res.data.shared_slug}`);
       } else {
@@ -112,8 +166,9 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
     <div className="flex gap-3 items-center justify-end pt-4 border-t border-gray-200">
       {/* Save */}
       <button
-        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         onClick={() => setShowSave(true)}
+        disabled={saving || favoriting || sharing}
         title="Save"
       >
         <FaSave className="w-4 h-4" />
@@ -121,33 +176,30 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
       </button>
       
       {/* Favorite */}
-      {responseId && (
-        <button
-          className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
-            favorite 
-              ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' 
-              : 'text-gray-600 hover:text-yellow-600 hover:bg-yellow-50'
-          }`}
-          onClick={handleFavorite}
-          disabled={favoriting}
-          title={favorite ? 'Unfavorite' : 'Favorite'}
-        >
-          <FaHeart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />
-          <span>{favorite ? 'Favorited' : 'Favorite'}</span>
-        </button>
-      )}
+      <button
+        className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          favorite 
+            ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' 
+            : 'text-gray-600 hover:text-yellow-600 hover:bg-yellow-50'
+        }`}
+        onClick={handleFavorite}
+        disabled={saving || favoriting || sharing}
+        title={favorite ? 'Unfavorite' : 'Favorite'}
+      >
+        <FaHeart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />
+        <span>{favorite ? 'Favorited' : 'Favorite'}</span>
+      </button>
       
       {/* Share */}
-      {responseId && (
-        <button
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-          onClick={() => setShowShare(true)}
-          title="Share"
-        >
-          <FaShare className="w-4 h-4" />
-          <span>Share</span>
-        </button>
-      )}
+      <button
+        className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={() => setShowShare(true)}
+        disabled={saving || favoriting || sharing}
+        title="Share"
+      >
+        <FaShare className="w-4 h-4" />
+        <span>Share</span>
+      </button>
 
       {/* Save Modal */}
       {showSave && (
@@ -190,6 +242,11 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
                 <span className="ml-2">Share with Team</span>
               </label>
             </div>
+            {!teamId && (
+              <div className="text-yellow-600 text-sm mb-2">
+                ⚠️ You must belong to a team to share with team.
+              </div>
+            )}
             {shareError && <div className="text-red-500 text-sm mb-2">{shareError}</div>}
             {publicLink && (
               <div className="bg-gray-100 rounded p-2 mb-2 text-xs">
@@ -198,7 +255,7 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
             )}
             <div className="flex gap-2 justify-end mt-4">
               <button className="px-4 py-2" onClick={() => setShowShare(false)} disabled={sharing}>Cancel</button>
-              <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={handleShare} disabled={sharing || !shareType}>
+              <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={handleShare} disabled={sharing || !shareType || (shareType === 'team' && !teamId)}>
                 {sharing ? 'Sharing...' : 'Share'}
               </button>
             </div>

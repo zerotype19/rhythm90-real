@@ -288,8 +288,8 @@ class ApiClient {
   /**
    * Get user history (saved responses)
    */
-  async getUserHistory(user_id: string) {
-    return this.request(`/api/saved-responses/user/${user_id}`, {
+  async getUserHistory() {
+    return this.request('/api/saved-responses/user/me', {
       credentials: 'include',
     });
   }
@@ -297,8 +297,8 @@ class ApiClient {
   /**
    * Get team shared history
    */
-  async getTeamSharedHistory(team_id: string) {
-    return this.request(`/api/saved-responses/team/${team_id}`, {
+  async getTeamSharedHistory() {
+    return this.request('/api/saved-responses/team/me', {
       credentials: 'include',
     });
   }
@@ -306,7 +306,7 @@ class ApiClient {
   /**
    * Get a public shared response by slug
    */
-  async getSharedPublic(slug: string) {
+  async getPublicShared(slug: string) {
     return this.request(`/api/saved-responses/public/${slug}`, {
       credentials: 'include',
     });
