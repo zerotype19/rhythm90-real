@@ -16,7 +16,21 @@ function debugLog(env: Env, msg: string, meta?: any) {
 
 // GET /api/dashboard/overview
 export async function handleDashboardOverview(request: Request, env: Env, ctx: any) {
-  const { user, teamId } = await verifyAuth(request, env);
+  const user = await verifyAuth(request, env);
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  
+  // Get user's team_id from team_members table
+  const teamMember = await env.DB.prepare(`
+    SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+  `).bind(user.id).first();
+  
+  if (!teamMember?.team_id) {
+    return new Response('User must belong to a team', { status: 400 });
+  }
+  
+  const teamId = teamMember.team_id;
   debugLog(env, 'Dashboard overview requested', { user, teamId });
 
   // Team stats (last 30d)
@@ -63,7 +77,17 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
 
   // Active dashboard announcements
   const announcements = await env.DB.prepare(`
-    SELECT * FROM dashboard_announcements
+    SELECT 
+      id,
+      title,
+      content as summary,
+      content as body,
+      link,
+      created_at,
+      author_email,
+      is_active,
+      created_at as updated_at
+    FROM dashboard_announcements
     WHERE is_active = 1
     ORDER BY created_at DESC
   `).all();
@@ -72,13 +96,22 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
 
   return new Response(JSON.stringify({
     stats: {
-      plays_created: stats?.plays_created || 0,
-      rituals_completed: stats?.rituals_completed || 0,
-      saved_responses: stats?.saved_responses || 0,
-      signals_logged: signals?.signals_logged || 0,
+      totalSavedResponses: stats?.saved_responses || 0,
+      totalTeamShared: stats?.saved_responses || 0, // This should be calculated separately
+      topTools: [
+        { toolName: 'Play Builder', count: stats?.plays_created || 0 },
+        { toolName: 'Signal Lab', count: signals?.signals_logged || 0 },
+        { toolName: 'Ritual Guide', count: stats?.rituals_completed || 0 }
+      ]
     },
-    personal_activity: personal.results || [],
-    team_activity: team.results || [],
+    teamActivity: team.results?.map((activity: any) => ({
+      id: activity.id || crypto.randomUUID(),
+      userName: activity.user_name || 'Unknown User',
+      action: 'used',
+      toolName: activity.tool_name || 'Unknown Tool',
+      timestamp: activity.created_at,
+      responseId: activity.response_id
+    })) || [],
     announcements: announcements.results || [],
   }), {
     headers: { 'Content-Type': 'application/json' },
@@ -89,7 +122,17 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
 export async function handleGetAnnouncements(request: Request, env: Env, ctx: any) {
   debugLog(env, 'Get dashboard announcements');
   const rows = await env.DB.prepare(`
-    SELECT * FROM dashboard_announcements
+    SELECT 
+      id,
+      title,
+      content as summary,
+      content as body,
+      link,
+      created_at,
+      author_email,
+      is_active,
+      created_at as updated_at
+    FROM dashboard_announcements
     ORDER BY created_at DESC
   `).all();
   return new Response(JSON.stringify({ announcements: rows.results }), {
@@ -99,7 +142,10 @@ export async function handleGetAnnouncements(request: Request, env: Env, ctx: an
 
 // POST /api/dashboard/announcements
 export async function handleCreateAnnouncement(request: Request, env: Env, ctx: any) {
-  const { user } = await verifyAuth(request, env);
+  const user = await verifyAuth(request, env);
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
   if (!isKevin(user.email)) {
     debugLog(env, 'Unauthorized announcement create attempt', { user });
     return new Response('Unauthorized', { status: 403 });
@@ -109,7 +155,7 @@ export async function handleCreateAnnouncement(request: Request, env: Env, ctx: 
   await env.DB.prepare(`
     INSERT INTO dashboard_announcements (id, title, content, link, created_at, author_email, is_active)
     VALUES (?, ?, ?, ?, datetime('now'), ?, ?)
-  `).bind(id, body.title, body.content, body.link || null, user.email, body.is_active ? 1 : 0).run();
+  `).bind(id, body.title, body.summary || body.body, body.link || null, user.email, body.is_active ? 1 : 0).run();
   debugLog(env, 'Announcement created', { id, ...body });
   return new Response(JSON.stringify({ success: true, id }), {
     headers: { 'Content-Type': 'application/json' },
@@ -118,7 +164,10 @@ export async function handleCreateAnnouncement(request: Request, env: Env, ctx: 
 
 // PATCH /api/dashboard/announcements/:id
 export async function handleUpdateAnnouncement(request: Request, env: Env, ctx: any, id: string) {
-  const { user } = await verifyAuth(request, env);
+  const user = await verifyAuth(request, env);
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
   if (!isKevin(user.email)) {
     debugLog(env, 'Unauthorized announcement update attempt', { user });
     return new Response('Unauthorized', { status: 403 });
@@ -128,7 +177,7 @@ export async function handleUpdateAnnouncement(request: Request, env: Env, ctx: 
     UPDATE dashboard_announcements
     SET title = ?, content = ?, link = ?, is_active = ?
     WHERE id = ?
-  `).bind(body.title, body.content, body.link || null, body.is_active ? 1 : 0, id).run();
+  `).bind(body.title, body.summary || body.body, body.link || null, body.is_active ? 1 : 0, id).run();
   debugLog(env, 'Announcement updated', { id, ...body });
   return new Response(JSON.stringify({ success: true }), {
     headers: { 'Content-Type': 'application/json' },
@@ -137,7 +186,10 @@ export async function handleUpdateAnnouncement(request: Request, env: Env, ctx: 
 
 // DELETE /api/dashboard/announcements/:id
 export async function handleDeleteAnnouncement(request: Request, env: Env, ctx: any, id: string) {
-  const { user } = await verifyAuth(request, env);
+  const user = await verifyAuth(request, env);
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
   if (!isKevin(user.email)) {
     debugLog(env, 'Unauthorized announcement delete attempt', { user });
     return new Response('Unauthorized', { status: 403 });
