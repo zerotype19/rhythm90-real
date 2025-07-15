@@ -10,7 +10,11 @@ import {
   PencilIcon,
   TrashIcon,
   EyeIcon,
-  EyeSlashIcon
+  EyeSlashIcon,
+  PlayIcon,
+  SignalIcon,
+  BookOpenIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/react/24/outline';
 
 interface DashboardStats {
@@ -205,6 +209,43 @@ const Dashboard: React.FC = () => {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-2">Welcome back, {user?.name || 'User'}! Here's what's happening with your team.</p>
+        </div>
+
+        {/* Quick Navigation */}
+        <div className="mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a
+              href="/app/play-builder"
+              className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 group"
+            >
+              <PlayIcon className="h-8 w-8 text-blue-600 group-hover:text-blue-700 mb-2" />
+              <span className="text-sm font-medium text-gray-900 group-hover:text-blue-700">Play Builder</span>
+            </a>
+            
+            <a
+              href="/app/signal-lab"
+              className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-green-300 transition-all duration-200 group"
+            >
+              <SignalIcon className="h-8 w-8 text-green-600 group-hover:text-green-700 mb-2" />
+              <span className="text-sm font-medium text-gray-900 group-hover:text-green-700">Signal Lab</span>
+            </a>
+            
+            <a
+              href="/app/ritual-guide"
+              className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-purple-300 transition-all duration-200 group"
+            >
+              <BookOpenIcon className="h-8 w-8 text-purple-600 group-hover:text-purple-700 mb-2" />
+              <span className="text-sm font-medium text-gray-900 group-hover:text-purple-700">Ritual Guide</span>
+            </a>
+            
+            <a
+              href="/app/mini-tools"
+              className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-orange-300 transition-all duration-200 group"
+            >
+              <WrenchScrewdriverIcon className="h-8 w-8 text-orange-600 group-hover:text-orange-700 mb-2" />
+              <span className="text-sm font-medium text-gray-900 group-hover:text-orange-700">Mini Tools</span>
+            </a>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
