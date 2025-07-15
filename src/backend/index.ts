@@ -201,7 +201,12 @@ export default {
           return errorResponse('Missing required fields', 400);
         }
         
-        const result = await setShareStatus(env, body.response_id, user.id, body.is_shared_public, body.is_shared_team, user.team_id);
+        // Get user's team_id from team_members table
+        const teamMember = await env.DB.prepare(`
+          SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+        `).bind(user.id).first();
+        
+        const result = await setShareStatus(env, body.response_id, user.id, body.is_shared_public, body.is_shared_team, teamMember?.team_id);
         
         if (result.success) {
           return jsonResponse(result);
@@ -226,9 +231,14 @@ export default {
       if (path.startsWith('/api/saved-responses/team/') && request.method === 'GET') {
         const user = await verifyAuth(request, env);
         if (!user) return errorResponse('Unauthorized', 401);
-        if (!user.team_id) return errorResponse('User must belong to a team', 400);
+        // Get user's team_id from team_members table
+        const teamMember = await env.DB.prepare(`
+          SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+        `).bind(user.id).first();
         
-        const result = await getTeamSharedHistory(env, user.team_id);
+        if (!teamMember?.team_id) return errorResponse('User must belong to a team', 400);
+        
+        const result = await getTeamSharedHistory(env, teamMember.team_id);
         
         if (result.success) {
           return jsonResponse(result);
