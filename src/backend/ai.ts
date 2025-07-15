@@ -1484,30 +1484,19 @@ export async function handleSyntheticFocusGroup(request: Request, env: Env): Pro
 
     const userMessage = {
       role: 'user',
-      content: `Topic/Category: ${topic_or_category}
-Audience Seed Info: ${audience_seed_info}
-Must Include Segments: ${must_include_segments || 'None specified'}
+      content: `Topic: ${topic_or_category}
+Audience: ${audience_seed_info}
+Segments: ${must_include_segments || 'None'}
 
-Instructions:
-Section A – Persona Line-Up:
-For each persona:
-- name, age, location, quick bio
-- core_motivations_values
-- pain_points_objections
-- decision_drivers_triggers
-- media_content_habits
+Create 5 personas with: name, age, location, bio, motivations, pain_points, triggers, media_habits.
 
-Section B – Ask Mode:
-Respond:
-"All five personas are present. Address your question to a name (e.g., 'Karen, why…?') or to 'the group.' When finished, say 'exit group.'"
-
-Response format:
+Format:
 {
-  "persona_lineup": [ { "name": "...", "age": "...", "location": "...", "bio": "...", "motivations": "...", "pain_points": "...", "triggers": "...", "media_habits": "..." }, ... ],
+  "persona_lineup": [{"name":"...","age":"...","location":"...","bio":"...","motivations":"...","pain_points":"...","triggers":"...","media_habits":"..."}],
   "ask_mode_message": "All five personas are present. Address your question to a name or to 'the group.' When finished, say 'exit group.'"
 }
 
-Return ONLY raw JSON — no markdown, no comments, no code fences.`
+Return ONLY raw JSON.`
     };
 
     const messages = [systemMessage, userMessage];
@@ -1529,24 +1518,20 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       parseStatus = 'fallback_used';
       let persona_lineup: any[] = [], ask_mode_message = 'All five personas are present. Address your question to a name or to \'the group.\' When finished, say \'exit group.\'';
       
-      // Extract persona lineup
-      const lineupMatch = aiResponse.match(/"persona_lineup":\s*\[([\s\S]*?)\]/);
-      if (lineupMatch) {
-        const lineupText = lineupMatch[1];
-        const personaMatches = lineupText.match(/\{[^}]+\}/g);
-        if (personaMatches) {
-          persona_lineup = personaMatches.map(persona => {
-            const name = persona.match(/"name":\s*"([^"]+)"/)?.[1] || '';
-            const age = persona.match(/"age":\s*"([^"]+)"/)?.[1] || '';
-            const location = persona.match(/"location":\s*"([^"]+)"/)?.[1] || '';
-            const bio = persona.match(/"bio":\s*"([^"]+)"/)?.[1] || '';
-            const motivations = persona.match(/"motivations":\s*"([^"]+)"/)?.[1] || '';
-            const pain_points = persona.match(/"pain_points":\s*"([^"]+)"/)?.[1] || '';
-            const triggers = persona.match(/"triggers":\s*"([^"]+)"/)?.[1] || '';
-            const media_habits = persona.match(/"media_habits":\s*"([^"]+)"/)?.[1] || '';
-            return { name, age, location, bio, motivations, pain_points, triggers, media_habits };
-          });
-        }
+      // More robust extraction for truncated responses
+      const personaMatches = aiResponse.match(/\{[^}]*"name":\s*"[^"]+"[^}]*\}/g);
+      if (personaMatches) {
+        persona_lineup = personaMatches.map(persona => {
+          const name = persona.match(/"name":\s*"([^"]+)"/)?.[1] || '';
+          const age = persona.match(/"age":\s*"([^"]+)"/)?.[1] || '';
+          const location = persona.match(/"location":\s*"([^"]+)"/)?.[1] || '';
+          const bio = persona.match(/"bio":\s*"([^"]+)"/)?.[1] || '';
+          const motivations = persona.match(/"motivations":\s*"([^"]+)"/)?.[1] || '';
+          const pain_points = persona.match(/"pain_points":\s*"([^"]+)"/)?.[1] || '';
+          const triggers = persona.match(/"triggers":\s*"([^"]+)"/)?.[1] || '';
+          const media_habits = persona.match(/"media_habits":\s*"([^"]+)"/)?.[1] || '';
+          return { name, age, location, bio, motivations, pain_points, triggers, media_habits };
+        }).filter(p => p.name); // Only include personas with names
       }
       
       // Extract ask mode message
