@@ -145,9 +145,9 @@ function TeamSharedPage() {
   const loadAvailableTools = async () => {
     try {
       const response = await apiClient.getAvailableToolNames();
-      const typedResponse = response as ApiResponse<{ data: string[] }>;
-      if (typedResponse.data && Array.isArray(typedResponse.data.data)) {
-        setAvailableTools(typedResponse.data.data);
+      // Handle the actual API response structure: { success: true, message: "...", data: {...} }
+      if (response.data && response.data.success && response.data.data && Array.isArray(response.data.data)) {
+        setAvailableTools(response.data.data);
       }
     } catch (err) {
       console.error('Failed to load available tools:', err);
@@ -162,12 +162,18 @@ function TeamSharedPage() {
       // If we have a slug, we need to get the specific shared item
       if (slug) {
         const response = await apiClient.getPublicShared(slug);
-        const typedResponse = response as ApiResponse<SavedResponse>;
+        console.log('Public shared response:', response);
+        console.log('Response.data:', response.data);
+        console.log('Response.data.success:', response.data?.success);
+        console.log('Response.data.data:', response.data?.data);
         
-        if (typedResponse.data) {
-          setResponses([typedResponse.data]);
+        // Handle the actual API response structure: { success: true, message: "...", data: {...} }
+        if (response.data && response.data.success && response.data.data) {
+          console.log('Setting response data:', response.data.data);
+          setResponses([response.data.data]);
           setTotalCount(1);
         } else {
+          console.error('Failed to load shared item:', response);
           setError('Shared item not found');
         }
         return;
@@ -179,15 +185,11 @@ function TeamSharedPage() {
         offset
       });
       
-      const typedResponse = response as ApiResponse<{ 
-        data: SavedResponse[]; 
-        total: number; 
-      }>;
-      
-      if (typedResponse.data && Array.isArray(typedResponse.data.data)) {
-        console.log('Team shared responses:', typedResponse.data.data);
+      // Handle the actual API response structure: { success: true, message: "...", data: {...} }
+      if (response.data && response.data.success && response.data.data) {
+        console.log('Team shared responses:', response.data.data);
         // Log each response object to see all fields
-        typedResponse.data.data.forEach((response, index) => {
+        response.data.data.forEach((response, index) => {
           console.log(`Response ${index}:`, {
             id: response.id,
             tool_name: response.tool_name,
@@ -203,8 +205,8 @@ function TeamSharedPage() {
             allValues: Object.values(response)
           });
         });
-        setResponses(typedResponse.data.data);
-        setTotalCount(typedResponse.data.total || 0);
+        setResponses(response.data.data);
+        setTotalCount(response.data.total || response.data.data.length);
       } else {
         setError('Failed to load team shared responses');
       }
@@ -256,13 +258,31 @@ function TeamSharedPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    try {
+      console.log('Formatting date:', dateString);
+      const date = new Date(dateString);
+      console.log('Parsed date:', date);
+      console.log('Date.getTime():', date.getTime());
+      console.log('isNaN(date.getTime()):', isNaN(date.getTime()));
+      
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date string:', dateString);
+        return 'Invalid Date';
+      }
+      
+      const formatted = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      console.log('Formatted date:', formatted);
+      return formatted;
+    } catch (error) {
+      console.error('Error formatting date:', error, 'Date string:', dateString);
+      return 'Invalid Date';
+    }
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -469,6 +489,19 @@ function TeamSharedPage() {
                 <p className="text-gray-700 mb-3">
                   {response.summary}
                 </p>
+                
+                {/* Response Content - Show for slug view */}
+                {slug && response.response_blob && (
+                  <div className="mb-3">
+                    <h4 className="font-semibold text-gray-900 mb-2">Response Content</h4>
+                    <div className="bg-gray-50 rounded-md p-4 overflow-x-auto">
+                      <div 
+                        className="text-sm text-gray-700"
+                        dangerouslySetInnerHTML={{ __html: parseAIResponse(response.response_blob) }}
+                      />
+                    </div>
+                  </div>
+                )}
                 
                 {/* Metadata - Stacked for mobile */}
                 <div className="mb-3">
