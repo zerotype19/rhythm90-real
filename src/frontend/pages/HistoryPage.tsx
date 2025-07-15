@@ -5,6 +5,73 @@ import { apiClient } from '../lib/api';
 import { SavedResponseActions } from '../components/SavedResponseActions';
 import AppLayout from '../components/AppLayout';
 
+// Parse AI response to hide prompts and show only the user-facing content
+const parseAIResponse = (responseBlob: string): string => {
+  try {
+    // Try to parse as JSON first
+    const parsed = JSON.parse(responseBlob);
+    
+    // If it's a structured response, extract the main content
+    if (parsed.content) {
+      return parsed.content;
+    }
+    
+    if (parsed.response) {
+      return parsed.response;
+    }
+    
+    if (parsed.result) {
+      return parsed.result;
+    }
+    
+    // If it's an array, join the content
+    if (Array.isArray(parsed)) {
+      return parsed.map(item => {
+        if (typeof item === 'string') return item;
+        if (item.content) return item.content;
+        if (item.response) return item.response;
+        return JSON.stringify(item);
+      }).join('\n\n');
+    }
+    
+    // If it's an object with text fields, extract them
+    const textFields = Object.entries(parsed)
+      .filter(([key, value]) => 
+        typeof value === 'string' && 
+        !key.toLowerCase().includes('prompt') &&
+        !key.toLowerCase().includes('input') &&
+        !key.toLowerCase().includes('context')
+      )
+      .map(([_, value]) => value as string);
+    
+    if (textFields.length > 0) {
+      return textFields.join('\n\n');
+    }
+    
+    // Fallback to stringified version
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    // If not JSON, treat as plain text
+    const lines = responseBlob.split('\n');
+    
+    // Remove lines that look like prompts or system messages
+    const filteredLines = lines.filter(line => {
+      const trimmed = line.trim();
+      return !trimmed.startsWith('System:') &&
+             !trimmed.startsWith('User:') &&
+             !trimmed.startsWith('Assistant:') &&
+             !trimmed.startsWith('Human:') &&
+             !trimmed.startsWith('AI:') &&
+             !trimmed.startsWith('Prompt:') &&
+             !trimmed.startsWith('Context:') &&
+             !trimmed.startsWith('Input:') &&
+             trimmed.length > 0;
+    });
+    
+    return filteredLines.join('\n');
+  }
+};
+
 interface SavedResponse {
   id: string;
   user_id: string;
@@ -156,12 +223,12 @@ const HistoryPage: React.FC = () => {
 
     // Favorites filter
     if (showFavoritesOnly) {
-      filtered = filtered.filter(response => response.is_favorite);
+      filtered = filtered.filter(response => Boolean(response.is_favorite));
     }
 
     // Shared filter
     if (showSharedOnly) {
-      filtered = filtered.filter(response => response.is_shared_public || response.is_shared_team);
+      filtered = filtered.filter(response => Boolean(response.is_shared_public) || Boolean(response.is_shared_team));
     }
 
     setFilteredResponses(filtered);
@@ -384,19 +451,19 @@ const HistoryPage: React.FC = () => {
                     
                     {/* Badges - Right Aligned */}
                     <div className="flex items-center gap-2">
-                      {response.is_favorite && (
+                      {Boolean(response.is_favorite) && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           <FaHeart className="w-3 h-3 mr-1 fill-current" />
                           Favorite
                         </span>
                       )}
-                      {response.is_shared_public && (
+                      {Boolean(response.is_shared_public) && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           <FaGlobe className="w-3 h-3 mr-1" />
                           Public
                         </span>
                       )}
-                      {response.is_shared_team && (
+                      {Boolean(response.is_shared_team) && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <FaUsers className="w-3 h-3 mr-1" />
                           Team
@@ -472,7 +539,7 @@ const HistoryPage: React.FC = () => {
                   <h4 className="text-sm font-medium text-gray-500 mb-2">Full Response</h4>
                   <div 
                     className="text-gray-900 whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: selectedResponse.response_blob }}
+                    dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
                   />
                 </div>
               </div>

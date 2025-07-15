@@ -224,3 +224,70 @@ export function jsonResponse(data: any, status: number = 200): Response {
 export function errorResponse(message: string, status: number = 400): Response {
   return jsonResponse({ error: message }, status);
 } 
+
+// Parse AI response to hide prompts and show only the user-facing content
+export const parseAIResponse = (responseBlob: string): string => {
+  try {
+    // Try to parse as JSON first
+    const parsed = JSON.parse(responseBlob);
+    
+    // If it's a structured response, extract the main content
+    if (parsed.content) {
+      return parsed.content;
+    }
+    
+    if (parsed.response) {
+      return parsed.response;
+    }
+    
+    if (parsed.result) {
+      return parsed.result;
+    }
+    
+    // If it's an array, join the content
+    if (Array.isArray(parsed)) {
+      return parsed.map(item => {
+        if (typeof item === 'string') return item;
+        if (item.content) return item.content;
+        if (item.response) return item.response;
+        return JSON.stringify(item);
+      }).join('\n\n');
+    }
+    
+    // If it's an object with text fields, extract them
+    const textFields = Object.entries(parsed)
+      .filter(([key, value]) => 
+        typeof value === 'string' && 
+        !key.toLowerCase().includes('prompt') &&
+        !key.toLowerCase().includes('input') &&
+        !key.toLowerCase().includes('context')
+      )
+      .map(([_, value]) => value as string);
+    
+    if (textFields.length > 0) {
+      return textFields.join('\n\n');
+    }
+    
+    // Fallback to stringified version
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    // If not JSON, treat as plain text
+    const lines = responseBlob.split('\n');
+    
+    // Remove lines that look like prompts or system messages
+    const filteredLines = lines.filter(line => {
+      const trimmed = line.trim();
+      return !trimmed.startsWith('System:') &&
+             !trimmed.startsWith('User:') &&
+             !trimmed.startsWith('Assistant:') &&
+             !trimmed.startsWith('Human:') &&
+             !trimmed.startsWith('AI:') &&
+             !trimmed.startsWith('Prompt:') &&
+             !trimmed.startsWith('Context:') &&
+             !trimmed.startsWith('Input:') &&
+             trimmed.length > 0;
+    });
+    
+    return filteredLines.join('\n');
+  }
+}; 
