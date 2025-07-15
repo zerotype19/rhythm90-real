@@ -535,12 +535,49 @@ export async function handlePlainEnglishTranslator(request: Request, env: Env): 
 
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Plain-English Translator assistant. Rewrite the input text into clear, human language without jargon or buzzwords.'
+      content: `You are a MadMarketing Plain-English Translator assistant. Your job is to:
+
+1. Rewrite marketing and business jargon into clear, human language
+2. Identify specific jargon phrases and explain what they really mean
+3. Create a comprehensive breakdown that helps people understand corporate speak
+
+When analyzing text:
+- Look for buzzwords, corporate jargon, and overly complex language
+- Break down each jargon phrase into simple, everyday language
+- Provide at least 3-5 specific examples in the side-by-side table
+- Be thorough and detailed in your analysis
+
+Do not be lazy or use placeholder text like "...". Always provide real, specific translations.`
     };
 
     const userMessage = {
       role: 'user',
-      content: `Original text: ${original_text}\n\nOutput JSON only: { "plain_english_rewrite": "...", "side_by_side_table": [{ "what_it_says": "...", "what_it_really_means": "..." }], "jargon_glossary": ["..."] }\n\nDo not include markdown fences, code blocks, or extra explanation.`
+      content: `Original text: ${original_text}
+
+Analyze this text and provide:
+
+1. A plain English rewrite that removes all jargon and buzzwords
+2. A side-by-side table that breaks down specific jargon phrases found in the text, showing what each phrase says vs what it really means
+3. A jargon glossary with definitions
+
+For the side_by_side_table, identify at least 3-5 specific jargon phrases from the text and explain what each one actually means in simple terms.
+
+Output JSON only:
+{
+  "plain_english_rewrite": "Clear, jargon-free version of the text",
+  "side_by_side_table": [
+    {
+      "what_it_says": "exact jargon phrase from text",
+      "what_it_really_means": "simple explanation of what this actually means"
+    }
+  ],
+  "jargon_glossary": [
+    "jargon term - simple definition",
+    "another term - simple definition"
+  ]
+}
+
+Do not include markdown fences, code blocks, or extra explanation.`
     };
 
     const messages = [systemMessage, userMessage];
