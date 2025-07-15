@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
+import SavedResponseActions from '../components/SavedResponseActions';
 import { apiClient } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { FaClipboardList, FaComments, FaUsers, FaLightbulb, FaCheckCircle } from 'react-icons/fa';
 
 function RitualGuide() {
@@ -14,6 +16,7 @@ function RitualGuide() {
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [userNote, setUserNote] = useState('');
+  const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
     // Clear previous validation error and user note
@@ -243,10 +246,32 @@ function RitualGuide() {
               </div>
             )}
             {structured ? (
-              renderStructured()
+              <div>
+                {renderStructured()}
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Ritual Guide"
+                    responseData={structured}
+                    teamId={currentTeam?.id}
+                    summary={`${ritualType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ritual for ${teamType || 'team'}`}
+                  />
+                </div>
+              </div>
             ) : output ? (
-              <div className="prose max-w-none text-xs">
-                <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+              <div>
+                <div className="prose max-w-none text-xs">
+                  <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+                </div>
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Ritual Guide"
+                    responseData={{ output }}
+                    teamId={currentTeam?.id}
+                    summary={`${ritualType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ritual for ${teamType || 'team'}`}
+                  />
+                </div>
               </div>
             ) : (
               <div className="text-center text-gray-500 py-8">

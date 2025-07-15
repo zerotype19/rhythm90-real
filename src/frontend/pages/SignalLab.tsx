@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
+import SavedResponseActions from '../components/SavedResponseActions';
 import { apiClient } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { FaLightbulb, FaClipboardList, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
 
 function SignalLab() {
@@ -9,6 +11,7 @@ function SignalLab() {
   const [output, setOutput] = useState('');
   const [structured, setStructured] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { currentTeam } = useAuth();
 
   const handleInterpret = async () => {
     if (!observation.trim()) return;
@@ -143,10 +146,32 @@ function SignalLab() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Interpretation</h2>
             {structured ? (
-              renderStructured()
+              <div>
+                {renderStructured()}
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Signal Lab"
+                    responseData={structured}
+                    teamId={currentTeam?.id}
+                    summary={`Signal: "${observation.substring(0, 100)}${observation.length > 100 ? '...' : ''}"`}
+                  />
+                </div>
+              </div>
             ) : output ? (
-              <div className="prose max-w-none text-xs">
-                <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+              <div>
+                <div className="prose max-w-none text-xs">
+                  <pre style={{whiteSpace: 'pre-wrap'}}>{output}</pre>
+                </div>
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Signal Lab"
+                    responseData={{ output }}
+                    teamId={currentTeam?.id}
+                    summary={`Signal: "${observation.substring(0, 100)}${observation.length > 100 ? '...' : ''}"`}
+                  />
+                </div>
               </div>
             ) : (
               <div className="text-center text-gray-500 py-8">

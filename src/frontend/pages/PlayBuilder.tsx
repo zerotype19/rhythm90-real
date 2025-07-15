@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
+import SavedResponseActions from '../components/SavedResponseActions';
 import { apiClient } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { FaLightbulb, FaClipboardList, FaCheckCircle, FaChartLine, FaUserTie, FaArrowRight } from 'react-icons/fa';
 
 const TEAM_TYPE_OPTIONS = [
@@ -34,6 +36,7 @@ function PlayBuilder() {
   const [userNote, setUserNote] = useState('');
   // Validation
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const { currentTeam } = useAuth();
 
   // Helper to validate fields
   const validate = () => {
@@ -457,37 +460,70 @@ function PlayBuilder() {
               </div>
             )}
             {structured ? (
-              renderStructured()
-            ) : output ? (
-              renderOutput()
-            ) : hypothesis ? (
-              <div className="space-y-6 text-xs">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
-                    <FaLightbulb aria-label="Hypothesis" className="inline text-yellow-400" /> Hypothesis
-                  </label>
-                  <div className="p-2 bg-gray-50 rounded-md border border-gray-100">
-                    <p className="text-gray-900">{hypothesis}</p>
-                  </div>
+              <div>
+                {renderStructured()}
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Play Builder"
+                    responseData={structured}
+                    teamId={currentTeam?.id}
+                    summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                  />
                 </div>
-                {hypothesis && suggestions.length > 0 && (
-                  <hr className="my-2 border-gray-200" />
-                )}
-                {suggestions.length > 0 && (
+              </div>
+            ) : output ? (
+              <div>
+                {renderOutput()}
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Play Builder"
+                    responseData={{ output, hypothesis, suggestions }}
+                    teamId={currentTeam?.id}
+                    summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                  />
+                </div>
+              </div>
+            ) : hypothesis ? (
+              <div>
+                <div className="space-y-6 text-xs">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
-                      <FaClipboardList aria-label="Testing Suggestions" className="inline text-blue-400" /> Testing Suggestions
+                      <FaLightbulb aria-label="Hypothesis" className="inline text-yellow-400" /> Hypothesis
                     </label>
-                    <ul className="space-y-2 bg-gray-50 rounded-md p-2 border border-gray-100">
-                      {suggestions.map((suggestion, index) => (
-                        <li key={index} className="flex items-start space-x-2">
-                          <FaCheckCircle aria-label="Suggestion" className="text-green-500 mt-0.5" />
-                          <span className="text-gray-900">{suggestion}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="p-2 bg-gray-50 rounded-md border border-gray-100">
+                      <p className="text-gray-900">{hypothesis}</p>
+                    </div>
                   </div>
-                )}
+                  {hypothesis && suggestions.length > 0 && (
+                    <hr className="my-2 border-gray-200" />
+                  )}
+                  {suggestions.length > 0 && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-2">
+                        <FaClipboardList aria-label="Testing Suggestions" className="inline text-blue-400" /> Testing Suggestions
+                      </label>
+                      <ul className="space-y-2 bg-gray-50 rounded-md p-2 border border-gray-100">
+                        {suggestions.map((suggestion, index) => (
+                          <li key={index} className="flex items-start space-x-2">
+                            <FaCheckCircle aria-label="Suggestion" className="text-green-500 mt-0.5" />
+                            <span className="text-gray-900">{suggestion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Play Builder"
+                    responseData={{ hypothesis, suggestions }}
+                    teamId={currentTeam?.id}
+                    summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                  />
+                </div>
               </div>
             ) : (
               <div className="text-center text-gray-500 py-8">
