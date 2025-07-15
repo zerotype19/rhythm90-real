@@ -7,6 +7,7 @@ import { jsonResponse, errorResponse, corsHeaders } from './utils';
 import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared } from './savedResponses';
 import { verifyAuth } from './auth';
 import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
+import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -179,6 +180,24 @@ export default {
           return jsonResponse(debugLog);
         } else {
           return jsonResponse({ error: 'No settings debug log found.' }, 404);
+        }
+      }
+
+      // Benchmarking routes
+      if (path === '/api/benchmarking/team' && request.method === 'GET') {
+        return await handleGetTeamBenchmarks(request, env);
+      }
+      if (path === '/api/benchmarking/industry' && request.method === 'GET') {
+        return await handleGetIndustryBenchmarks(request, env);
+      }
+
+      // Benchmarking Debugger: Last benchmark call
+      if (path === '/api/debug/last-benchmark-call' && request.method === 'GET') {
+        const debugLog = getLastBenchmarkDebugLog();
+        if (debugLog) {
+          return jsonResponse(debugLog);
+        } else {
+          return jsonResponse({ error: 'No benchmark debug log found.' }, 404);
         }
       }
 

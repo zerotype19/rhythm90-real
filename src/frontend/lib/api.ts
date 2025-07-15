@@ -424,6 +424,19 @@ class ApiClient {
       credentials: 'include',
     });
   }
+
+  // Benchmarking API
+  async getTeamBenchmarks(period: string = '30d') {
+    return this.request(`/api/benchmarking/team?period=${period}`, {
+      credentials: 'include',
+    });
+  }
+
+  async getIndustryBenchmarks(period: string = '30d') {
+    return this.request(`/api/benchmarking/industry?period=${period}`, {
+      credentials: 'include',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE); 
