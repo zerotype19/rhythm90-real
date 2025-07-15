@@ -327,7 +327,7 @@ const HistoryPage: React.FC = () => {
                           Favorite
                         </span>
                       )}
-                      {response.is_shared_public && (
+                      {response.is_shared_public === true && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           <FaGlobe className="w-3 h-3 mr-1" />
                           Public
