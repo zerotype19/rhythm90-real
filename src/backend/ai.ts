@@ -1469,10 +1469,11 @@ export async function handleSyntheticFocusGroup(request: Request, env: Env): Pro
     // const user = await verifyAuth(request, env);
     // if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
-    const { topic_or_category, audience_seed_info, must_include_segments } = body;
+    const { topic_or_category, audience_seed_info, must_include_segments, user_id } = body;
     if (!topic_or_category || !audience_seed_info) {
       return errorResponse('Topic/category and audience seed info are required', 400);
     }
+    if (!user_id) return errorResponse('User ID is required', 400);
 
     const systemMessage = {
       role: 'system',
@@ -1576,7 +1577,12 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    // Store focus group in cookie if we have one
+    let response = jsonResponse(backendPayload);
+    if (backendPayload.persona_lineup && Array.isArray(backendPayload.persona_lineup) && backendPayload.persona_lineup.length > 0) {
+      response = storeFocusGroupSession(user_id, backendPayload, response);
+    }
+    return response;
   } catch (error) {
     console.error('Synthetic Focus Group error:', error);
     return errorResponse('Failed to generate focus group', 500);
@@ -1585,7 +1591,8 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
 
 // Cookie-based session store for persona context (works across stateless worker instances)
 const PERSONA_COOKIE_NAME = 'rhythm90_persona';
-const PERSONA_COOKIE_MAX_AGE = 60 * 60; // 1 hour in seconds
+const FOCUS_GROUP_COOKIE_NAME = 'rhythm90_focus_group';
+const COOKIE_MAX_AGE = 60 * 60; // 1 hour in seconds
 
 // Store persona in session using cookies
 function storePersonaSession(userId: string, persona: any, response: Response): Response {
@@ -1596,7 +1603,7 @@ function storePersonaSession(userId: string, persona: any, response: Response): 
   };
   
   const cookieValue = encodeURIComponent(JSON.stringify(personaData));
-  const cookie = `${PERSONA_COOKIE_NAME}=${cookieValue}; Max-Age=${PERSONA_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Strict; Secure`;
+  const cookie = `${PERSONA_COOKIE_NAME}=${cookieValue}; Max-Age=${COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Strict; Secure`;
   
   response.headers.set('Set-Cookie', cookie);
   console.log(`[DEBUG] Stored persona for user ${userId}:`, persona.name);
@@ -1641,6 +1648,159 @@ function getPersonaSession(userId: string, request: Request): any | null {
   } catch (error) {
     console.log(`[DEBUG] Error parsing persona cookie for user ${userId}:`, error);
     return null;
+  }
+}
+
+// Store focus group in session using cookies
+function storeFocusGroupSession(userId: string, focusGroup: any, response: Response): Response {
+  const focusGroupData = {
+    userId,
+    focusGroup,
+    timestamp: Date.now()
+  };
+  
+  const cookieValue = encodeURIComponent(JSON.stringify(focusGroupData));
+  const cookie = `${FOCUS_GROUP_COOKIE_NAME}=${cookieValue}; Max-Age=${COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Strict; Secure`;
+  
+  response.headers.set('Set-Cookie', cookie);
+  console.log(`[DEBUG] Stored focus group for user ${userId}:`, focusGroup.persona_lineup?.length || 0, 'personas');
+  return response;
+}
+
+// Get focus group from session using cookies
+function getFocusGroupSession(userId: string, request: Request): any | null {
+  const cookies = request.headers.get('cookie');
+  if (!cookies) {
+    console.log(`[DEBUG] No cookies found for user ${userId}`);
+    return null;
+  }
+  
+  const focusGroupCookie = cookies.split(';')
+    .find(cookie => cookie.trim().startsWith(`${FOCUS_GROUP_COOKIE_NAME}=`));
+  
+  if (!focusGroupCookie) {
+    console.log(`[DEBUG] No focus group cookie found for user ${userId}`);
+    return null;
+  }
+  
+  try {
+    const cookieValue = focusGroupCookie.split('=')[1];
+    const focusGroupData = JSON.parse(decodeURIComponent(cookieValue));
+    
+    // Check if cookie is for the right user and not expired
+    if (focusGroupData.userId !== userId) {
+      console.log(`[DEBUG] Cookie user ID mismatch: expected ${userId}, got ${focusGroupData.userId}`);
+      return null;
+    }
+    
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000;
+    if (now - focusGroupData.timestamp > oneHour) {
+      console.log(`[DEBUG] Focus group cookie expired for user ${userId}`);
+      return null;
+    }
+    
+    console.log(`[DEBUG] Found focus group for user ${userId}:`, focusGroupData.focusGroup.persona_lineup?.length || 0, 'personas');
+    return focusGroupData.focusGroup;
+  } catch (error) {
+    console.log(`[DEBUG] Error parsing focus group cookie for user ${userId}:`, error);
+    return null;
+  }
+}
+
+export async function handleFocusGroupAsk(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { question, user_id } = body;
+    if (!question || !user_id) {
+      return errorResponse('Question and user_id are required', 400);
+    }
+
+    // Get focus group from session
+    console.log(`[DEBUG] FocusGroupAsk called with user_id: ${user_id}`);
+    const focusGroup = getFocusGroupSession(user_id, request);
+    if (!focusGroup) {
+      console.log(`[DEBUG] No focus group found for user ${user_id}`);
+      return errorResponse('No focus group found for this session. Please generate a focus group first.', 400);
+    }
+    console.log(`[DEBUG] Found focus group with ${focusGroup.persona_lineup?.length || 0} personas`);
+
+    // Build system message with all personas
+    const personas = focusGroup.persona_lineup || [];
+    const personaDescriptions = personas.map(persona => 
+      `${persona.name} (${persona.age}, ${persona.location}): ${persona.bio}. Motivations: ${persona.motivations}. Pain points: ${persona.pain_points}. Decision drivers: ${persona.triggers}. Media habits: ${persona.media_habits}`
+    ).join('\n\n');
+
+    const systemMessage = {
+      role: 'system',
+      content: `You are facilitating a focus group with these participants:
+
+${personaDescriptions}
+
+When a question is asked:
+- If addressed to a specific person (e.g., "Karen, what do you think?"), respond as that person
+- If addressed to "the group", have multiple personas respond in a conversational format
+- If no specific person is mentioned, have the most relevant persona(s) respond
+- Keep responses authentic to each persona's background and characteristics
+- Use the persona names when responding
+
+Format group responses as a natural conversation between the participants.`
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Question: ${question}`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      // For Ask Mode, we expect a simple text response, not JSON
+      backendPayload = {
+        answer: aiResponse.trim(),
+        focus_group_size: personas.length,
+        persona_names: personas.map(p => p.name)
+      };
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { 
+        answer: aiResponse.trim(),
+        focus_group_size: personas.length,
+        persona_names: personas.map(p => p.name),
+        raw_response: aiResponse 
+      };
+      warning = 'Response parsing failed; returning raw text.';
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'focus-group-ask',
+      input_payload: body,
+      last_focus_group_snapshot: focusGroup,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Focus Group Ask error:', error);
+    return errorResponse('Failed to get focus group response', 500);
   }
 }
 

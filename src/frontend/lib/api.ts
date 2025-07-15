@@ -179,6 +179,30 @@ class ApiClient {
     });
   }
 
+  async syntheticFocusGroup(topicOrCategory: string, audienceSeedInfo: string, mustIncludeSegments?: string, userId?: string) {
+    return this.request('/api/mini-tools/synthetic-focus-group', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        topic_or_category: topicOrCategory,
+        audience_seed_info: audienceSeedInfo,
+        must_include_segments: mustIncludeSegments,
+        user_id: userId
+      }),
+      credentials: 'include',
+    });
+  }
+
+  async focusGroupAsk(question: string, userId: string) {
+    return this.request('/api/mini-tools/focus-group-ask', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        question: question,
+        user_id: userId
+      }),
+      credentials: 'include',
+    });
+  }
+
   async journeyBuilder(productOrService: string, primaryObjective: string, keyBarrier?: string) {
     return this.request('/api/mini-tools/journey-builder', {
       method: 'POST',
