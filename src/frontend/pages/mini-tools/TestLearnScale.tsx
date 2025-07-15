@@ -113,11 +113,11 @@ function TestLearnScale() {
         )}
 
         {/* Raw Output (for debugging) */}
-        {output.status === 'not_implemented' && (
+        {output.raw_response && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Debug Output</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Raw AI Response</h3>
             <div className="bg-gray-50 rounded-md p-4">
-              <pre className="text-gray-800 whitespace-pre-wrap">{JSON.stringify(output, null, 2)}</pre>
+              <pre className="text-gray-800 whitespace-pre-wrap text-sm">{output.raw_response}</pre>
             </div>
           </div>
         )}

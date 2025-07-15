@@ -552,9 +552,51 @@ export async function handlePlainEnglishTranslator(request: Request, env: Env): 
         jargon_glossary: Array.isArray(parsed.jargon_glossary) ? parsed.jargon_glossary : []
       };
     } catch (err) {
-      parseStatus = 'failed';
-      backendPayload = { raw_response: aiResponse };
-      warning = 'AI response could not be parsed; returning raw text only.';
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let plain_english_rewrite = '', side_by_side_table: any[] = [], jargon_glossary: string[] = [];
+      
+      // Extract plain English rewrite
+      const rewriteMatch = aiResponse.match(/"plain_english_rewrite":\s*"([^"]+)"/);
+      if (rewriteMatch) {
+        plain_english_rewrite = rewriteMatch[1];
+      }
+      
+      // Extract side by side table
+      const tableMatch = aiResponse.match(/"side_by_side_table":\s*\[([\s\S]*?)\]/);
+      if (tableMatch) {
+        const tableText = tableMatch[1];
+        const rowMatches = tableText.match(/\{[^}]+\}/g);
+        if (rowMatches) {
+          side_by_side_table = rowMatches.map(row => {
+            const what_it_says = row.match(/"what_it_says":\s*"([^"]+)"/)?.[1] || '';
+            const what_it_really_means = row.match(/"what_it_really_means":\s*"([^"]+)"/)?.[1] || '';
+            return { what_it_says, what_it_really_means };
+          });
+        }
+      }
+      
+      // Extract jargon glossary
+      const glossaryMatch = aiResponse.match(/"jargon_glossary":\s*\[([\s\S]*?)\]/);
+      if (glossaryMatch) {
+        const glossaryText = glossaryMatch[1];
+        jargon_glossary = glossaryText.match(/"([^"]+)"/g)?.map(g => g.replace(/"/g, '')) || [];
+      }
+      
+      // If we extracted any data, return it structured
+      if (plain_english_rewrite || side_by_side_table.length || jargon_glossary.length) {
+        backendPayload = {
+          plain_english_rewrite,
+          side_by_side_table,
+          jargon_glossary
+        };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
     }
 
     // Debug log
@@ -616,9 +658,30 @@ export async function handleGetToByGenerator(request: Request, env: Env): Promis
         by: parsed.by || ''
       };
     } catch (err) {
-      parseStatus = 'failed';
-      backendPayload = { raw_response: aiResponse };
-      warning = 'AI response could not be parsed; returning raw text only.';
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let get = '', to = '', by = '';
+      
+      // Extract get/to/by fields
+      const getMatch = aiResponse.match(/"get":\s*"([^"]+)"/);
+      if (getMatch) get = getMatch[1];
+      
+      const toMatch = aiResponse.match(/"to":\s*"([^"]+)"/);
+      if (toMatch) to = toMatch[1];
+      
+      const byMatch = aiResponse.match(/"by":\s*"([^"]+)"/);
+      if (byMatch) by = byMatch[1];
+      
+      // If we extracted any data, return it structured
+      if (get || to || by) {
+        backendPayload = { get, to, by };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
     }
 
     // Debug log
@@ -674,9 +737,34 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
       const parsed = JSON.parse(aiResponse);
       backendPayload = Array.isArray(parsed) ? parsed : [];
     } catch (err) {
-      parseStatus = 'failed';
-      backendPayload = { raw_response: aiResponse };
-      warning = 'AI response could not be parsed; returning raw text only.';
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let tensions: any[] = [];
+      
+      // Extract tensions from array format
+      const tensionsMatch = aiResponse.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (tensionsMatch) {
+        const tensionsText = tensionsMatch[0];
+        const tensionMatches = tensionsText.match(/\{[^}]+\}/g);
+        if (tensionMatches) {
+          tensions = tensionMatches.map(tension => {
+            const tension_text = tension.match(/"tension":\s*"([^"]+)"/)?.[1] || '';
+            const platform_name = tension.match(/"optional_platform_name":\s*"([^"]+)"/)?.[1] || '';
+            return { tension: tension_text, optional_platform_name: platform_name };
+          });
+        }
+      }
+      
+      // If we extracted any data, return it structured
+      if (tensions.length > 0) {
+        backendPayload = tensions;
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
     }
 
     // Debug log
@@ -756,9 +844,49 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         ask_mode_message: parsed.ask_mode_message || 'Persona ready. Ask me anything.'
       };
     } catch (err) {
-      parseStatus = 'failed';
-      backendPayload = { raw_response: aiResponse };
-      warning = 'AI response could not be parsed; returning raw text only.';
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let persona_sheet: any = {}, ask_mode_message = 'Persona ready. Ask me anything.';
+      
+      // Extract persona sheet fields
+      const nameMatch = aiResponse.match(/"name":\s*"([^"]+)"/);
+      if (nameMatch) persona_sheet.name = nameMatch[1];
+      
+      const ageMatch = aiResponse.match(/"age":\s*"([^"]+)"/);
+      if (ageMatch) persona_sheet.age = ageMatch[1];
+      
+      const locationMatch = aiResponse.match(/"location":\s*"([^"]+)"/);
+      if (locationMatch) persona_sheet.location = locationMatch[1];
+      
+      const bioMatch = aiResponse.match(/"bio":\s*"([^"]+)"/);
+      if (bioMatch) persona_sheet.bio = bioMatch[1];
+      
+      const motivationsMatch = aiResponse.match(/"motivations":\s*"([^"]+)"/);
+      if (motivationsMatch) persona_sheet.motivations = motivationsMatch[1];
+      
+      const painPointsMatch = aiResponse.match(/"pain_points":\s*"([^"]+)"/);
+      if (painPointsMatch) persona_sheet.pain_points = painPointsMatch[1];
+      
+      const triggersMatch = aiResponse.match(/"triggers":\s*"([^"]+)"/);
+      if (triggersMatch) persona_sheet.triggers = triggersMatch[1];
+      
+      const mediaHabitsMatch = aiResponse.match(/"media_habits":\s*"([^"]+)"/);
+      if (mediaHabitsMatch) persona_sheet.media_habits = mediaHabitsMatch[1];
+      
+      // Extract ask mode message
+      const askModeMatch = aiResponse.match(/"ask_mode_message":\s*"([^"]+)"/);
+      if (askModeMatch) ask_mode_message = askModeMatch[1];
+      
+      // If we extracted any data, return it structured
+      if (Object.keys(persona_sheet).length > 0 || ask_mode_message) {
+        backendPayload = { persona_sheet, ask_mode_message };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
     }
 
     // Debug log
@@ -841,9 +969,44 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         stuck_stage: parsed.stuck_stage || ''
       };
     } catch (err) {
-      parseStatus = 'failed';
-      backendPayload = { raw_response: aiResponse };
-      warning = 'AI response could not be parsed; returning raw text only.';
+      // If JSON parsing failed, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let journey_map: any[] = [], stuck_stage = '';
+      
+      // Extract journey map
+      const mapMatch = aiResponse.match(/"journey_map":\s*\[([\s\S]*?)\]/);
+      if (mapMatch) {
+        const mapText = mapMatch[1];
+        const rowMatches = mapText.match(/\{[^}]+\}/g);
+        if (rowMatches) {
+          journey_map = rowMatches.map(row => {
+            const stage = row.match(/"stage":\s*"([^"]+)"/)?.[1] || '';
+            const mindset = row.match(/"mindset":\s*"([^"]+)"/)?.[1] || '';
+            const barrier = row.match(/"barrier":\s*"([^"]+)"/)?.[1] || '';
+            const marketing_role = row.match(/"marketing_role":\s*"([^"]+)"/)?.[1] || '';
+            const channels = row.match(/"channels":\s*"([^"]+)"/)?.[1] || '';
+            const kpi = row.match(/"kpi":\s*"([^"]+)"/)?.[1] || '';
+            return { stage, mindset, barrier, marketing_role, channels, kpi };
+          });
+        }
+      }
+      
+      // Extract stuck stage
+      const stuckStageMatch = aiResponse.match(/"stuck_stage":\s*"([^"]+)"/);
+      if (stuckStageMatch) {
+        stuck_stage = stuckStageMatch[1];
+      }
+      
+      // If we extracted any data, return it structured
+      if (journey_map.length > 0 || stuck_stage) {
+        backendPayload = { journey_map, stuck_stage };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
     }
 
     // Debug log
@@ -890,21 +1053,29 @@ export async function handleTestLearnScale(request: Request, env: Env): Promise<
 Resources/Constraints: ${resources_or_constraints || 'None specified'}
 
 Instructions:
-Return:
-- core_hypotheses: [ ... ]
-- test_design_table: [
-    { hypothesis, tactic, target_sample, primary_kpi, success_threshold, timeframe },
-    ...
-  ]
-- learning_application: "How learnings scale into always-on"
-- risk_mitigation_tips: [ ... ]
+Return a JSON object with these exact fields:
+- core_hypotheses: Array of hypothesis strings
+- test_design_table: Array of test objects with fields: hypothesis, tactic, target_sample (number), primary_kpi, success_threshold, timeframe
+- learning_application: String describing how learnings scale into always-on
+- risk_mitigation_tips: Array of tip strings
+
+IMPORTANT: target_sample must be a number, not a string. Example: "target_sample": 5000 not "target_sample": "5000"
 
 Response format:
 {
-  "core_hypotheses": [ ... ],
-  "test_design_table": [ { ... }, ... ],
-  "learning_application": "...",
-  "risk_mitigation_tips": [ ... ]
+  "core_hypotheses": ["hypothesis 1", "hypothesis 2"],
+  "test_design_table": [
+    {
+      "hypothesis": "test hypothesis",
+      "tactic": "test tactic", 
+      "target_sample": 5000,
+      "primary_kpi": "kpi name",
+      "success_threshold": "threshold description",
+      "timeframe": "timeframe description"
+    }
+  ],
+  "learning_application": "how learnings scale",
+  "risk_mitigation_tips": ["tip 1", "tip 2"]
 }
 
 Return ONLY raw JSON — no markdown, no comments, no code fences.`
@@ -919,7 +1090,17 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     let parseStatus = 'success';
 
     try {
-      const parsed = JSON.parse(aiResponse);
+      // Try to fix common AI JSON formatting issues
+      let cleanedResponse = aiResponse;
+      
+      // Fix quoted numbers in target_sample fields
+      cleanedResponse = cleanedResponse.replace(/"target_sample":\s*"(\d+)"/g, '"target_sample": $1');
+      
+      // Fix other common numeric field issues
+      cleanedResponse = cleanedResponse.replace(/"timeframe":\s*"(\d+)\s*months?"/g, '"timeframe": "$1 months"');
+      cleanedResponse = cleanedResponse.replace(/"timeframe":\s*"(\d+)\s*weeks?"/g, '"timeframe": "$1 weeks"');
+      
+      const parsed = JSON.parse(cleanedResponse);
       backendPayload = {
         core_hypotheses: Array.isArray(parsed.core_hypotheses) ? parsed.core_hypotheses : [],
         test_design_table: Array.isArray(parsed.test_design_table) ? parsed.test_design_table : [],
@@ -927,9 +1108,64 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         risk_mitigation_tips: Array.isArray(parsed.risk_mitigation_tips) ? parsed.risk_mitigation_tips : []
       };
     } catch (err) {
-      parseStatus = 'failed';
-      backendPayload = { raw_response: aiResponse };
-      warning = 'AI response could not be parsed; returning raw text only.';
+      // If cleaning didn't work, try to extract structured data from the raw response
+      parseStatus = 'fallback_used';
+      let core_hypotheses: string[] = [], test_design_table: any[] = [], learning_application = '', risk_mitigation_tips: string[] = [];
+      
+      // Extract core hypotheses
+      const hypothesesMatch = aiResponse.match(/"core_hypotheses":\s*\[([\s\S]*?)\]/);
+      if (hypothesesMatch) {
+        const hypothesesText = hypothesesMatch[1];
+        core_hypotheses = hypothesesText.match(/"([^"]+)"/g)?.map(h => h.replace(/"/g, '')) || [];
+      }
+      
+      // Extract test design table
+      const tableMatch = aiResponse.match(/"test_design_table":\s*\[([\s\S]*?)\]/);
+      if (tableMatch) {
+        const tableText = tableMatch[1];
+        // Simple extraction of table rows
+        const rowMatches = tableText.match(/\{[^}]+\}/g);
+        if (rowMatches) {
+          test_design_table = rowMatches.map(row => {
+            const hypothesis = row.match(/"hypothesis":\s*"([^"]+)"/)?.[1] || '';
+            const tactic = row.match(/"tactic":\s*"([^"]+)"/)?.[1] || '';
+            const target_sample = row.match(/"target_sample":\s*"?(\d+)"?/)?.[1] || '';
+            const primary_kpi = row.match(/"primary_kpi":\s*"([^"]+)"/)?.[1] || '';
+            const success_threshold = row.match(/"success_threshold":\s*"([^"]+)"/)?.[1] || '';
+            const timeframe = row.match(/"timeframe":\s*"([^"]+)"/)?.[1] || '';
+            return { hypothesis, tactic, target_sample, primary_kpi, success_threshold, timeframe };
+          });
+        }
+      }
+      
+      // Extract learning application
+      const learningMatch = aiResponse.match(/"learning_application":\s*"([^"]+)"/);
+      if (learningMatch) {
+        learning_application = learningMatch[1];
+      }
+      
+      // Extract risk mitigation tips
+      const tipsMatch = aiResponse.match(/"risk_mitigation_tips":\s*\[([\s\S]*?)\]/);
+      if (tipsMatch) {
+        const tipsText = tipsMatch[1];
+        risk_mitigation_tips = tipsText.match(/"([^"]+)"/g)?.map(t => t.replace(/"/g, '')) || [];
+      }
+      
+      // If we extracted any data, return it structured
+      if (core_hypotheses.length || test_design_table.length || learning_application || risk_mitigation_tips.length) {
+        backendPayload = {
+          core_hypotheses,
+          test_design_table,
+          learning_application,
+          risk_mitigation_tips
+        };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = { raw_response: aiResponse };
+        warning = 'AI response could not be parsed; returning raw text only.';
+      }
     }
 
     // Debug log
