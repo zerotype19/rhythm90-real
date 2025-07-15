@@ -698,4 +698,115 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
   }
 }
 
+export async function handlePersonaGenerator(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { input } = body;
+    if (!input) return errorResponse('Input is required', 400);
+
+    // For now, return scaffolding response
+    const backendPayload = {
+      status: 'not_implemented',
+      message: 'Backend scaffolding ready.'
+    };
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'persona-generator',
+      input_payload: body,
+      prompt: 'Scaffolding - no AI call yet',
+      openai_response: 'Not implemented',
+      parse_status: 'scaffolding',
+      backend_payload: backendPayload,
+      warning: 'Backend scaffolding only',
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Persona Generator error:', error);
+    return errorResponse('Failed to generate persona', 500);
+  }
+}
+
+export async function handleJourneyBuilder(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { input } = body;
+    if (!input) return errorResponse('Input is required', 400);
+
+    // For now, return scaffolding response
+    const backendPayload = {
+      status: 'not_implemented',
+      message: 'Backend scaffolding ready.'
+    };
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'journey-builder',
+      input_payload: body,
+      prompt: 'Scaffolding - no AI call yet',
+      openai_response: 'Not implemented',
+      parse_status: 'scaffolding',
+      backend_payload: backendPayload,
+      warning: 'Backend scaffolding only',
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Journey Builder error:', error);
+    return errorResponse('Failed to build journey', 500);
+  }
+}
+
+export async function handleTestLearnScale(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { input } = body;
+    if (!input) return errorResponse('Input is required', 400);
+
+    // For now, return scaffolding response
+    const backendPayload = {
+      status: 'not_implemented',
+      message: 'Backend scaffolding ready.'
+    };
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'test-learn-scale',
+      input_payload: body,
+      prompt: 'Scaffolding - no AI call yet',
+      openai_response: 'Not implemented',
+      parse_status: 'scaffolding',
+      backend_payload: backendPayload,
+      warning: 'Backend scaffolding only',
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Test-Learn-Scale error:', error);
+    return errorResponse('Failed to generate roadmap', 500);
+  }
+}
+
 export { lastMiniToolDebugLog }; 

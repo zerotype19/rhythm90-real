@@ -157,6 +157,30 @@ class ApiClient {
     });
   }
 
+  async personaGenerator(input: string) {
+    return this.request('/api/mini-tools/persona-generator', {
+      method: 'POST',
+      body: JSON.stringify({ input }),
+      credentials: 'include',
+    });
+  }
+
+  async journeyBuilder(input: string) {
+    return this.request('/api/mini-tools/journey-builder', {
+      method: 'POST',
+      body: JSON.stringify({ input }),
+      credentials: 'include',
+    });
+  }
+
+  async testLearnScale(input: string) {
+    return this.request('/api/mini-tools/test-learn-scale', {
+      method: 'POST',
+      body: JSON.stringify({ input }),
+      credentials: 'include',
+    });
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/api/health');

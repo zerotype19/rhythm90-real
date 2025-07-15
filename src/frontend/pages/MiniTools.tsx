@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import AppLayout from '../components/AppLayout';
-import { FaLanguage, FaCrosshairs, FaLightbulb } from 'react-icons/fa';
+import { FaLanguage, FaCrosshairs, FaLightbulb, FaUser, FaRoute, FaChartLine } from 'react-icons/fa';
 
 function MiniTools() {
   const tools = [
@@ -21,6 +21,24 @@ function MiniTools() {
       description: 'Generate creative tensions to inspire big campaign ideas.',
       slug: 'creative-tension-finder',
       icon: <FaLightbulb className="w-8 h-8 text-yellow-500" />
+    },
+    {
+      name: 'Persona Generator + Ask Mode',
+      description: 'Build detailed audience personas and enter live Q&A.',
+      slug: 'persona-generator',
+      icon: <FaUser className="w-8 h-8 text-purple-500" />
+    },
+    {
+      name: 'Journey Builder',
+      description: 'Map a step-by-step customer journey with action tips.',
+      slug: 'journey-builder',
+      icon: <FaRoute className="w-8 h-8 text-indigo-500" />
+    },
+    {
+      name: 'Test-Learn-Scale Roadmap',
+      description: 'Design an experimentation plan with hypotheses + KPIs.',
+      slug: 'test-learn-scale',
+      icon: <FaChartLine className="w-8 h-8 text-orange-500" />
     }
   ];
 

@@ -11,6 +11,9 @@ import MiniTools from './pages/MiniTools';
 import PlainEnglishTranslator from './pages/mini-tools/PlainEnglishTranslator';
 import GetToByGenerator from './pages/mini-tools/GetToByGenerator';
 import CreativeTensionFinder from './pages/mini-tools/CreativeTensionFinder';
+import PersonaGenerator from './pages/mini-tools/PersonaGenerator';
+import JourneyBuilder from './pages/mini-tools/JourneyBuilder';
+import TestLearnScale from './pages/mini-tools/TestLearnScale';
 import Community from './pages/Community';
 import Settings from './pages/Settings';
 import TeamBenchmarking from './pages/TeamBenchmarking';
@@ -38,6 +41,9 @@ function App() {
               <Route path="mini-tools/plain-english-translator" element={<PlainEnglishTranslator />} />
               <Route path="mini-tools/get-to-by-generator" element={<GetToByGenerator />} />
               <Route path="mini-tools/creative-tension-finder" element={<CreativeTensionFinder />} />
+              <Route path="mini-tools/persona-generator" element={<PersonaGenerator />} />
+              <Route path="mini-tools/journey-builder" element={<JourneyBuilder />} />
+              <Route path="mini-tools/test-learn-scale" element={<TestLearnScale />} />
               <Route path="community" element={<Community />} />
               <Route path="settings" element={<Settings />} />
               <Route path="team-benchmarking" element={<TeamBenchmarking />} />
