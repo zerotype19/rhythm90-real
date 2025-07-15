@@ -21,7 +21,7 @@ export interface SavedResponse {
   shared_slug?: string;
   is_shared_team: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string; // Optional for backward compatibility
 }
 
 // Generate a unique shared slug
