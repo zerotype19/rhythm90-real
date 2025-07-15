@@ -48,10 +48,10 @@ const parseAIResponse = (responseBlob: string): string => {
       return textFields.join('\n\n');
     }
     
-    // Fallback to stringified version
+    // Fallback to stringified version - ensure full content is shown
     return JSON.stringify(parsed, null, 2);
   } catch {
-    // If not JSON, treat as plain text
+    // If not JSON, treat as plain text - ensure full content is shown
     const lines = responseBlob.split('\n');
     
     // Remove lines that look like prompts or system messages
@@ -67,6 +67,11 @@ const parseAIResponse = (responseBlob: string): string => {
              !trimmed.startsWith('Input:') &&
              trimmed.length > 0;
     });
+    
+    // If no lines were filtered out, return the original content
+    if (filteredLines.length === 0) {
+      return responseBlob;
+    }
     
     return filteredLines.join('\n');
   }
@@ -551,7 +556,7 @@ const HistoryPage: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-500 mb-2">Full Response</h4>
                   <div 
-                    className="text-gray-900 whitespace-pre-wrap"
+                    className="text-gray-900 whitespace-pre-wrap break-words overflow-x-auto"
                     dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
                   />
                 </div>

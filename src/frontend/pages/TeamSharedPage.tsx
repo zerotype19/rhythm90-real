@@ -89,10 +89,10 @@ const parseAIResponse = (responseBlob: string): string => {
       return textFields.join('\n\n');
     }
     
-    // Fallback to stringified version
+    // Fallback to stringified version - ensure full content is shown
     return JSON.stringify(parsed, null, 2);
   } catch {
-    // If not JSON, treat as plain text
+    // If not JSON, treat as plain text - ensure full content is shown
     const lines = responseBlob.split('\n');
     
     // Remove lines that look like prompts or system messages
@@ -108,6 +108,11 @@ const parseAIResponse = (responseBlob: string): string => {
              !trimmed.startsWith('Input:') &&
              trimmed.length > 0;
     });
+    
+    // If no lines were filtered out, return the original content
+    if (filteredLines.length === 0) {
+      return responseBlob;
+    }
     
     return filteredLines.join('\n');
   }
@@ -563,9 +568,9 @@ function TeamSharedPage() {
 
                 <div className="mb-4">
                   <h3 className="font-semibold text-gray-900 mb-2">Full Response</h3>
-                  <div className="bg-gray-50 rounded-md p-4">
+                  <div className="bg-gray-50 rounded-md p-4 overflow-x-auto">
                     <div 
-                      className="text-sm text-gray-700 whitespace-pre-wrap"
+                      className="text-sm text-gray-700 whitespace-pre-wrap break-words"
                       dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
                     />
                   </div>
