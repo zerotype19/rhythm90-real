@@ -50,9 +50,62 @@ interface ApiResponse<T> {
 const parseAIResponse = (responseBlob: string): string => {
   try {
     const parsed = JSON.parse(responseBlob);
-    return `<pre>${JSON.stringify(parsed, null, 2)}</pre>`;
+    
+    // If it's a string, just return it
+    if (typeof parsed === 'string') {
+      return `<div class="whitespace-pre-wrap">${parsed}</div>`;
+    }
+    
+    // If it's an array, format each item
+    if (Array.isArray(parsed)) {
+      return parsed.map((item, index) => {
+        if (typeof item === 'string') {
+          return `<div class="mb-3 p-3 bg-gray-50 rounded">${item}</div>`;
+        }
+        return `<div class="mb-3 p-3 bg-gray-50 rounded"><pre>${JSON.stringify(item, null, 2)}</pre></div>`;
+      }).join('');
+    }
+    
+    // If it's an object, create a structured display
+    if (typeof parsed === 'object' && parsed !== null) {
+      let html = '<div class="space-y-4">';
+      
+      Object.entries(parsed).forEach(([key, value]) => {
+        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        
+        html += '<div class="border-l-4 border-blue-500 pl-4">';
+        html += `<h4 class="font-semibold text-gray-900 mb-2">${label}</h4>`;
+        
+        if (typeof value === 'string') {
+          html += `<div class="text-gray-700 whitespace-pre-wrap">${value}</div>`;
+        } else if (Array.isArray(value)) {
+          html += '<ul class="list-disc list-inside space-y-1">';
+          value.forEach(item => {
+            if (typeof item === 'string') {
+              html += `<li class="text-gray-700">${item}</li>`;
+            } else {
+              html += `<li class="text-gray-700"><pre class="text-sm">${JSON.stringify(item, null, 2)}</pre></li>`;
+            }
+          });
+          html += '</ul>';
+        } else if (typeof value === 'object' && value !== null) {
+          html += `<pre class="text-sm bg-gray-50 p-2 rounded overflow-x-auto">${JSON.stringify(value, null, 2)}</pre>`;
+        } else {
+          html += `<div class="text-gray-700">${String(value)}</div>`;
+        }
+        
+        html += '</div>';
+      });
+      
+      html += '</div>';
+      return html;
+    }
+    
+    // Fallback to pretty-printed JSON
+    return `<pre class="text-sm bg-gray-50 p-4 rounded overflow-x-auto">${JSON.stringify(parsed, null, 2)}</pre>`;
   } catch {
-    return `<pre>${responseBlob}</pre>`;
+    // If it's not valid JSON, return as plain text
+    return `<div class="whitespace-pre-wrap text-gray-700">${responseBlob}</div>`;
   }
 };
 

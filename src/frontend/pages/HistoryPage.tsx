@@ -8,72 +8,63 @@ import AppLayout from '../components/AppLayout';
 // Parse AI response to hide prompts and show only the user-facing content
 const parseAIResponse = (responseBlob: string): string => {
   try {
-    // Try to parse as JSON first
     const parsed = JSON.parse(responseBlob);
     
-    // If it's a structured response, extract the main content
-    if (parsed.content) {
-      return parsed.content;
+    // If it's a string, just return it
+    if (typeof parsed === 'string') {
+      return `<div class="whitespace-pre-wrap">${parsed}</div>`;
     }
     
-    if (parsed.response) {
-      return parsed.response;
-    }
-    
-    if (parsed.result) {
-      return parsed.result;
-    }
-    
-    // If it's an array, join the content
+    // If it's an array, format each item
     if (Array.isArray(parsed)) {
-      return parsed.map(item => {
-        if (typeof item === 'string') return item;
-        if (item.content) return item.content;
-        if (item.response) return item.response;
-        return JSON.stringify(item);
-      }).join('\n\n');
+      return parsed.map((item, index) => {
+        if (typeof item === 'string') {
+          return `<div class="mb-3 p-3 bg-gray-50 rounded">${item}</div>`;
+        }
+        return `<div class="mb-3 p-3 bg-gray-50 rounded"><pre>${JSON.stringify(item, null, 2)}</pre></div>`;
+      }).join('');
     }
     
-    // If it's an object with text fields, extract them
-    const textFields = Object.entries(parsed)
-      .filter(([key, value]) => 
-        typeof value === 'string' && 
-        !key.toLowerCase().includes('prompt') &&
-        !key.toLowerCase().includes('input') &&
-        !key.toLowerCase().includes('context')
-      )
-      .map(([_, value]) => value as string);
-    
-    if (textFields.length > 0) {
-      return textFields.join('\n\n');
+    // If it's an object, create a structured display
+    if (typeof parsed === 'object' && parsed !== null) {
+      let html = '<div class="space-y-4">';
+      
+      Object.entries(parsed).forEach(([key, value]) => {
+        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        
+        html += '<div class="border-l-4 border-blue-500 pl-4">';
+        html += `<h4 class="font-semibold text-gray-900 mb-2">${label}</h4>`;
+        
+        if (typeof value === 'string') {
+          html += `<div class="text-gray-700 whitespace-pre-wrap">${value}</div>`;
+        } else if (Array.isArray(value)) {
+          html += '<ul class="list-disc list-inside space-y-1">';
+          value.forEach(item => {
+            if (typeof item === 'string') {
+              html += `<li class="text-gray-700">${item}</li>`;
+            } else {
+              html += `<li class="text-gray-700"><pre class="text-sm">${JSON.stringify(item, null, 2)}</pre></li>`;
+            }
+          });
+          html += '</ul>';
+        } else if (typeof value === 'object' && value !== null) {
+          html += `<pre class="text-sm bg-gray-50 p-2 rounded overflow-x-auto">${JSON.stringify(value, null, 2)}</pre>`;
+        } else {
+          html += `<div class="text-gray-700">${String(value)}</div>`;
+        }
+        
+        html += '</div>';
+      });
+      
+      html += '</div>';
+      return html;
     }
     
-    // Fallback to stringified version - ensure full content is shown
-    return JSON.stringify(parsed, null, 2);
+    // Fallback to pretty-printed JSON
+    return `<pre class="text-sm bg-gray-50 p-4 rounded overflow-x-auto">${JSON.stringify(parsed, null, 2)}</pre>`;
   } catch {
-    // If not JSON, treat as plain text - ensure full content is shown
-    const lines = responseBlob.split('\n');
-    
-    // Remove lines that look like prompts or system messages
-    const filteredLines = lines.filter(line => {
-      const trimmed = line.trim();
-      return !trimmed.startsWith('System:') &&
-             !trimmed.startsWith('User:') &&
-             !trimmed.startsWith('Assistant:') &&
-             !trimmed.startsWith('Human:') &&
-             !trimmed.startsWith('AI:') &&
-             !trimmed.startsWith('Prompt:') &&
-             !trimmed.startsWith('Context:') &&
-             !trimmed.startsWith('Input:') &&
-             trimmed.length > 0;
-    });
-    
-    // If no lines were filtered out, return the original content
-    if (filteredLines.length === 0) {
-      return responseBlob;
-    }
-    
-    return filteredLines.join('\n');
+    // If it's not valid JSON, return as plain text
+    return `<div class="whitespace-pre-wrap text-gray-700">${responseBlob}</div>`;
   }
 };
 
