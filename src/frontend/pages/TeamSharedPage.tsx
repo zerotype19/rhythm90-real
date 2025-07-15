@@ -50,30 +50,9 @@ interface ApiResponse<T> {
 const parseAIResponse = (responseBlob: string): string => {
   try {
     const parsed = JSON.parse(responseBlob);
-    // If it's a string, just return it
-    if (typeof parsed === 'string') return parsed;
-    // If it's an array, join all stringifiable items
-    if (Array.isArray(parsed)) {
-      return parsed.map(item =>
-        typeof item === 'string' ? item : JSON.stringify(item, null, 2)
-      ).join('\n\n');
-    }
-    // If it's an object, show all top-level string fields with labels
-    if (typeof parsed === 'object' && parsed !== null) {
-      const stringFields = Object.entries(parsed)
-        .filter(([_, value]) => typeof value === 'string')
-        .map(([key, value]) => `<strong>${key.replace(/_/g, ' ')}:</strong> ${value}`);
-      if (stringFields.length > 0) {
-        return stringFields.join('<br/><br/>');
-      }
-      // If no string fields, show the whole object
-      return `<pre>${JSON.stringify(parsed, null, 2)}</pre>`;
-    }
-    // Fallback
-    return responseBlob;
+    return `<pre>${JSON.stringify(parsed, null, 2)}</pre>`;
   } catch {
-    // Not JSON, just return as plain text
-    return responseBlob;
+    return `<pre>${responseBlob}</pre>`;
   }
 };
 
