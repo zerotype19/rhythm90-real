@@ -325,7 +325,9 @@ Additional Refinements:
 
 - For Preparation Tips: Format as a concise checklist with checkmarks (✓), aiming for 5-7 items max. Include reference to prior insights: "Review prior insights, including last quarter's key plays and signals."
 
-- For Success Definition: Include how learnings will transfer to next-quarter action. Suggest general guidance like "Consider codifying learnings in a team playbook or onboarding docs" with focus on team-level learning transfer.`;
+- For Success Definition: Include how learnings will transfer to next-quarter action. Suggest general guidance like "Consider codifying learnings in a team playbook or onboarding docs" with focus on team-level learning transfer.
+
+⚠️ CRITICAL: Return ONLY raw JSON — no markdown fences, no code blocks, no comments, no explanation text. Do not wrap output like \`\`\`json ... \`\`\`. Return the JSON object directly.`;
     
     const messages = [
       RITUAL_GUIDE_SYSTEM_MESSAGE,
@@ -345,8 +347,11 @@ Additional Refinements:
     // --- Output Structuring ---
     let backendPayload: any = {};
     let warning = undefined;
+    let parseStatus = 'success';
+    let userNote = undefined;
+    
     try {
-      // Try to parse as JSON
+      // Try to parse as JSON first
       const parsed = JSON.parse(aiResponse);
       backendPayload = {
         agenda: Array.isArray(parsed.agenda) ? parsed.agenda : (parsed.agenda ? [parsed.agenda] : []),
@@ -356,10 +361,11 @@ Additional Refinements:
         success_definition: parsed.success_definition || ''
       };
     } catch (err) {
-      // Try to extract sections from text if not JSON
+      // JSON parsing failed, try minimal regex extraction as safety net
+      parseStatus = 'fallback_used';
       let agenda: string[] = [], discussion_prompts: string[] = [], roles_contributions = '', preparation_tips = '', success_definition = '';
       
-      // Use regex to extract sections
+      // Minimal, safe regex extraction
       const agendaMatch = aiResponse.match(/Agenda\s*[:\-]?\s*([\s\S]*?)(?=Discussion Prompts|Roles|Preparation|Success|$)/i);
       if (agendaMatch) {
         const lines = agendaMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
@@ -381,7 +387,7 @@ Additional Refinements:
       const successMatch = aiResponse.match(/Success[^:]*:\s*([\s\S]*)/i);
       if (successMatch) success_definition = successMatch[1].trim();
       
-      // If at least one field is found, return structured
+      // If at least one field was extracted, return structured with warning
       if (agenda.length || discussion_prompts.length || roles_contributions || preparation_tips || success_definition) {
         backendPayload = {
           agenda,
@@ -391,17 +397,15 @@ Additional Refinements:
           success_definition
         };
         warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+        userNote = 'Note: This result is shown as raw text because AI response formatting failed.';
       } else {
-        // Fallback: pass raw response
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
         backendPayload = {
-          agenda: [],
-          discussion_prompts: [],
-          roles_contributions: '',
-          preparation_tips: '',
-          success_definition: '',
           raw_response: aiResponse
         };
-        warning = 'AI response could not be parsed; raw response returned.';
+        warning = 'AI response could not be parsed; returning raw text only.';
+        userNote = 'Note: This result is shown as raw text because AI response formatting failed.';
       }
     }
 
@@ -409,8 +413,10 @@ Additional Refinements:
     lastRitualGuideDebugLog = {
       prompt: messages,
       openai_response: aiResponse,
+      parse_status: parseStatus,
       backend_payload: backendPayload,
       warning,
+      user_note: userNote,
       timestamp: new Date().toISOString()
     };
 

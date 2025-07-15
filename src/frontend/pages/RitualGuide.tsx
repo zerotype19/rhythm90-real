@@ -13,10 +13,12 @@ function RitualGuide() {
   const [structured, setStructured] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [userNote, setUserNote] = useState('');
 
   const handleGenerate = async () => {
-    // Clear previous validation error
+    // Clear previous validation error and user note
     setValidationError('');
+    setUserNote('');
     
     // Validate ritual type
     const validRitualTypes = ['kickoff', 'pulse_check', 'rr'];
@@ -36,6 +38,18 @@ function RitualGuide() {
       };
       const response = await apiClient.generateRitualPrompts(payload);
       if (response.data) {
+        // Check for user note from backend
+        if (response.data.user_note) {
+          setUserNote(response.data.user_note);
+        }
+        
+        // Handle raw response fallback
+        if (response.data.raw_response) {
+          setOutput(response.data.raw_response);
+          setStructured(null);
+          return;
+        }
+        
         // Try to parse structured fields
         if (
           response.data.agenda !== undefined ||
@@ -217,6 +231,11 @@ function RitualGuide() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Meeting Structure</h2>
+            {userNote && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">{userNote}</p>
+              </div>
+            )}
             {structured ? (
               renderStructured()
             ) : output ? (
