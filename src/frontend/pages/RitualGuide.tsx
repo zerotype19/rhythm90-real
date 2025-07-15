@@ -126,7 +126,11 @@ function RitualGuide() {
                 <span className="font-bold text-sm text-gray-900">{section.label}</span>
               </div>
               <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
-                {Array.isArray(section.content) ? <ul className="list-none ml-5 space-y-1">{section.content}</ul> : section.content}
+                {Array.isArray(section.content) ? (
+                  <ul className={`ml-5 space-y-1 ${section.key === 'preparation_tips' ? 'list-disc' : 'list-none'}`}>
+                    {section.content}
+                  </ul>
+                ) : section.content}
               </div>
             </div>
           ) : null
