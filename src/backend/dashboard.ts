@@ -49,29 +49,33 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
       AND DATE(created_at) <= ?
   `).bind(teamId, periodStart, periodEnd).first();
 
-  // Signals logged (from ai_usage_logs)
+  // Signals logged (from ai_usage_logs) - need to join with team_members to get team_id
   const signals = await env.DB.prepare(`
     SELECT COUNT(*) as signals_logged
-    FROM ai_usage_logs
-    WHERE team_id = ?
-      AND tool_name = 'Signal Lab'
-      AND DATE(created_at) >= ?
-      AND DATE(created_at) <= ?
+    FROM ai_usage_logs aul
+    JOIN team_members tm ON aul.user_id = tm.user_id
+    WHERE tm.team_id = ?
+      AND aul.tool_name = 'Signal Lab'
+      AND DATE(aul.timestamp) >= ?
+      AND DATE(aul.timestamp) <= ?
   `).bind(teamId, periodStart, periodEnd).first();
 
   // Personal activity (last 5 actions)
   const personal = await env.DB.prepare(`
     SELECT * FROM ai_usage_logs
     WHERE user_id = ?
-    ORDER BY created_at DESC
+    ORDER BY timestamp DESC
     LIMIT 5
-  `).bind(user.user_id).all();
+  `).bind(user.id).all();
 
   // Team activity (last 5 actions, all team members)
   const team = await env.DB.prepare(`
-    SELECT * FROM ai_usage_logs
-    WHERE team_id = ?
-    ORDER BY created_at DESC
+    SELECT aul.*, u.name as user_name
+    FROM ai_usage_logs aul
+    JOIN team_members tm ON aul.user_id = tm.user_id
+    JOIN users u ON aul.user_id = u.id
+    WHERE tm.team_id = ?
+    ORDER BY aul.timestamp DESC
     LIMIT 5
   `).bind(teamId).all();
 
@@ -109,7 +113,7 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
       userName: activity.user_name || 'Unknown User',
       action: 'used',
       toolName: activity.tool_name || 'Unknown Tool',
-      timestamp: activity.created_at,
+      timestamp: activity.timestamp,
       responseId: activity.response_id
     })) || [],
     announcements: announcements.results || [],
