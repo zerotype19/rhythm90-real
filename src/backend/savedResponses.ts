@@ -248,7 +248,7 @@ export const getTeamSharedHistoryEnhanced = async (
     limit?: number;
     offset?: number;
   } = {}
-): Promise<{ success: boolean; message: string; data?: SavedResponse[]; total?: number }> => {
+): Promise<{ success: boolean; message: string; data?: (SavedResponse & { user_name?: string; user_email?: string })[]; total?: number }> => {
   try {
     const {
       tool_name,
@@ -261,30 +261,30 @@ export const getTeamSharedHistoryEnhanced = async (
     } = options;
 
     // Build the WHERE clause dynamically
-    let whereConditions = ['team_id = ?', 'is_shared_team = 1'];
+    let whereConditions = ['r.team_id = ?', 'r.is_shared_team = 1'];
     let params: any[] = [teamId];
 
     if (tool_name) {
-      whereConditions.push('tool_name = ?');
+      whereConditions.push('r.tool_name = ?');
       params.push(tool_name);
     }
 
     if (date_from) {
-      whereConditions.push('created_at >= ?');
+      whereConditions.push('r.created_at >= ?');
       params.push(date_from);
     }
 
     if (date_to) {
-      whereConditions.push('created_at <= ?');
+      whereConditions.push('r.created_at <= ?');
       params.push(date_to);
     }
 
     if (favorites_only) {
-      whereConditions.push('is_favorite = 1');
+      whereConditions.push('r.is_favorite = 1');
     }
 
     if (search) {
-      whereConditions.push('(summary LIKE ? OR tool_name LIKE ?)');
+      whereConditions.push('(r.summary LIKE ? OR r.tool_name LIKE ?)');
       const searchPattern = `%${search}%`;
       params.push(searchPattern, searchPattern);
     }
@@ -292,15 +292,17 @@ export const getTeamSharedHistoryEnhanced = async (
     const whereClause = whereConditions.join(' AND ');
 
     // Get total count for pagination
-    const countQuery = `SELECT COUNT(*) as total FROM ai_saved_responses WHERE ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) as total FROM ai_saved_responses r WHERE ${whereClause}`;
     const countResult = await env.DB.prepare(countQuery).bind(...params).first();
     const total = countResult?.total || 0;
 
-    // Get paginated results
+    // Get paginated results with user information
     const dataQuery = `
-      SELECT * FROM ai_saved_responses 
+      SELECT r.*, u.name as user_name, u.email as user_email
+      FROM ai_saved_responses r
+      LEFT JOIN users u ON r.user_id = u.id
       WHERE ${whereClause}
-      ORDER BY created_at DESC
+      ORDER BY r.created_at DESC
       LIMIT ? OFFSET ?
     `;
     
@@ -311,7 +313,7 @@ export const getTeamSharedHistoryEnhanced = async (
     return { 
       success: true, 
       message: 'Team shared history retrieved successfully',
-      data: responses.results as SavedResponse[],
+      data: responses.results as (SavedResponse & { user_name?: string; user_email?: string })[],
       total
     };
   } catch (error) {

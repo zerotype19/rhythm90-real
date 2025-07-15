@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../components/AppLayout';
 import { 
@@ -29,6 +29,8 @@ interface SavedResponse {
   is_shared_team: boolean;
   shared_slug?: string;
   created_at: string;
+  user_name?: string;
+  user_email?: string;
 }
 
 interface FilterOptions {
@@ -38,6 +40,78 @@ interface FilterOptions {
   date_from: string;
   date_to: string;
 }
+
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+// Parse AI response to hide prompts and show only the user-facing content
+const parseAIResponse = (responseBlob: string): string => {
+  try {
+    // Try to parse as JSON first
+    const parsed = JSON.parse(responseBlob);
+    
+    // If it's a structured response, extract the main content
+    if (parsed.content) {
+      return parsed.content;
+    }
+    
+    if (parsed.response) {
+      return parsed.response;
+    }
+    
+    if (parsed.result) {
+      return parsed.result;
+    }
+    
+    // If it's an array, join the content
+    if (Array.isArray(parsed)) {
+      return parsed.map(item => {
+        if (typeof item === 'string') return item;
+        if (item.content) return item.content;
+        if (item.response) return item.response;
+        return JSON.stringify(item);
+      }).join('\n\n');
+    }
+    
+    // If it's an object with text fields, extract them
+    const textFields = Object.entries(parsed)
+      .filter(([key, value]) => 
+        typeof value === 'string' && 
+        !key.toLowerCase().includes('prompt') &&
+        !key.toLowerCase().includes('input') &&
+        !key.toLowerCase().includes('context')
+      )
+      .map(([_, value]) => value as string);
+    
+    if (textFields.length > 0) {
+      return textFields.join('\n\n');
+    }
+    
+    // Fallback to stringified version
+    return JSON.stringify(parsed, null, 2);
+  } catch {
+    // If not JSON, treat as plain text
+    const lines = responseBlob.split('\n');
+    
+    // Remove lines that look like prompts or system messages
+    const filteredLines = lines.filter(line => {
+      const trimmed = line.trim();
+      return !trimmed.startsWith('System:') &&
+             !trimmed.startsWith('User:') &&
+             !trimmed.startsWith('Assistant:') &&
+             !trimmed.startsWith('Human:') &&
+             !trimmed.startsWith('AI:') &&
+             !trimmed.startsWith('Prompt:') &&
+             !trimmed.startsWith('Context:') &&
+             !trimmed.startsWith('Input:') &&
+             trimmed.length > 0;
+    });
+    
+    return filteredLines.join('\n');
+  }
+};
 
 function TeamSharedPage() {
   const [responses, setResponses] = useState<SavedResponse[]>([]);
@@ -74,8 +148,9 @@ function TeamSharedPage() {
   const loadAvailableTools = async () => {
     try {
       const response = await apiClient.getAvailableToolNames();
-      if (response.data && Array.isArray(response.data.data)) {
-        setAvailableTools(response.data.data);
+      const typedResponse = response as ApiResponse<{ data: string[] }>;
+      if (typedResponse.data && Array.isArray(typedResponse.data.data)) {
+        setAvailableTools(typedResponse.data.data);
       }
     } catch (err) {
       console.error('Failed to load available tools:', err);
@@ -93,9 +168,14 @@ function TeamSharedPage() {
         offset
       });
       
-      if (response.data && Array.isArray(response.data.data)) {
-        setResponses(response.data.data);
-        setTotalCount(response.data.total || 0);
+      const typedResponse = response as ApiResponse<{ 
+        data: SavedResponse[]; 
+        total: number; 
+      }>;
+      
+      if (typedResponse.data && Array.isArray(typedResponse.data.data)) {
+        setResponses(typedResponse.data.data);
+        setTotalCount(typedResponse.data.total || 0);
       } else {
         setError('Failed to load team shared responses');
       }
@@ -154,24 +234,6 @@ function TeamSharedPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getToolIcon = (toolName: string) => {
-    const icons: { [key: string]: string } = {
-      'Plain English Translator': '🔤',
-      'Persona Generator': '👤',
-      'Synthetic Focus Group': '👥',
-      'Ritual Guide': '📅',
-      'Play Builder': '🎯',
-      'Signal Lab': '📊',
-      'Creative Tension Finder': '⚡',
-      'Get-To-By Generator': '🎯',
-      'Journey Builder': '🗺️',
-      'Test Learn Scale': '📈',
-      'Agile Sprint Planner': '🏃',
-      'Connected Media Matrix': '📱'
-    };
-    return icons[toolName] || '🛠️';
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
@@ -341,69 +403,16 @@ function TeamSharedPage() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {responses.map((response) => {
-              const responseData = JSON.parse(response.response_blob);
-              return (
-                <div key={response.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{getToolIcon(response.tool_name)}</span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{response.tool_name}</h3>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FaCalendar className="w-3 h-3 mr-1" />
-                          {formatDate(response.created_at)}
-                        </div>
-                        <p className="text-xs text-gray-400">Shared by team member</p>
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedResponse(response);
-                          setShowModal(true);
-                        }}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                        title="View full response"
-                      >
-                        <FaEye className="w-4 h-4" />
-                      </button>
-                      
-                      {response.is_shared_public && response.shared_slug && (
-                        <button
-                          onClick={() => handleCopyPublicLink(response.shared_slug!)}
-                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-                          title="Copy public link"
-                        >
-                          <FaCopy className="w-4 h-4" />
-                        </button>
-                      )}
-                      
-                      <button
-                        onClick={() => handleToggleFavorite(response.id, response.is_favorite)}
-                        className={`p-2 rounded-md transition-colors ${
-                          response.is_favorite 
-                            ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50' 
-                            : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
-                        }`}
-                        title={response.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
-                      >
-                        <FaHeart className={`w-4 h-4 ${response.is_favorite ? 'fill-current' : ''}`} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <p className="text-gray-700 mb-4">{response.summary}</p>
-
-                  {/* Badges */}
-                  <div className="flex gap-2 mb-4">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      <FaShare className="w-3 h-3 mr-1" />
-                      Team Shared
-                    </span>
+            {responses.map((response) => (
+              <div key={response.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
+                {/* Title and Badges Row */}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {response.tool_name}
+                  </h3>
+                  
+                  {/* Badges - Right Aligned */}
+                  <div className="flex items-center gap-2">
                     {response.is_shared_public && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <FaShare className="w-3 h-3 mr-1" />
@@ -417,21 +426,56 @@ function TeamSharedPage() {
                       </span>
                     )}
                   </div>
-
-                  {/* Preview */}
-                  <div className="bg-gray-50 rounded-md p-3">
-                    <p className="text-sm text-gray-600 line-clamp-3">
-                      {responseData.plain_english_rewrite || 
-                       responseData.persona || 
-                       responseData.summary || 
-                       responseData.agenda ||
-                       responseData.discussion_prompts ||
-                       'Response preview not available'}
-                    </p>
+                </div>
+                
+                {/* Summary */}
+                <p className="text-gray-700 mb-3">
+                  {response.summary}
+                </p>
+                
+                {/* Date, User, and Action Buttons Row */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center text-xs text-gray-500">
+                    <FaCalendar className="w-3 h-3 mr-1" />
+                    {formatDate(response.created_at)}
+                    {response.user_email && (
+                      <>
+                        <span className="mx-2">•</span>
+                        <span>Shared by {response.user_email}</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 ml-4">
+                    {/* Favorite Button */}
+                    <button
+                      onClick={() => handleToggleFavorite(response.id, response.is_favorite)}
+                      className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-md transition-colors ${
+                        response.is_favorite 
+                          ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200' 
+                          : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                      }`}
+                    >
+                      <FaHeart className={`w-3 h-3 mr-1 ${response.is_favorite ? 'fill-current' : ''}`} />
+                      {response.is_favorite ? 'Favorited' : 'Favorite'}
+                    </button>
+                    
+                    {/* View Button */}
+                    <button
+                      onClick={() => {
+                        setSelectedResponse(response);
+                        setShowModal(true);
+                      }}
+                      className="inline-flex items-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                    >
+                      <FaEye className="w-3 h-3 mr-1" />
+                      View
+                    </button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
 
@@ -481,12 +525,12 @@ function TeamSharedPage() {
             <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{getToolIcon(selectedResponse.tool_name)}</span>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">{selectedResponse.tool_name}</h2>
-                      <p className="text-sm text-gray-500">{formatDate(selectedResponse.created_at)}</p>
-                    </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">{selectedResponse.tool_name}</h2>
+                    <p className="text-sm text-gray-500">{formatDate(selectedResponse.created_at)}</p>
+                    {selectedResponse.user_email && (
+                      <p className="text-sm text-gray-500">Shared by {selectedResponse.user_email}</p>
+                    )}
                   </div>
                   <button
                     onClick={() => setShowModal(false)}
@@ -504,9 +548,10 @@ function TeamSharedPage() {
                 <div className="mb-4">
                   <h3 className="font-semibold text-gray-900 mb-2">Full Response</h3>
                   <div className="bg-gray-50 rounded-md p-4">
-                    <pre className="text-sm text-gray-700 whitespace-pre-wrap">
-                      {JSON.stringify(JSON.parse(selectedResponse.response_blob), null, 2)}
-                    </pre>
+                    <div 
+                      className="text-sm text-gray-700 whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
+                    />
                   </div>
                 </div>
 
