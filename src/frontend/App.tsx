@@ -59,6 +59,7 @@ function App() {
               <Route path="team-benchmarking" element={<TeamBenchmarking />} />
               <Route path="history" element={<HistoryPage />} />
               <Route path="team-shared" element={<TeamSharedPage />} />
+              <Route path="team-shared/:slug" element={<TeamSharedPage />} />
               <Route index element={<Navigate to="/app/dashboard" replace />} />
             </Route>
             

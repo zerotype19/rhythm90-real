@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import AppLayout from '../components/AppLayout';
 import { 
   FaSearch, 
@@ -110,6 +110,7 @@ const parseAIResponse = (responseBlob: string): string => {
 };
 
 function TeamSharedPage() {
+  const { slug } = useParams<{ slug?: string }>();
   const [responses, setResponses] = useState<SavedResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -133,7 +134,7 @@ function TeamSharedPage() {
   useEffect(() => {
     loadAvailableTools();
     loadTeamShared();
-  }, []);
+  }, [slug]);
 
   useEffect(() => {
     // Reset to first page when filters change
@@ -157,6 +158,20 @@ function TeamSharedPage() {
     try {
       setLoading(true);
       const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+      
+      // If we have a slug, we need to get the specific shared item
+      if (slug) {
+        const response = await apiClient.getPublicShared(slug);
+        const typedResponse = response as ApiResponse<SavedResponse>;
+        
+        if (typedResponse.data) {
+          setResponses([typedResponse.data]);
+          setTotalCount(1);
+        } else {
+          setError('Shared item not found');
+        }
+        return;
+      }
       
       const response = await apiClient.getTeamSharedHistoryEnhanced({
         ...filters,
@@ -258,34 +273,38 @@ function TeamSharedPage() {
         {/* Header */}
         <div className="mb-6">
           <Link
-            to="/app"
+            to={slug ? "/app/team-shared" : "/app"}
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-2"
           >
             <FaArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            {slug ? "Back to Team Shared" : "Back to Dashboard"}
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center">
               <FaUsers className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                  Team Shared Responses
+                  {slug ? "Shared Response" : "Team Shared Responses"}
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">AI responses shared with your team</p>
+                <p className="text-sm sm:text-base text-gray-600 mt-1">
+                  {slug ? "Viewing a specific shared response" : "AI responses shared with your team"}
+                </p>
               </div>
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center justify-center px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
-            >
-              <FaFilter className="w-4 h-4 mr-2" />
-              Filters
-            </button>
+            {!slug && (
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center justify-center px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+              >
+                <FaFilter className="w-4 h-4 mr-2" />
+                Filters
+              </button>
+            )}
           </div>
         </div>
 
         {/* Filters */}
-        {showFilters && (
+        {showFilters && !slug && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
@@ -364,11 +383,12 @@ function TeamSharedPage() {
         )}
 
         {/* Results Summary */}
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            {loading ? 'Loading...' : `${totalCount} response${totalCount !== 1 ? 's' : ''} found`}
-          </p>
-          {totalPages > 1 && (
+        {!slug && (
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              {loading ? 'Loading...' : `${totalCount} response${totalCount !== 1 ? 's' : ''} found`}
+            </p>
+            {totalPages > 1 && (
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -390,6 +410,7 @@ function TeamSharedPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Results */}
         {loading ? (
@@ -500,7 +521,7 @@ function TeamSharedPage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {totalPages > 1 && !slug && (
           <div className="mt-8 flex justify-center">
             <div className="flex items-center space-x-2">
               <button
