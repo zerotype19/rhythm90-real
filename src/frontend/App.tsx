@@ -8,6 +8,9 @@ import PlayBuilder from './pages/PlayBuilder';
 import SignalLab from './pages/SignalLab';
 import RitualGuide from './pages/RitualGuide';
 import MiniTools from './pages/MiniTools';
+import PlainEnglishTranslator from './pages/mini-tools/PlainEnglishTranslator';
+import GetToByGenerator from './pages/mini-tools/GetToByGenerator';
+import CreativeTensionFinder from './pages/mini-tools/CreativeTensionFinder';
 import Community from './pages/Community';
 import Settings from './pages/Settings';
 import TeamBenchmarking from './pages/TeamBenchmarking';
@@ -32,6 +35,9 @@ function App() {
               <Route path="signal-lab" element={<SignalLab />} />
               <Route path="ritual-guide" element={<RitualGuide />} />
               <Route path="mini-tools" element={<MiniTools />} />
+              <Route path="mini-tools/plain-english-translator" element={<PlainEnglishTranslator />} />
+              <Route path="mini-tools/get-to-by-generator" element={<GetToByGenerator />} />
+              <Route path="mini-tools/creative-tension-finder" element={<CreativeTensionFinder />} />
               <Route path="community" element={<Community />} />
               <Route path="settings" element={<Settings />} />
               <Route path="team-benchmarking" element={<TeamBenchmarking />} />

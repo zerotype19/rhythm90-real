@@ -1,7 +1,7 @@
 import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
-import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts } from './ai';
+import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 
@@ -58,6 +58,19 @@ export default {
         return await handleGenerateRitualPrompts(request, env);
       }
 
+      // Mini Tools routes
+      if (path === '/api/mini-tools/plain-english-translator' && request.method === 'POST') {
+        return await handlePlainEnglishTranslator(request, env);
+      }
+
+      if (path === '/api/mini-tools/get-to-by-generator' && request.method === 'POST') {
+        return await handleGetToByGenerator(request, env);
+      }
+
+      if (path === '/api/mini-tools/creative-tension-finder' && request.method === 'POST') {
+        return await handleCreativeTensionFinder(request, env);
+      }
+
       // AI Debugger: Play Builder last log
       if (path === '/api/debug/last-play' && request.method === 'GET') {
         if (typeof lastPlayBuilderDebugLog !== 'undefined' && lastPlayBuilderDebugLog) {
@@ -80,6 +93,15 @@ export default {
           return jsonResponse(lastRitualGuideDebugLog);
         } else {
           return jsonResponse({ error: 'No Ritual Guide debug log found.' }, 404);
+        }
+      }
+
+      // AI Debugger: Mini Tools last log
+      if (path === '/api/debug/last-mini-tool' && request.method === 'GET') {
+        if (typeof lastMiniToolDebugLog !== 'undefined' && lastMiniToolDebugLog) {
+          return jsonResponse(lastMiniToolDebugLog);
+        } else {
+          return jsonResponse({ error: 'No Mini Tool debug log found.' }, 404);
         }
       }
 

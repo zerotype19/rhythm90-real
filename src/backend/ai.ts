@@ -335,6 +335,9 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
   }
 }
 
+// Global debug log for mini tools
+let lastMiniToolDebugLog: any = null;
+
 export async function handleGenerateRitualPrompts(request: Request, env: Env): Promise<Response> {
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
@@ -507,4 +510,192 @@ Additional Refinements:
     console.error('Generate ritual prompts error:', error);
     return errorResponse('Failed to generate ritual prompts', 500);
   }
-} 
+}
+
+// Mini Tools Handlers
+
+export async function handlePlainEnglishTranslator(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { original_text } = body;
+    if (!original_text) return errorResponse('Original text is required', 400);
+
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Plain-English Translator assistant. Rewrite the input text into clear, human language without jargon or buzzwords.'
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Original text: ${original_text}\n\nOutput JSON only: { "plain_english_rewrite": "...", "side_by_side_table": [{ "what_it_says": "...", "what_it_really_means": "..." }], "jargon_glossary": ["..."] }\n\nDo not include markdown fences, code blocks, or extra explanation.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        plain_english_rewrite: parsed.plain_english_rewrite || '',
+        side_by_side_table: Array.isArray(parsed.side_by_side_table) ? parsed.side_by_side_table : [],
+        jargon_glossary: Array.isArray(parsed.jargon_glossary) ? parsed.jargon_glossary : []
+      };
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { raw_response: aiResponse };
+      warning = 'AI response could not be parsed; returning raw text only.';
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'plain-english-translator',
+      input_payload: body,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Plain-English Translator error:', error);
+    return errorResponse('Failed to translate text', 500);
+  }
+}
+
+export async function handleGetToByGenerator(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { audience_description, behavioral_or_emotional_insight, brand_product_role } = body;
+    if (!audience_description || !behavioral_or_emotional_insight || !brand_product_role) {
+      return errorResponse('All fields are required', 400);
+    }
+
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Get/To/By Generator assistant. Generate a sharp Get/To/By statement. Define audience behaviorally, not just demographics. The "by" must reference a real brand action.'
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Audience: ${audience_description}\nBehavioral/Emotional Insight: ${behavioral_or_emotional_insight}\nBrand/Product Role: ${brand_product_role}\n\nOutput JSON only: { "get": "...", "to": "...", "by": "..." }\n\nDo not include markdown fences, code blocks, or explanation.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        get: parsed.get || '',
+        to: parsed.to || '',
+        by: parsed.by || ''
+      };
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { raw_response: aiResponse };
+      warning = 'AI response could not be parsed; returning raw text only.';
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'get-to-by-generator',
+      input_payload: body,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Get/To/By Generator error:', error);
+    return errorResponse('Failed to generate Get/To/By statement', 500);
+  }
+}
+
+export async function handleCreativeTensionFinder(request: Request, env: Env): Promise<Response> {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
+  }
+  try {
+    // Temporarily bypass auth for testing
+    // const user = await verifyAuth(request, env);
+    // if (!user) return errorResponse('Unauthorized', 401);
+    const body = await request.json();
+    const { problem_or_strategy_summary } = body;
+    if (!problem_or_strategy_summary) return errorResponse('Problem or strategy summary is required', 400);
+
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a MadMarketing Creative-Tension Finder assistant. Generate 4–6 potent creative tensions and optional platform names. Focus on real human contradictions. Platform name optional, max 5 words.'
+    };
+
+    const userMessage = {
+      role: 'user',
+      content: `Problem/Strategy: ${problem_or_strategy_summary}\n\nOutput JSON only: [{ "tension": "...", "optional_platform_name": "..." }]\n\nDo not include markdown fences, code blocks, or explanation.`
+    };
+
+    const messages = [systemMessage, userMessage];
+    const aiResponse = await callOpenAI(messages, env);
+
+    // Parse response
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+
+    try {
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+      parseStatus = 'failed';
+      backendPayload = { raw_response: aiResponse };
+      warning = 'AI response could not be parsed; returning raw text only.';
+    }
+
+    // Debug log
+    lastMiniToolDebugLog = {
+      tool: 'creative-tension-finder',
+      input_payload: body,
+      prompt: messages,
+      openai_response: aiResponse,
+      parse_status: parseStatus,
+      backend_payload: backendPayload,
+      warning,
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse(backendPayload);
+  } catch (error) {
+    console.error('Creative-Tension Finder error:', error);
+    return errorResponse('Failed to find creative tensions', 500);
+  }
+}
+
+export { lastMiniToolDebugLog }; 

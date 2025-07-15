@@ -101,10 +101,10 @@ export interface InterpretSignalResponse {
 
 export interface GenerateRitualPromptsRequest {
   ritual_type: 'kickoff' | 'pulse_check' | 'rr';
-  team_context?: string;
   team_type?: string;
-  session_purpose?: string;
-  challenges?: string | string[];
+  top_challenges?: string;
+  focus_areas?: string;
+  additional_context?: string;
 }
 
 export interface GenerateRitualPromptsResponse {

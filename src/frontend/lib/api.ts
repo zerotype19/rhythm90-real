@@ -128,6 +128,35 @@ class ApiClient {
     });
   }
 
+  // Mini Tools
+  async plainEnglishTranslator(originalText: string) {
+    return this.request('/api/mini-tools/plain-english-translator', {
+      method: 'POST',
+      body: JSON.stringify({ original_text: originalText }),
+      credentials: 'include',
+    });
+  }
+
+  async getToByGenerator(audienceDescription: string, behavioralOrEmotionalInsight: string, brandProductRole: string) {
+    return this.request('/api/mini-tools/get-to-by-generator', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        audience_description: audienceDescription,
+        behavioral_or_emotional_insight: behavioralOrEmotionalInsight,
+        brand_product_role: brandProductRole
+      }),
+      credentials: 'include',
+    });
+  }
+
+  async creativeTensionFinder(problemOrStrategySummary: string) {
+    return this.request('/api/mini-tools/creative-tension-finder', {
+      method: 'POST',
+      body: JSON.stringify({ problem_or_strategy_summary: problemOrStrategySummary }),
+      credentials: 'include',
+    });
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/api/health');
