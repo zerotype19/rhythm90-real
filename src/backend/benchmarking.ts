@@ -17,8 +17,8 @@ interface TeamBenchmarks {
   industry_metrics: {
     metric_name: string;
     average_value: number;
-    percentile_25: number;
-    percentile_75: number;
+    min_value: number;
+    max_value: number;
     team_count: number;
   }[];
 }
@@ -212,8 +212,8 @@ export const getIndustryBenchmarks = async (env: Env, periodStart: string, perio
       SELECT 
         metric_name,
         AVG(metric_value) as average_value,
-        PERCENTILE(metric_value, 25) as percentile_25,
-        PERCENTILE(metric_value, 75) as percentile_75,
+        MIN(metric_value) as min_value,
+        MAX(metric_value) as max_value,
         COUNT(DISTINCT team_id) as team_count
       FROM team_benchmarks 
       WHERE period_start = ? 

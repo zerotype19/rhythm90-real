@@ -15,8 +15,8 @@ interface BenchmarkMetric {
 interface IndustryMetric {
   metric_name: string;
   average_value: number;
-  percentile_25: number;
-  percentile_75: number;
+  min_value: number;
+  max_value: number;
   team_count: number;
 }
 
@@ -88,18 +88,18 @@ function TeamBenchmarking() {
     return metric?.average_value || 0;
   };
 
-  const getPercentile = (metricName: string): number => {
+  const getMaxValue = (metricName: string): number => {
     const metric = benchmarks?.industry_metrics.find(m => m.metric_name === metricName);
-    return metric?.percentile_75 || 0;
+    return metric?.max_value || 0;
   };
 
   const getPerformanceBadge = (metricName: string): { text: string; color: string } => {
     const teamValue = getMetricValue(metricName);
     const industryAvg = getIndustryAverage(metricName);
-    const percentile75 = getPercentile(metricName);
+    const maxValue = getMaxValue(metricName);
 
-    if (teamValue >= percentile75) {
-      return { text: 'Top 25%', color: 'bg-green-100 text-green-800' };
+    if (teamValue >= maxValue * 0.8) {
+      return { text: 'Top 20%', color: 'bg-green-100 text-green-800' };
     } else if (teamValue >= industryAvg) {
       return { text: 'Above Average', color: 'bg-blue-100 text-blue-800' };
     } else {
