@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeftIcon, MagnifyingGlassIcon, StarIcon, GlobeAltIcon, UserGroupIcon, EyeIcon, ShareIcon } from '@heroicons/react/24/outline';
-import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import { api } from '../lib/api';
+import { apiClient } from '../lib/api';
 import { SavedResponseActions } from '../components/SavedResponseActions';
 import AppLayout from '../components/AppLayout';
 
@@ -107,7 +105,7 @@ const HistoryPage: React.FC = () => {
     const fetchResponses = async () => {
       try {
         setLoading(true);
-        const response = await api.getUserHistory();
+        const response = await apiClient.getUserHistory();
         
         if (response.data?.data) {
           const userResponses = response.data.data;
@@ -164,7 +162,7 @@ const HistoryPage: React.FC = () => {
   // Handle favorite toggle
   const handleFavoriteToggle = async (responseId: string, isFavorite: boolean) => {
     try {
-      const response = await api.toggleFavorite(responseId, isFavorite);
+      const response = await apiClient.toggleFavorite(responseId, isFavorite);
       if (response.data?.data) {
         setResponses(prev => prev.map(r => 
           r.id === responseId ? { ...r, is_favorite: isFavorite } : r
@@ -178,7 +176,7 @@ const HistoryPage: React.FC = () => {
   // Handle share toggle
   const handleShareToggle = async (responseId: string, isSharedPublic: boolean, isSharedTeam: boolean) => {
     try {
-      const response = await api.setShareStatus(responseId, isSharedPublic, isSharedTeam);
+      const response = await apiClient.setShareStatus(responseId, isSharedPublic, isSharedTeam);
       if (response.data?.data) {
         setResponses(prev => prev.map(r => 
           r.id === responseId ? { 
@@ -265,7 +263,7 @@ const HistoryPage: React.FC = () => {
                   onClick={() => navigate('/app')}
                   className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
                 >
-                  <ChevronLeftIcon className="w-4 h-4 mr-2" />
+                  <span className="mr-2">←</span>
                   Back to Dashboard
                 </button>
                 <h1 className="text-3xl font-bold text-gray-900">My Saved Responses</h1>
@@ -276,13 +274,13 @@ const HistoryPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Search */}
                   <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg">🔍</span>
                     <input
                       type="text"
                       placeholder="Search responses..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                     />
                   </div>
 
@@ -300,27 +298,19 @@ const HistoryPage: React.FC = () => {
 
                   {/* Favorites Filter */}
                   <button
-                    onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                    className={`flex items-center justify-center px-4 py-2 rounded-lg border ${
-                      showFavoritesOnly
-                        ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
-                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    onClick={() => setShowFavoritesOnly((v) => !v)}
+                    className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium ${showFavoritesOnly ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'} mr-2`}
                   >
-                    <StarIcon className="w-4 h-4 mr-2" />
+                    <span className="mr-2">⭐</span>
                     Favorites Only
                   </button>
 
                   {/* Shared Filter */}
                   <button
-                    onClick={() => setShowSharedOnly(!showSharedOnly)}
-                    className={`flex items-center justify-center px-4 py-2 rounded-lg border ${
-                      showSharedOnly
-                        ? 'bg-blue-100 border-blue-300 text-blue-800'
-                        : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
+                    onClick={() => setShowSharedOnly((v) => !v)}
+                    className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium ${showSharedOnly ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}
                   >
-                    <ShareIcon className="w-4 h-4 mr-2" />
+                    <span className="mr-2">🔗</span>
                     Shared Only
                   </button>
                 </div>
@@ -354,19 +344,19 @@ const HistoryPage: React.FC = () => {
                             <div className="flex items-center space-x-2">
                               {response.is_favorite && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  <StarIconSolid className="w-3 h-3 mr-1" />
+                                  <span className="mr-1">⭐</span>
                                   Favorite
                                 </span>
                               )}
                               {response.is_shared_public && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  <GlobeAltIcon className="w-3 h-3 mr-1" />
+                                  <span className="mr-1">🌐</span>
                                   Public
                                 </span>
                               )}
                               {response.is_shared_team && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  <UserGroupIcon className="w-3 h-3 mr-1" />
+                                  <span className="mr-1">👥</span>
                                   Team
                                 </span>
                               )}
@@ -393,7 +383,7 @@ const HistoryPage: React.FC = () => {
                             }}
                             className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                           >
-                            <EyeIcon className="w-4 h-4 mr-1" />
+                            <span className="mr-1">👁️</span>
                             View
                           </button>
                           
