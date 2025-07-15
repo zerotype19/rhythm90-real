@@ -849,7 +849,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       // Store persona in session for Ask Mode
       if (parsed.persona_sheet && Object.keys(parsed.persona_sheet).length > 0) {
         console.log(`[DEBUG] Storing persona for user ${user_id}:`, parsed.persona_sheet.name);
-        storePersonaSession(user_id, parsed.persona_sheet);
+        // We'll store the persona in the response
       } else {
         console.log(`[DEBUG] No persona sheet to store for user ${user_id}`);
       }
@@ -895,7 +895,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         // Store persona in session for Ask Mode (even if extracted via fallback)
         if (Object.keys(persona_sheet).length > 0) {
           console.log(`[DEBUG] Storing fallback persona for user ${user_id}:`, persona_sheet.name);
-          storePersonaSession(user_id, persona_sheet);
+          // We'll store the persona in the response
         } else {
           console.log(`[DEBUG] No fallback persona to store for user ${user_id}`);
         }
@@ -919,7 +919,12 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    // Store persona in cookie if we have one
+    let response = jsonResponse(backendPayload);
+    if (backendPayload.persona_sheet && Object.keys(backendPayload.persona_sheet).length > 0) {
+      response = storePersonaSession(user_id, backendPayload.persona_sheet, response);
+    }
+    return response;
   } catch (error) {
     console.error('Persona Generator error:', error);
     return errorResponse('Failed to generate persona', 500);
@@ -1578,45 +1583,65 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
   }
 }
 
-// In-memory session store for persona context (in production, use KV store)
-// Using a global variable to persist across requests in the same worker instance
-let personaSessions = new Map<string, { persona: any; timestamp: number }>();
+// Cookie-based session store for persona context (works across stateless worker instances)
+const PERSONA_COOKIE_NAME = 'rhythm90_persona';
+const PERSONA_COOKIE_MAX_AGE = 60 * 60; // 1 hour in seconds
 
-// Clean up expired sessions (older than 1 hour)
-function cleanupExpiredSessions() {
-  const now = Date.now();
-  const oneHour = 60 * 60 * 1000;
-  let cleanedCount = 0;
-  for (const [key, value] of personaSessions.entries()) {
-    if (now - value.timestamp > oneHour) {
-      personaSessions.delete(key);
-      cleanedCount++;
-    }
-  }
-  if (cleanedCount > 0) {
-    console.log(`[DEBUG] Cleaned up ${cleanedCount} expired sessions`);
-  }
-}
-
-// Store persona in session
-function storePersonaSession(userId: string, persona: any) {
-  cleanupExpiredSessions();
-  personaSessions.set(userId, {
+// Store persona in session using cookies
+function storePersonaSession(userId: string, persona: any, response: Response): Response {
+  const personaData = {
+    userId,
     persona,
     timestamp: Date.now()
-  });
+  };
+  
+  const cookieValue = encodeURIComponent(JSON.stringify(personaData));
+  const cookie = `${PERSONA_COOKIE_NAME}=${cookieValue}; Max-Age=${PERSONA_COOKIE_MAX_AGE}; Path=/; HttpOnly; SameSite=Strict; Secure`;
+  
+  response.headers.set('Set-Cookie', cookie);
   console.log(`[DEBUG] Stored persona for user ${userId}:`, persona.name);
-  console.log(`[DEBUG] Total sessions: ${personaSessions.size}`);
+  return response;
 }
 
-// Get persona from session
-function getPersonaSession(userId: string): any | null {
-  cleanupExpiredSessions();
-  const session = personaSessions.get(userId);
-  console.log(`[DEBUG] Looking for persona for user ${userId}`);
-  console.log(`[DEBUG] Session found:`, !!session);
-  console.log(`[DEBUG] Available sessions:`, Array.from(personaSessions.keys()));
-  return session ? session.persona : null;
+// Get persona from session using cookies
+function getPersonaSession(userId: string, request: Request): any | null {
+  const cookies = request.headers.get('cookie');
+  if (!cookies) {
+    console.log(`[DEBUG] No cookies found for user ${userId}`);
+    return null;
+  }
+  
+  const personaCookie = cookies.split(';')
+    .find(cookie => cookie.trim().startsWith(`${PERSONA_COOKIE_NAME}=`));
+  
+  if (!personaCookie) {
+    console.log(`[DEBUG] No persona cookie found for user ${userId}`);
+    return null;
+  }
+  
+  try {
+    const cookieValue = personaCookie.split('=')[1];
+    const personaData = JSON.parse(decodeURIComponent(cookieValue));
+    
+    // Check if cookie is for the right user and not expired
+    if (personaData.userId !== userId) {
+      console.log(`[DEBUG] Cookie user ID mismatch: expected ${userId}, got ${personaData.userId}`);
+      return null;
+    }
+    
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000;
+    if (now - personaData.timestamp > oneHour) {
+      console.log(`[DEBUG] Persona cookie expired for user ${userId}`);
+      return null;
+    }
+    
+    console.log(`[DEBUG] Found persona for user ${userId}:`, personaData.persona.name);
+    return personaData.persona;
+  } catch (error) {
+    console.log(`[DEBUG] Error parsing persona cookie for user ${userId}:`, error);
+    return null;
+  }
 }
 
 export async function handlePersonaAsk(request: Request, env: Env): Promise<Response> {
@@ -1635,7 +1660,7 @@ export async function handlePersonaAsk(request: Request, env: Env): Promise<Resp
 
     // Get persona from session
     console.log(`[DEBUG] PersonaAsk called with user_id: ${user_id}`);
-    const persona = getPersonaSession(user_id);
+    const persona = getPersonaSession(user_id, request);
     if (!persona) {
       console.log(`[DEBUG] No persona found for user ${user_id}`);
       return errorResponse('No persona found for this session. Please generate a persona first.', 400);
