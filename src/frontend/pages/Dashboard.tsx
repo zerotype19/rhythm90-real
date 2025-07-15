@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
-import apiClient from '../lib/api';
+import { apiClient } from '../lib/api';
 import AppLayout from '../components/AppLayout';
 import { 
   ChartBarIcon, 
