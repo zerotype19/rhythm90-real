@@ -2,7 +2,7 @@ import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
 import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts } from './ai';
-import { lastPlayBuilderDebugLog, lastSignalLabDebugLog } from './ai';
+import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 
 export default {
@@ -72,6 +72,14 @@ export default {
           return jsonResponse(lastSignalLabDebugLog);
         } else {
           return jsonResponse({ error: 'No Signal Lab debug log found.' }, 404);
+        }
+      }
+      // AI Debugger: Ritual Guide last log
+      if (path === '/api/debug/last-ritual' && request.method === 'GET') {
+        if (typeof lastRitualGuideDebugLog !== 'undefined' && lastRitualGuideDebugLog) {
+          return jsonResponse(lastRitualGuideDebugLog);
+        } else {
+          return jsonResponse({ error: 'No Ritual Guide debug log found.' }, 404);
         }
       }
 
