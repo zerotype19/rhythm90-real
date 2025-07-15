@@ -49,72 +49,31 @@ interface ApiResponse<T> {
 // Parse AI response to hide prompts and show only the user-facing content
 const parseAIResponse = (responseBlob: string): string => {
   try {
-    // Try to parse as JSON first
     const parsed = JSON.parse(responseBlob);
-    
-    // If it's a structured response, extract the main content
-    if (parsed.content) {
-      return parsed.content;
-    }
-    
-    if (parsed.response) {
-      return parsed.response;
-    }
-    
-    if (parsed.result) {
-      return parsed.result;
-    }
-    
-    // If it's an array, join the content
+    // If it's a string, just return it
+    if (typeof parsed === 'string') return parsed;
+    // If it's an array, join all stringifiable items
     if (Array.isArray(parsed)) {
-      return parsed.map(item => {
-        if (typeof item === 'string') return item;
-        if (item.content) return item.content;
-        if (item.response) return item.response;
-        return JSON.stringify(item);
-      }).join('\n\n');
+      return parsed.map(item =>
+        typeof item === 'string' ? item : JSON.stringify(item, null, 2)
+      ).join('\n\n');
     }
-    
-    // If it's an object with text fields, extract them
-    const textFields = Object.entries(parsed)
-      .filter(([key, value]) => 
-        typeof value === 'string' && 
-        !key.toLowerCase().includes('prompt') &&
-        !key.toLowerCase().includes('input') &&
-        !key.toLowerCase().includes('context')
-      )
-      .map(([_, value]) => value as string);
-    
-    if (textFields.length > 0) {
-      return textFields.join('\n\n');
+    // If it's an object, show all top-level string fields with labels
+    if (typeof parsed === 'object' && parsed !== null) {
+      const stringFields = Object.entries(parsed)
+        .filter(([_, value]) => typeof value === 'string')
+        .map(([key, value]) => `<strong>${key.replace(/_/g, ' ')}:</strong> ${value}`);
+      if (stringFields.length > 0) {
+        return stringFields.join('<br/><br/>');
+      }
+      // If no string fields, show the whole object
+      return `<pre>${JSON.stringify(parsed, null, 2)}</pre>`;
     }
-    
-    // Fallback to stringified version - ensure full content is shown
-    return JSON.stringify(parsed, null, 2);
+    // Fallback
+    return responseBlob;
   } catch {
-    // If not JSON, treat as plain text - ensure full content is shown
-    const lines = responseBlob.split('\n');
-    
-    // Remove lines that look like prompts or system messages
-    const filteredLines = lines.filter(line => {
-      const trimmed = line.trim();
-      return !trimmed.startsWith('System:') &&
-             !trimmed.startsWith('User:') &&
-             !trimmed.startsWith('Assistant:') &&
-             !trimmed.startsWith('Human:') &&
-             !trimmed.startsWith('AI:') &&
-             !trimmed.startsWith('Prompt:') &&
-             !trimmed.startsWith('Context:') &&
-             !trimmed.startsWith('Input:') &&
-             trimmed.length > 0;
-    });
-    
-    // If no lines were filtered out, return the original content
-    if (filteredLines.length === 0) {
-      return responseBlob;
-    }
-    
-    return filteredLines.join('\n');
+    // Not JSON, just return as plain text
+    return responseBlob;
   }
 };
 
@@ -568,13 +527,6 @@ function TeamSharedPage() {
                       className="text-sm text-gray-700 whitespace-pre-wrap break-words"
                       dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
                     />
-                    {/* Debug info - remove after testing */}
-                    <div className="mt-4 p-2 bg-blue-50 text-xs text-blue-700 rounded">
-                      <strong>Debug Info:</strong><br/>
-                      Raw blob length: {selectedResponse.response_blob.length}<br/>
-                      Parsed content length: {parseAIResponse(selectedResponse.response_blob).length}<br/>
-                      First 100 chars: {selectedResponse.response_blob.substring(0, 100)}...
-                    </div>
                   </div>
                 </div>
 
