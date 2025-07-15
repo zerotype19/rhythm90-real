@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import PlayBuilder from './pages/PlayBuilder';
 import SignalLab from './pages/SignalLab';
 import RitualGuide from './pages/RitualGuide';
+import MiniTools from './pages/MiniTools';
 import Community from './pages/Community';
 import Settings from './pages/Settings';
 import TeamBenchmarking from './pages/TeamBenchmarking';
@@ -30,6 +31,7 @@ function App() {
               <Route path="play-builder" element={<PlayBuilder />} />
               <Route path="signal-lab" element={<SignalLab />} />
               <Route path="ritual-guide" element={<RitualGuide />} />
+              <Route path="mini-tools" element={<MiniTools />} />
               <Route path="community" element={<Community />} />
               <Route path="settings" element={<Settings />} />
               <Route path="team-benchmarking" element={<TeamBenchmarking />} />
