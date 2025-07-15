@@ -27,9 +27,11 @@ function PlayBuilder() {
   const [context, setContext] = useState('');
   // Output
   const [output, setOutput] = useState('');
+  const [structured, setStructured] = useState<any>(null);
   const [hypothesis, setHypothesis] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userNote, setUserNote] = useState('');
   // Validation
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -46,7 +48,75 @@ function PlayBuilder() {
     return errs;
   };
 
-  // Helper to render output
+  // Helper to render structured output
+  const renderStructured = () => {
+    if (!structured) return null;
+    const sections = [
+      {
+        key: 'hypothesis',
+        label: 'Hypothesis',
+        icon: <FaLightbulb className="text-yellow-500 mr-2" />,
+        content: structured.hypothesis,
+      },
+      {
+        key: 'how_to_run_summary',
+        label: 'How-to-Run Summary',
+        icon: <FaClipboardList className="text-blue-500 mr-2" />,
+        content: structured.how_to_run_summary,
+      },
+      {
+        key: 'signals_to_watch',
+        label: 'Signals to Watch',
+        icon: <FaChartLine className="text-green-500 mr-2" />,
+        content: structured.signals_to_watch && Array.isArray(structured.signals_to_watch)
+          ? structured.signals_to_watch.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>)
+          : structured.signals_to_watch,
+      },
+      {
+        key: 'owner_role',
+        label: 'Owner Role',
+        icon: <FaUserTie className="text-purple-500 mr-2" />,
+        content: structured.owner_role,
+      },
+      {
+        key: 'what_success_looks_like',
+        label: 'What Success Looks Like',
+        icon: <FaCheckCircle className="text-emerald-500 mr-2" />,
+        content: structured.what_success_looks_like,
+      },
+      {
+        key: 'next_recommendation',
+        label: 'Next Recommendation',
+        icon: <FaArrowRight className="text-orange-500 mr-2" />,
+        content: structured.next_recommendation && Array.isArray(structured.next_recommendation)
+          ? structured.next_recommendation.filter(Boolean).map((item: string, i: number) => <li key={i}>{item}</li>)
+          : structured.next_recommendation,
+      },
+    ];
+    return (
+      <div className="space-y-4">
+        {sections.map((section) =>
+          section.content && (Array.isArray(section.content) ? section.content.length > 0 : section.content.length > 0) ? (
+            <div key={section.key} className="bg-white rounded-md shadow-sm p-3">
+              <div className="flex items-center mb-1">
+                {section.icon}
+                <span className="font-bold text-sm text-gray-900">{section.label}</span>
+              </div>
+              <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
+                {Array.isArray(section.content) ? (
+                  <ul className={`ml-5 space-y-1 ${['signals_to_watch', 'next_recommendation'].includes(section.key) ? 'list-disc' : 'list-none'}`}>
+                    {section.content}
+                  </ul>
+                ) : section.content}
+              </div>
+            </div>
+          ) : null
+        )}
+      </div>
+    );
+  };
+
+  // Helper to render legacy output
   const renderOutput = () => {
     if (!output) return null;
 
@@ -179,14 +249,28 @@ function PlayBuilder() {
       };
       const response = await apiClient.generatePlay(payload);
       if (response.data) {
-        if (response.data.output) {
-          setOutput(response.data.output);
+        // Check if we have structured data (new format)
+        if (response.data.hypothesis || response.data.how_to_run_summary || response.data.signals_to_watch || 
+            response.data.owner_role || response.data.what_success_looks_like || response.data.next_recommendation) {
+          setStructured(response.data);
+          setOutput('');
           setHypothesis('');
           setSuggestions([]);
+          setUserNote(response.data.user_note || '');
+        } else if (response.data.output) {
+          // Legacy format
+          setOutput(response.data.output);
+          setStructured(null);
+          setHypothesis('');
+          setSuggestions([]);
+          setUserNote('');
         } else {
-          setHypothesis(response.data.hypothesis);
-          setSuggestions(response.data.suggestions);
+          // Old legacy format
+          setHypothesis(response.data.hypothesis || '');
+          setSuggestions(response.data.suggestions || []);
           setOutput('');
+          setStructured(null);
+          setUserNote('');
         }
       }
     } catch (error) {
@@ -342,7 +426,14 @@ function PlayBuilder() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <FaLightbulb className="text-yellow-400" /> Generated Hypothesis
             </h2>
-            {output ? (
+            {userNote && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">{userNote}</p>
+              </div>
+            )}
+            {structured ? (
+              renderStructured()
+            ) : output ? (
               renderOutput()
             ) : hypothesis ? (
               <div className="space-y-6 text-xs">

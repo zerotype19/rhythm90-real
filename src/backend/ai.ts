@@ -106,19 +106,26 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
 5. What Success Looks Like (include what we will learn and how it informs future plays)
 6. Next Recommendation (Based on what we learn, what should we do next?)
 
+Format your response as JSON with these exact field names:
+hypothesis, how_to_run_summary, signals_to_watch, owner_role, what_success_looks_like, next_recommendation.
+
+Ensure signals_to_watch and next_recommendation are arrays, even if only one item.
+Do NOT include numbers in any section titles or content (e.g., "Timeframe" not "1. Timeframe").
+Do NOT include checkmarks (✓) or any special characters in lists.
+
 Incorporate the Additional Context into all sections. Provide category-specific recommendations when possible.
 
 In the How-to-Run Summary, provide timeframe, sample size, and control vs. experiment details where applicable.
 
 In What Success Looks Like, include what we will learn from the results and how that learning can inform future plays.
 
-Include a brief recommendation: Based on what we learn, what should we do next?
-
 Tailor your output to the Owner Role if specified.
 
 Important: Always ensure your recommendations are directly tied to the provided idea_prompt and top_signal. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.
 
-Avoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or signal.`
+Avoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or signal.
+
+⚠️ CRITICAL: Return ONLY raw JSON — no markdown fences, no code blocks, no comments, no explanation text. Do not wrap output like \`\`\`json ... \`\`\`. Return the JSON object directly.`
       });
     } else if (extracted_idea) {
       // Fallback to old prompt structure
@@ -139,18 +146,90 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
     const aiResponse = await callOpenAI(messages, env);
     // Log full OpenAI response
     console.log('[AI DEBUG] PlayBuilder Raw OpenAI Response:', aiResponse);
-    // Prepare backend payload
-    const backendPayload = { output: aiResponse };
+    
+    // --- Output Structuring ---
+    let backendPayload: any = {};
+    let warning = undefined;
+    let parseStatus = 'success';
+    let userNote = undefined;
+    
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(aiResponse);
+      backendPayload = {
+        hypothesis: parsed.hypothesis || '',
+        how_to_run_summary: parsed.how_to_run_summary || '',
+        signals_to_watch: Array.isArray(parsed.signals_to_watch) ? parsed.signals_to_watch : (parsed.signals_to_watch ? [parsed.signals_to_watch] : []),
+        owner_role: parsed.owner_role || '',
+        what_success_looks_like: parsed.what_success_looks_like || '',
+        next_recommendation: Array.isArray(parsed.next_recommendation) ? parsed.next_recommendation : (parsed.next_recommendation ? [parsed.next_recommendation] : [])
+      };
+    } catch (err) {
+      // JSON parsing failed, try minimal regex extraction as safety net
+      parseStatus = 'fallback_used';
+      let hypothesis = '', how_to_run_summary = '', signals_to_watch: string[] = [], owner_role = '', what_success_looks_like = '', next_recommendation: string[] = [];
+      
+      // Minimal, safe regex extraction
+      const hypothesisMatch = aiResponse.match(/Hypothesis\s*[:\-]?\s*([\s\S]*?)(?=How-to-Run Summary|How to Run Summary|Signals to Watch|Owner Role|What Success Looks Like|Next Recommendation|$)/i);
+      if (hypothesisMatch) hypothesis = hypothesisMatch[1].trim();
+      
+      const summaryMatch = aiResponse.match(/How-to-Run Summary\s*[:\-]?\s*([\s\S]*?)(?=Signals to Watch|Owner Role|What Success Looks Like|Next Recommendation|$)/i);
+      if (summaryMatch) how_to_run_summary = summaryMatch[1].trim();
+      
+      const signalsMatch = aiResponse.match(/Signals to Watch\s*[:\-]?\s*([\s\S]*?)(?=Owner Role|What Success Looks Like|Next Recommendation|$)/i);
+      if (signalsMatch) {
+        const lines = signalsMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
+        signals_to_watch = lines;
+      }
+      
+      const ownerMatch = aiResponse.match(/Owner Role\s*[:\-]?\s*([\s\S]*?)(?=What Success Looks Like|Next Recommendation|$)/i);
+      if (ownerMatch) owner_role = ownerMatch[1].trim();
+      
+      const successMatch = aiResponse.match(/What Success Looks Like\s*[:\-]?\s*([\s\S]*?)(?=Next Recommendation|$)/i);
+      if (successMatch) what_success_looks_like = successMatch[1].trim();
+      
+      const nextMatch = aiResponse.match(/Next Recommendation\s*[:\-]?\s*([\s\S]*)/i);
+      if (nextMatch) {
+        const lines = nextMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
+        next_recommendation = lines;
+      }
+      
+      // If at least one field was extracted, return structured with warning
+      if (hypothesis || how_to_run_summary || signals_to_watch.length || owner_role || what_success_looks_like || next_recommendation.length) {
+        backendPayload = {
+          hypothesis,
+          how_to_run_summary,
+          signals_to_watch,
+          owner_role,
+          what_success_looks_like,
+          next_recommendation
+        };
+        warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+        userNote = 'Note: This result is shown as raw text because AI response formatting failed.';
+      } else {
+        // Complete fallback: return raw response
+        parseStatus = 'failed';
+        backendPayload = {
+          raw_response: aiResponse
+        };
+        warning = 'AI response could not be parsed; returning raw text only.';
+        userNote = 'Note: This result is shown as raw text because AI response formatting failed.';
+      }
+    }
+    
     // Log backend payload
     console.log('[AI DEBUG] PlayBuilder Backend Payload:', JSON.stringify(backendPayload, null, 2));
     // Store last debug log in memory (excluding user emails, account IDs, backend IDs)
     lastPlayBuilderDebugLog = {
       prompt: messages,
       openai_response: aiResponse,
+      parse_status: parseStatus,
       backend_payload: backendPayload,
+      warning,
+      user_note: userNote,
       timestamp: new Date().toISOString()
     };
-    // Pass through raw AI output (frontend will structure)
+    // Return structured payload
     return jsonResponse(backendPayload);
   } catch (error) {
     console.error('Generate play error:', error);
