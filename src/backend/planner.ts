@@ -73,10 +73,12 @@ Quarterly Planning Inputs:
 - Roles: ${JSON.stringify(inputs.roles)}
 `;
 
+    console.log('Generating AI summary for planner session...');
     const summary = await callOpenAI([
       { role: 'system', content: PLANNER_SYSTEM_PROMPT },
       { role: 'user', content: teamContext + userInputs + '\n\nPlease provide a clear, actionable summary for this team\'s quarterly planning session.' }
     ], env);
+    console.log('AI summary generated successfully, length:', summary.length);
 
     // Create planner session
     const sessionId = crypto.randomUUID();

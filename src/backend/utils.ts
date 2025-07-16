@@ -154,7 +154,7 @@ export async function callOpenAI(messages: any[], env: Env): Promise<string> {
     const startTime = Date.now();
     // Create AbortController for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -164,7 +164,7 @@ export async function callOpenAI(messages: any[], env: Env): Promise<string> {
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: 500,
+        max_tokens: 300,
         temperature: 0.7,
       }),
       signal: controller.signal,
