@@ -1,16 +1,13 @@
-import { verifyAuth, getUserFromToken } from './auth';
 import { Env } from './types';
+import { verifyAuth } from './auth';
 import { jsonResponse, errorResponse } from './utils';
 
-// Utility: Only allow Kevin as admin
 function isKevin(email: string) {
-  return email === 'kevin.mcgovern@gmail.com';
+  return email === 'kevin@rhythm90.io' || email === 'kevinmcgovern@gmail.com';
 }
 
-// Debug log helper
 function debugLog(env: Env, msg: string, meta?: any) {
-  if (env && env.DEBUG) {
-    // eslint-disable-next-line no-console
+  if (env.ENVIRONMENT === 'development') {
     console.log(`[dashboard] ${msg}`, meta || '');
   }
 }

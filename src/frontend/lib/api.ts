@@ -4,6 +4,43 @@ if (!API_BASE) {
   throw new Error('VITE_API_URL is not set. Please configure it in your environment variables.');
 }
 
+// Generic API call function
+export async function apiCall<T = any>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<{ data?: T; error?: string }> {
+  const url = `${API_BASE}${endpoint}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  // Get token from localStorage
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { error: data.error || 'Request failed' };
+    }
+
+    return { data };
+  } catch (error) {
+    console.error('API request failed:', error);
+    return { error: 'Network error' };
+  }
+}
+
 interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -531,6 +568,27 @@ class ApiClient {
     return this.request('/api/admin/update-announcement', {
       method: 'POST',
       body: JSON.stringify({ announcement }),
+      credentials: 'include',
+    });
+  }
+
+  // Planner API methods
+  async createPlannerSession(inputs: any) {
+    return this.request('/api/planner/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ inputs }),
+      credentials: 'include',
+    });
+  }
+
+  async getPlannerSessions() {
+    return this.request('/api/planner/sessions', {
+      credentials: 'include',
+    });
+  }
+
+  async getPlannerSession(sessionId: string) {
+    return this.request(`/api/planner/sessions/${sessionId}`, {
       credentials: 'include',
     });
   }

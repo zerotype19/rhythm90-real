@@ -55,6 +55,15 @@ export interface Signal {
   created_at: string;
 }
 
+export interface PlannerSession {
+  id: string;
+  team_id: string;
+  created_by: string;
+  inputs_json: string; // JSON string containing all planner inputs
+  output_summary: string | null;
+  created_at: string;
+}
+
 // API Request/Response types
 export interface AuthRequest {
   code: string;
@@ -122,6 +131,35 @@ export interface GenerateRitualPromptsRequest {
 export interface GenerateRitualPromptsResponse {
   agenda: string[];
   prompts: string[];
+}
+
+// Quarterly Planner types
+export interface PlannerInputs {
+  bigChallenge: string;
+  learningGoals: string[];
+  businessContext?: string;
+  knownPlays?: string;
+  signalsToWatch: string[];
+  blockers?: string;
+  roles: {
+    rhythm90Lead?: string;
+    strategicLeads?: string[];
+    executionalLeads?: string[];
+    signalOwner?: string;
+  };
+}
+
+export interface CreatePlannerSessionRequest {
+  inputs: PlannerInputs;
+}
+
+export interface CreatePlannerSessionResponse {
+  session: PlannerSession;
+  summary: string;
+}
+
+export interface GetPlannerSessionsResponse {
+  sessions: PlannerSession[];
 }
 
 // System Settings types

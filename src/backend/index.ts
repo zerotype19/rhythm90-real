@@ -11,6 +11,7 @@ import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkD
 import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
 import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, getLastStripeDebugLog } from './billing';
 import { handleUpdateModel, handleUpdateAnnouncement as handleUpdateSystemAnnouncement, handleGetSettings } from './admin';
+import { handleCreatePlannerSession, handleGetPlannerSessions, handleGetPlannerSession } from './planner';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -456,6 +457,17 @@ export default {
       }
       if (path === '/api/admin/update-announcement' && request.method === 'POST') {
         return await handleUpdateSystemAnnouncement(request, env);
+      }
+
+      // Planner routes
+      if (path === '/api/planner/sessions' && request.method === 'POST') {
+        return await handleCreatePlannerSession(request, env);
+      }
+      if (path === '/api/planner/sessions' && request.method === 'GET') {
+        return await handleGetPlannerSessions(request, env);
+      }
+      if (path.startsWith('/api/planner/sessions/') && request.method === 'GET') {
+        return await handleGetPlannerSession(request, env);
       }
 
       // Health check
