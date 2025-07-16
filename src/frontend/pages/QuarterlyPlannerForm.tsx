@@ -5,7 +5,7 @@ import SavedResponseActions from '../components/SavedResponseActions';
 import { apiClient } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { 
-  FaTarget, 
+  FaBullseye, 
   FaGraduationCap, 
   FaBriefcase, 
   FaPlay, 
@@ -112,7 +112,7 @@ function QuarterlyPlannerForm() {
       {
         key: 'objective',
         label: 'Objective',
-        icon: <FaTarget className="text-red-500 mr-2" />,
+        icon: <FaBullseye className="text-red-500 mr-2" />,
         content: structuredSummary.objective,
       },
       {
