@@ -1,59 +1,58 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AppLayout from '../components/AppLayout';
+import SavedResponseActions from '../components/SavedResponseActions';
+import { apiClient } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { apiCall } from '../lib/api';
+import { 
+  FaTarget, 
+  FaGraduationCap, 
+  FaBriefcase, 
+  FaPlay, 
+  FaChartLine, 
+  FaExclamationTriangle, 
+  FaUsers, 
+  FaFileAlt,
+  FaLightbulb,
+  FaClipboardList,
+  FaCheckCircle,
+  FaArrowRight,
+  FaChartBar,
+  FaUserTie
+} from 'react-icons/fa';
 
 interface PlannerInputs {
   bigChallenge: string;
   learningGoals: string[];
-  businessContext?: string;
-  knownPlays?: string;
+  businessContext: string;
+  knownPlays: string;
   signalsToWatch: string[];
-  blockers?: string;
+  blockers: string;
   roles: {
-    rhythm90Lead?: string;
-    strategicLeads?: string[];
-    executionalLeads?: string[];
-    signalOwner?: string;
+    rhythm90Lead: string;
+    strategicLeads: string[];
+    executionalLeads: string[];
+    signalOwner: string;
   };
 }
 
-interface PlannerSession {
-  id: string;
-  team_id: string;
-  created_by: string;
-  inputs_json: string;
-  output_summary: string | null;
-  created_at: string;
+interface StructuredSummary {
+  title: string;
+  objective: string;
+  keyFocusAreas: string[];
+  plays: Array<{
+    title: string;
+    description: string;
+    leads: string[];
+    expectedOutcome: string;
+  }>;
+  learningGoals: string[];
+  signalsToWatch: string[];
+  nextSteps: string[];
 }
 
-const LEARNING_GOALS_OPTIONS = [
-  'Conversion rates',
-  'Customer retention',
-  'Creative effectiveness',
-  'Message clarity',
-  'Experience friction',
-  'Audience targeting',
-  'Other'
-];
-
-const SIGNALS_OPTIONS = [
-  'Funnel drop-offs',
-  'Customer feedback / verbatims',
-  'Click-throughs / engagement',
-  'Behavioral patterns',
-  'Channel performance',
-  'Support / field feedback'
-];
-
 function QuarterlyPlannerForm() {
-  const { currentTeam } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [summary, setSummary] = useState<string>('');
-  const [session, setSession] = useState<PlannerSession | null>(null);
-  
   const [inputs, setInputs] = useState<PlannerInputs>({
     bigChallenge: '',
     learningGoals: [],
@@ -69,63 +68,164 @@ function QuarterlyPlannerForm() {
     }
   });
 
-  const [otherLearningGoal, setOtherLearningGoal] = useState('');
-  const [otherSignal, setOtherSignal] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [summary, setSummary] = useState('');
+  const [structuredSummary, setStructuredSummary] = useState<StructuredSummary | null>(null);
+  const [session, setSession] = useState<any>(null);
+  const { currentTeam } = useAuth();
 
-  const updateInputs = (updates: Partial<PlannerInputs>) => {
-    setInputs(prev => ({ ...prev, ...updates }));
-  };
+  // Available options
+  const learningGoalOptions = [
+    'Customer retention', 'Experience friction', 'Growth channels', 'Team alignment',
+    'Data & analytics', 'Product-market fit', 'Operational efficiency', 'Brand awareness',
+    'Revenue optimization', 'User engagement', 'Market expansion', 'Process improvement',
+    'Technology adoption', 'Competitive analysis', 'Other'
+  ];
 
-  const toggleLearningGoal = (goal: string) => {
-    setInputs(prev => ({
-      ...prev,
-      learningGoals: prev.learningGoals.includes(goal)
-        ? prev.learningGoals.filter(g => g !== goal)
-        : [...prev.learningGoals, goal]
-    }));
-  };
+  const signalOptions = [
+    'Funnel drop-offs', 'Click-throughs / engagement', 'Support / field feedback',
+    'Revenue metrics', 'User behavior', 'Market trends', 'Competitor activity',
+    'Team performance', 'Customer feedback', 'Operational metrics', 'Other'
+  ];
 
-  const toggleSignal = (signal: string) => {
-    setInputs(prev => ({
-      ...prev,
-      signalsToWatch: prev.signalsToWatch.includes(signal)
-        ? prev.signalsToWatch.filter(s => s !== signal)
-        : [...prev.signalsToWatch, signal]
-    }));
-  };
+  const roleOptions = [
+    'sam', 'dave', 'frank', 'sarah', 'mike', 'jessica', 'alex', 'emma', 'david', 'lisa'
+  ];
 
-  const addOtherLearningGoal = () => {
-    if (otherLearningGoal.trim() && !inputs.learningGoals.includes(otherLearningGoal.trim())) {
-      setInputs(prev => ({
-        ...prev,
-        learningGoals: [...prev.learningGoals, otherLearningGoal.trim()]
-      }));
-      setOtherLearningGoal('');
+  // Helper to parse AI response
+  const parseAIResponse = (response: string): StructuredSummary | null => {
+    try {
+      // Try to parse as JSON
+      const parsed = JSON.parse(response);
+      return parsed;
+    } catch (error) {
+      console.error('Failed to parse AI response as JSON:', error);
+      return null;
     }
   };
 
-  const addOtherSignal = () => {
-    if (otherSignal.trim() && !inputs.signalsToWatch.includes(otherSignal.trim())) {
-      setInputs(prev => ({
-        ...prev,
-        signalsToWatch: [...prev.signalsToWatch, otherSignal.trim()]
-      }));
-      setOtherSignal('');
+  // Helper to render structured summary
+  const renderStructuredSummary = () => {
+    if (!structuredSummary) return null;
+
+    const sections = [
+      {
+        key: 'objective',
+        label: 'Objective',
+        icon: <FaTarget className="text-red-500 mr-2" />,
+        content: structuredSummary.objective,
+      },
+      {
+        key: 'keyFocusAreas',
+        label: 'Key Focus Areas',
+        icon: <FaChartBar className="text-blue-500 mr-2" />,
+        content: structuredSummary.keyFocusAreas,
+        isList: true,
+      },
+      {
+        key: 'plays',
+        label: 'Plays to Implement',
+        icon: <FaPlay className="text-green-500 mr-2" />,
+        content: structuredSummary.plays,
+        isPlays: true,
+      },
+      {
+        key: 'learningGoals',
+        label: 'Learning Goals',
+        icon: <FaGraduationCap className="text-purple-500 mr-2" />,
+        content: structuredSummary.learningGoals,
+        isList: true,
+      },
+      {
+        key: 'signalsToWatch',
+        label: 'Signals to Watch',
+        icon: <FaChartLine className="text-orange-500 mr-2" />,
+        content: structuredSummary.signalsToWatch,
+        isList: true,
+      },
+      {
+        key: 'nextSteps',
+        label: 'Next Steps',
+        icon: <FaArrowRight className="text-emerald-500 mr-2" />,
+        content: structuredSummary.nextSteps,
+        isList: true,
+      },
+    ];
+
+    return (
+      <div className="space-y-4">
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-red-200">
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{structuredSummary.title}</h3>
+        </div>
+        
+        {sections.map((section) => {
+          if (!section.content || (Array.isArray(section.content) && section.content.length === 0)) {
+            return null;
+          }
+
+          return (
+            <div key={section.key} className="bg-white rounded-md shadow-sm p-3">
+              <div className="flex items-center mb-2">
+                {section.icon}
+                <span className="font-bold text-sm text-gray-900">{section.label}</span>
+              </div>
+              <div className="text-xs text-gray-800 leading-relaxed">
+                {section.isList && Array.isArray(section.content) ? (
+                  <ul className="ml-5 space-y-1 list-disc">
+                    {section.content.map((item: string, index: number) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                ) : section.isPlays && Array.isArray(section.content) ? (
+                  <div className="space-y-3">
+                    {section.content.map((play: any, index: number) => (
+                      <div key={index} className="border-l-2 border-blue-200 pl-3">
+                        <h4 className="font-semibold text-gray-900 mb-1">{play.title}</h4>
+                        <p className="text-gray-700 mb-2">{play.description}</p>
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Leads:</span> {play.leads.join(', ')}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Expected Outcome:</span> {play.expectedOutcome}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>{section.content}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const saveSession = async () => {
+    setIsLoading(true);
+    try {
+      console.log('Saving planner session with inputs:', inputs);
+      
+      const response = await apiClient.planner.createSession({ inputs });
+      console.log('API response:', response);
+
+      if (response.data?.session && response.data?.summary) {
+        setSession(response.data.session);
+        setSummary(response.data.summary);
+        
+        // Try to parse the summary as structured data
+        const parsed = parseAIResponse(response.data.summary);
+        if (parsed) {
+          setStructuredSummary(parsed);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving planner session:', error);
+      alert('Error saving planner session. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const removeLearningGoal = (goal: string) => {
-    setInputs(prev => ({
-      ...prev,
-      learningGoals: prev.learningGoals.filter(g => g !== goal)
-    }));
-  };
-
-  const removeSignal = (signal: string) => {
-    setInputs(prev => ({
-      ...prev,
-      signalsToWatch: prev.signalsToWatch.filter(s => s !== signal)
-    }));
   };
 
   const nextStep = async () => {
@@ -143,490 +243,241 @@ function QuarterlyPlannerForm() {
     }
   };
 
-  const saveSession = async () => {
-    setIsLoading(true);
-    try {
-      console.log('Saving planner session with inputs:', inputs);
-      
-      const response = await apiCall('/api/planner/sessions', {
-        method: 'POST',
-        body: JSON.stringify({ inputs })
-      });
-
-      console.log('API response:', response);
-
-      if (response.error) {
-        console.error('API error:', response.error);
-        alert(`Error generating summary: ${response.error}`);
-        return;
-      }
-
-      if (response.data?.session && response.data?.summary) {
-        setSession(response.data.session);
-        setSummary(response.data.summary);
-        setCurrentStep(8); // Show summary
-      } else {
-        console.error('Unexpected response format:', response);
-        alert('Unexpected response format from server');
-      }
-    } catch (error) {
-      console.error('Error saving planner session:', error);
-      alert('Error saving planner session. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+  const updateInput = (field: keyof PlannerInputs, value: any) => {
+    setInputs(prev => ({ ...prev, [field]: value }));
   };
 
-  const downloadSummary = () => {
-    const content = `
-Quarterly Planner Summary
-Generated on: ${new Date().toLocaleDateString()}
-
-BIG CHALLENGE
-${inputs.bigChallenge}
-
-LEARNING GOALS
-${inputs.learningGoals.join('\n• ')}
-
-BUSINESS CONTEXT
-${inputs.businessContext || 'Not specified'}
-
-KNOWN PLAYS
-${inputs.knownPlays || 'None specified'}
-
-SIGNALS TO WATCH
-${inputs.signalsToWatch.join('\n• ')}
-
-BLOCKERS
-${inputs.blockers || 'None identified'}
-
-ROLES
-• Rhythm90 Lead: ${inputs.roles.rhythm90Lead || 'Not assigned'}
-• Strategic Leads: ${inputs.roles.strategicLeads?.join(', ') || 'Not assigned'}
-• Executional Leads: ${inputs.roles.executionalLeads?.join(', ') || 'Not assigned'}
-• Signal Owner: ${inputs.roles.signalOwner || 'Not assigned'}
-
-AI-GENERATED SUMMARY
-${summary}
-    `.trim();
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `quarterly-planner-${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const shareWithTeam = () => {
-    // For now, just copy to clipboard
-    const shareText = `Quarterly Planner Summary\n\n${summary}`;
-    navigator.clipboard.writeText(shareText).then(() => {
-      alert('Summary copied to clipboard!');
-    });
+  const updateRoles = (field: keyof PlannerInputs['roles'], value: any) => {
+    setInputs(prev => ({
+      ...prev,
+      roles: { ...prev.roles, [field]: value }
+    }));
   };
 
   const renderStep = () => {
     switch (currentStep) {
       case 1:
         return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">What's the big challenge or goal this quarter?</h2>
-              <p className="text-gray-600 mb-4">Describe the main challenge you're trying to solve or goal you're working toward.</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                What's your team's biggest challenge this quarter?
+              </label>
               <textarea
                 value={inputs.bigChallenge}
-                onChange={(e) => updateInputs({ bigChallenge: e.target.value })}
-                placeholder="e.g., Improve customer retention by 20%, Launch new product feature, Increase conversion rates..."
-                className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                onChange={(e) => updateInput('bigChallenge', e.target.value)}
+                placeholder="E.g., improve customer retention by 20%"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows={4}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Describe the main challenge or goal your team needs to tackle this quarter.
+              </p>
             </div>
-          </motion.div>
+          </div>
         );
 
       case 2:
         return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">What are we trying to learn or improve?</h2>
-              <p className="text-gray-600 mb-4">Select all that apply:</p>
-              <div className="space-y-3">
-                {LEARNING_GOALS_OPTIONS.map((goal) => (
-                  <label key={goal} className="flex items-center space-x-3 cursor-pointer">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                What do you want to learn or improve this quarter?
+              </label>
+              <div className="space-y-2">
+                {learningGoalOptions.map((goal) => (
+                  <label key={goal} className="flex items-center">
                     <input
                       type="checkbox"
                       checked={inputs.learningGoals.includes(goal)}
-                      onChange={() => toggleLearningGoal(goal)}
-                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          updateInput('learningGoals', [...inputs.learningGoals, goal]);
+                        } else {
+                          updateInput('learningGoals', inputs.learningGoals.filter(g => g !== goal));
+                        }
+                      }}
+                      className="mr-2"
                     />
-                    <span className="text-gray-700">{goal}</span>
+                    <span className="text-sm">{goal}</span>
                   </label>
                 ))}
               </div>
-              
-              {inputs.learningGoals.includes('Other') && (
-                <div className="mt-4 flex space-x-2">
-                  <input
-                    type="text"
-                    value={otherLearningGoal}
-                    onChange={(e) => setOtherLearningGoal(e.target.value)}
-                    placeholder="Specify other learning goal..."
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                  <button
-                    onClick={addOtherLearningGoal}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-
-              {inputs.learningGoals.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Selected goals:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {inputs.learningGoals.map((goal) => (
-                      <span
-                        key={goal}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800"
-                      >
-                        {goal}
-                        <button
-                          onClick={() => removeLearningGoal(goal)}
-                          className="ml-2 text-red-600 hover:text-red-800"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Select the areas where your team wants to grow or improve.
+              </p>
             </div>
-          </motion.div>
+          </div>
         );
 
       case 3:
         return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">What's the business context?</h2>
-              <p className="text-gray-600 mb-4">Any important business context, market conditions, or strategic considerations? (Optional)</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                What's the business context for this quarter?
+              </label>
               <textarea
                 value={inputs.businessContext}
-                onChange={(e) => updateInputs({ businessContext: e.target.value })}
-                placeholder="e.g., New competitor entering market, Q4 budget constraints, Leadership changes..."
-                className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                onChange={(e) => updateInput('businessContext', e.target.value)}
+                placeholder="E.g., new product launch, market expansion, cost optimization"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows={3}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Describe the broader business context or initiatives happening this quarter.
+              </p>
             </div>
-          </motion.div>
+          </div>
         );
 
       case 4:
         return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Any known plays or bets already?</h2>
-              <p className="text-gray-600 mb-4">What initiatives, experiments, or bets are you already planning or considering? (Optional)</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                What plays or strategies do you already know you'll be running?
+              </label>
               <textarea
                 value={inputs.knownPlays}
-                onChange={(e) => updateInputs({ knownPlays: e.target.value })}
-                placeholder="e.g., A/B test new pricing model, Launch referral program, Redesign onboarding flow..."
-                className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                onChange={(e) => updateInput('knownPlays', e.target.value)}
+                placeholder="E.g., loyalty program optimization, email campaign series"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows={3}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                List any plays, campaigns, or strategies you've already planned.
+              </p>
             </div>
-          </motion.div>
+          </div>
         );
 
       case 5:
         return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">What signals should we watch for?</h2>
-              <p className="text-gray-600 mb-4">Select signals that will help you understand if you're on track:</p>
-              <div className="space-y-3">
-                {SIGNALS_OPTIONS.map((signal) => (
-                  <label key={signal} className="flex items-center space-x-3 cursor-pointer">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                What signals should you watch to measure progress?
+              </label>
+              <div className="space-y-2">
+                {signalOptions.map((signal) => (
+                  <label key={signal} className="flex items-center">
                     <input
                       type="checkbox"
                       checked={inputs.signalsToWatch.includes(signal)}
-                      onChange={() => toggleSignal(signal)}
-                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          updateInput('signalsToWatch', [...inputs.signalsToWatch, signal]);
+                        } else {
+                          updateInput('signalsToWatch', inputs.signalsToWatch.filter(s => s !== signal));
+                        }
+                      }}
+                      className="mr-2"
                     />
-                    <span className="text-gray-700">{signal}</span>
+                    <span className="text-sm">{signal}</span>
                   </label>
                 ))}
               </div>
-              
-              <div className="mt-4 flex space-x-2">
-                <input
-                  type="text"
-                  value={otherSignal}
-                  onChange={(e) => setOtherSignal(e.target.value)}
-                  placeholder="Add your own signal..."
-                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                />
-                <button
-                  onClick={addOtherSignal}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-
-              {inputs.signalsToWatch.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Selected signals:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {inputs.signalsToWatch.map((signal) => (
-                      <span
-                        key={signal}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-                      >
-                        {signal}
-                        <button
-                          onClick={() => removeSignal(signal)}
-                          className="ml-2 text-blue-600 hover:text-blue-800"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Select the key metrics and signals you'll monitor this quarter.
+              </p>
             </div>
-          </motion.div>
+          </div>
         );
 
       case 6:
         return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Any known blockers or dependencies?</h2>
-              <p className="text-gray-600 mb-4">What might slow you down or prevent success? (Optional)</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                What blockers or challenges do you anticipate?
+              </label>
               <textarea
                 value={inputs.blockers}
-                onChange={(e) => updateInputs({ blockers: e.target.value })}
-                placeholder="e.g., Resource constraints, Technical debt, External dependencies..."
-                className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                onChange={(e) => updateInput('blockers', e.target.value)}
+                placeholder="E.g., resource constraints, technical limitations, market conditions"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows={3}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Identify potential obstacles or challenges that might impact your quarter.
+              </p>
             </div>
-          </motion.div>
+          </div>
         );
 
       case 7:
         return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
+          <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Who's who this quarter?</h2>
-              <p className="text-gray-600 mb-4">Assign key roles for this quarter:</p>
-              
-              <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Assign roles and responsibilities
+              </label>
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Rhythm90 Lead
-                  </label>
-                  <input
-                    type="text"
+                  <label className="block text-xs font-medium text-gray-600">Rhythm90 Lead</label>
+                  <select
                     value={inputs.roles.rhythm90Lead}
-                    onChange={(e) => updateInputs({ 
-                      roles: { ...inputs.roles, rhythm90Lead: e.target.value }
-                    })}
-                    placeholder="Who will facilitate rituals and keep the team on track?"
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Strategic Lead(s)
-                  </label>
-                  <input
-                    type="text"
-                    value={inputs.roles.strategicLeads?.join(', ') || ''}
-                    onChange={(e) => updateInputs({ 
-                      roles: { 
-                        ...inputs.roles, 
-                        strategicLeads: e.target.value.split(',').map(s => s.trim()).filter(s => s)
-                      }
-                    })}
-                    placeholder="Who will provide strategic direction? (comma-separated)"
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Executional Lead(s)
-                  </label>
-                  <input
-                    type="text"
-                    value={inputs.roles.executionalLeads?.join(', ') || ''}
-                    onChange={(e) => updateInputs({ 
-                      roles: { 
-                        ...inputs.roles, 
-                        executionalLeads: e.target.value.split(',').map(s => s.trim()).filter(s => s)
-                      }
-                    })}
-                    placeholder="Who will drive execution? (comma-separated)"
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Signal Owner (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={inputs.roles.signalOwner}
-                    onChange={(e) => updateInputs({ 
-                      roles: { ...inputs.roles, signalOwner: e.target.value }
-                    })}
-                    placeholder="Who will monitor and report on signals?"
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        );
-
-      case 8:
-        return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-          >
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Quarterly Planner Summary</h2>
-              
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Big Challenge</h3>
-                    <p className="text-gray-700">{inputs.bigChallenge}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Learning Goals</h3>
-                    <ul className="list-disc list-inside text-gray-700">
-                      {inputs.learningGoals.map((goal, index) => (
-                        <li key={index}>{goal}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  {inputs.businessContext && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Business Context</h3>
-                      <p className="text-gray-700">{inputs.businessContext}</p>
-                    </div>
-                  )}
-                  
-                  {inputs.knownPlays && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Known Plays</h3>
-                      <p className="text-gray-700">{inputs.knownPlays}</p>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Signals to Watch</h3>
-                    <ul className="list-disc list-inside text-gray-700">
-                      {inputs.signalsToWatch.map((signal, index) => (
-                        <li key={index}>{signal}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  {inputs.blockers && (
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Blockers</h3>
-                      <p className="text-gray-700">{inputs.blockers}</p>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Roles</h3>
-                    <div className="space-y-2 text-gray-700">
-                      <p><strong>Rhythm90 Lead:</strong> {inputs.roles.rhythm90Lead || 'Not assigned'}</p>
-                      <p><strong>Strategic Leads:</strong> {inputs.roles.strategicLeads?.join(', ') || 'Not assigned'}</p>
-                      <p><strong>Executional Leads:</strong> {inputs.roles.executionalLeads?.join(', ') || 'Not assigned'}</p>
-                      <p><strong>Signal Owner:</strong> {inputs.roles.signalOwner || 'Not assigned'}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {summary && (
-                <div className="bg-blue-50 rounded-lg p-6 mb-6">
-                  <h3 className="font-semibold text-blue-900 mb-3">AI-Generated Insights</h3>
-                  <div className="prose prose-sm max-w-none text-blue-800">
-                    {summary.split('\n').map((line, index) => (
-                      <p key={index} className="mb-2">{line}</p>
+                    onChange={(e) => updateRoles('rhythm90Lead', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  >
+                    <option value="">Select lead</option>
+                    {roleOptions.map((role) => (
+                      <option key={role} value={role}>{role}</option>
                     ))}
-                  </div>
+                  </select>
                 </div>
-              )}
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={saveSession}
-                  disabled={isLoading}
-                  className="px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-                >
-                  {isLoading ? 'Saving...' : 'Save Summary'}
-                </button>
-                <button
-                  onClick={shareWithTeam}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Share with Team
-                </button>
-                <button
-                  onClick={downloadSummary}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                >
-                  Download Summary
-                </button>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600">Strategic Leads</label>
+                  <select
+                    multiple
+                    value={inputs.roles.strategicLeads}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      updateRoles('strategicLeads', selected);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  >
+                    {roleOptions.map((role) => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600">Executional Leads</label>
+                  <select
+                    multiple
+                    value={inputs.roles.executionalLeads}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      updateRoles('executionalLeads', selected);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  >
+                    {roleOptions.map((role) => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600">Signal Owner</label>
+                  <select
+                    value={inputs.roles.signalOwner}
+                    onChange={(e) => updateRoles('signalOwner', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                  >
+                    <option value="">Select owner</option>
+                    {roleOptions.map((role) => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Assign team members to key roles for this quarter's initiatives.
+              </p>
             </div>
-          </motion.div>
+          </div>
         );
 
       default:
@@ -636,62 +487,114 @@ ${summary}
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quarterly Planner</h1>
-          <p className="text-gray-600">
-            Prepare for your quarterly Kickoff by clarifying challenges, goals, and alignment
-          </p>
-        </div>
+      <div className="p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Quarterly Planner</h1>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Input Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Plan Your Quarter</h2>
+            
+            {/* Progress indicator */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Step {currentStep} of 7</span>
+                <span className="text-sm text-gray-500">{Math.round((currentStep / 7) * 100)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-red-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(currentStep / 7) * 100}%` }}
+                ></div>
+              </div>
+            </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Step {currentStep} of 8
-            </span>
-            <span className="text-sm text-gray-500">
-              {Math.round((currentStep / 8) * 100)}% Complete
-            </span>
+            {/* Step content */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                {renderStep()}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Navigation */}
+            <div className="flex justify-between mt-6">
+              <button
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={nextStep}
+                disabled={
+                  (currentStep === 1 && !inputs.bigChallenge.trim()) ||
+                  (currentStep === 2 && inputs.learningGoals.length === 0) ||
+                  (currentStep === 5 && inputs.signalsToWatch.length === 0) ||
+                  (currentStep === 7 && isLoading)
+                }
+                className="px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {currentStep === 7 ? (isLoading ? 'Generating...' : 'Generate Summary') : 'Next'}
+              </button>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-red-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / 8) * 100}%` }}
-            />
+
+          {/* Output Section */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FaLightbulb className="text-yellow-400" /> Quarterly Summary
+            </h2>
+            
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                <p className="text-gray-500">Generating your quarterly summary...</p>
+              </div>
+            ) : structuredSummary ? (
+              <div>
+                {renderStructuredSummary()}
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Quarterly Planner"
+                    responseData={structuredSummary}
+                    teamId={currentTeam?.id}
+                    summary={`Quarterly Plan: "${inputs.bigChallenge.substring(0, 100)}${inputs.bigChallenge.length > 100 ? '...' : ''}"`}
+                  />
+                </div>
+              </div>
+            ) : summary ? (
+              <div>
+                <div className="prose max-w-none text-xs">
+                  <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100">{summary}</pre>
+                </div>
+                {/* Action buttons for saving/favoriting/sharing */}
+                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                  <SavedResponseActions
+                    toolName="Quarterly Planner"
+                    responseData={{ summary }}
+                    teamId={currentTeam?.id}
+                    summary={`Quarterly Plan: "${inputs.bigChallenge.substring(0, 100)}${inputs.bigChallenge.length > 100 ? '...' : ''}"`}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p>Complete the steps to generate your quarterly planning summary</p>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          {renderStep()}
-        </div>
-
-        {/* Navigation */}
-        {currentStep < 8 && (
-          <div className="mt-8 flex justify-between">
-            <button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={nextStep}
-              disabled={
-                (currentStep === 1 && !inputs.bigChallenge.trim()) ||
-                (currentStep === 2 && inputs.learningGoals.length === 0) ||
-                (currentStep === 5 && inputs.signalsToWatch.length === 0) ||
-                (currentStep === 7 && isLoading)
-              }
-              className="px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-            >
-              {currentStep === 7 ? (isLoading ? 'Generating...' : 'Generate Summary') : 'Next'}
-            </button>
-          </div>
-        )}
       </div>
     </AppLayout>
   );

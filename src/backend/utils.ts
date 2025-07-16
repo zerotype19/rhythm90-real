@@ -164,7 +164,7 @@ export async function callOpenAI(messages: any[], env: Env): Promise<string> {
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: 300,
+        max_tokens: 800,
         temperature: 0.7,
       }),
       signal: controller.signal,

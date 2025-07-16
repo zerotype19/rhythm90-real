@@ -12,7 +12,25 @@ Your job is to:
 - Keep suggestions practical and achievable
 - Connect recommendations to their business context
 
-Format your response as a clear, structured summary that teams can use to align on their quarter ahead.`;
+Format your response as a structured JSON object with these exact fields:
+{
+  "title": "Quarterly Planning Summary for [Team Name]",
+  "objective": "Clear statement of the main challenge/goal",
+  "keyFocusAreas": ["Area 1", "Area 2", "Area 3"],
+  "plays": [
+    {
+      "title": "Play Name",
+      "description": "Clear description of what this play involves",
+      "leads": ["Person 1", "Person 2"],
+      "expectedOutcome": "What success looks like"
+    }
+  ],
+  "learningGoals": ["Goal 1", "Goal 2"],
+  "signalsToWatch": ["Signal 1", "Signal 2", "Signal 3"],
+  "nextSteps": ["Step 1", "Step 2", "Step 3"]
+}
+
+Keep each section concise but comprehensive. Focus on actionable insights that will help the team align and execute effectively.`;
 
 export async function handleCreatePlannerSession(request: Request, env: Env): Promise<Response> {
   try {
