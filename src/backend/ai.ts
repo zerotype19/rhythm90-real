@@ -450,13 +450,6 @@ Your job is to:
 - Connect all recommendations to the team type, business context, top challenges, focus areas, or category context if provided.`
     };
     
-    let messages = [RITUAL_GUIDE_SYSTEM_MESSAGE];
-    
-    // Add team context if available
-    if (teamContext) {
-      messages.push({ role: 'system', content: teamContext });
-    }
-    
     // Build context block with all fields, marking missing ones as "None provided"
     let contextBlock = 'Context:';
     contextBlock += `\nRitual Type: ${ritual_type}`;
