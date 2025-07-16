@@ -128,8 +128,11 @@ function QuarterlyPlannerForm() {
     }));
   };
 
-  const nextStep = () => {
-    if (currentStep < 7) {
+  const nextStep = async () => {
+    if (currentStep === 7) {
+      // Generate summary when moving from step 7 to step 8
+      await saveSession();
+    } else if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -143,15 +146,28 @@ function QuarterlyPlannerForm() {
   const saveSession = async () => {
     setIsLoading(true);
     try {
+      console.log('Saving planner session with inputs:', inputs);
+      
       const response = await apiCall('/api/planner/sessions', {
         method: 'POST',
         body: JSON.stringify({ inputs })
       });
 
+      console.log('API response:', response);
+
+      if (response.error) {
+        console.error('API error:', response.error);
+        alert(`Error generating summary: ${response.error}`);
+        return;
+      }
+
       if (response.data?.session && response.data?.summary) {
         setSession(response.data.session);
         setSummary(response.data.summary);
         setCurrentStep(8); // Show summary
+      } else {
+        console.error('Unexpected response format:', response);
+        alert('Unexpected response format from server');
       }
     } catch (error) {
       console.error('Error saving planner session:', error);
@@ -667,11 +683,12 @@ ${summary}
               disabled={
                 (currentStep === 1 && !inputs.bigChallenge.trim()) ||
                 (currentStep === 2 && inputs.learningGoals.length === 0) ||
-                (currentStep === 5 && inputs.signalsToWatch.length === 0)
+                (currentStep === 5 && inputs.signalsToWatch.length === 0) ||
+                (currentStep === 7 && isLoading)
               }
               className="px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
             >
-              {currentStep === 7 ? 'Generate Summary' : 'Next'}
+              {currentStep === 7 ? (isLoading ? 'Generating...' : 'Generate Summary') : 'Next'}
             </button>
           </div>
         )}
