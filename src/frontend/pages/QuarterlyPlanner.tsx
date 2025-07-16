@@ -174,67 +174,66 @@ function QuarterlyPlanner() {
           </div>
           
           <div className="overflow-x-auto">
-            <div className="min-w-full">
-              {/* Header Row */}
-              <div className="grid grid-cols-[120px_repeat(12,1fr)] bg-gray-50 border-b border-gray-200">
-                <div className="p-2 font-semibold text-gray-900 border-r border-gray-200">
-                  Week
-                </div>
-                {weeks.map((week) => (
-                  <div
-                    key={week.week}
-                    className="p-2 font-semibold text-gray-900 border-r border-gray-200 text-center min-w-[100px]"
-                  >
-                    <div className="text-xs">Week {week.week}</div>
-                    <div className="text-xs text-gray-500 leading-tight">{week.date}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Activities Row */}
-              <div className="grid grid-cols-[120px_repeat(12,1fr)] border-b border-gray-200">
-                <div className="p-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                  Activities
-                </div>
-                {weeks.map((week) => (
-                  <div
-                    key={week.week}
-                    className="p-2 border-r border-gray-200 min-h-[60px]"
-                  >
-                    <div className="space-y-0.5">
-                      {getActivitiesForWeek(week.week, selectedRole).map((activity, index) => (
-                        <div
-                          key={index}
-                          className="text-xs bg-blue-50 text-blue-700 px-1 py-0.5 rounded leading-tight"
-                        >
-                          {activity}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Notes Row */}
-              <div className="grid grid-cols-[120px_repeat(12,1fr)]">
-                <div className="p-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                  Notes
-                </div>
-                {weeks.map((week, index) => (
-                  <div
-                    key={week.week}
-                    className="p-2 border-r border-gray-200"
-                  >
-                    <textarea
-                      value={week.notes}
-                      onChange={(e) => updateWeekNotes(index, e.target.value)}
-                      placeholder="Add notes..."
-                      className="w-full h-14 text-xs border border-gray-300 rounded p-1 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="p-2 font-semibold text-gray-900 border-r border-gray-200 text-left w-32">
+                    Week
+                  </th>
+                  {weeks.map((week) => (
+                    <th
+                      key={week.week}
+                      className="p-2 font-semibold text-gray-900 border-r border-gray-200 text-center min-w-[120px]"
+                    >
+                      <div className="text-xs">Week {week.week}</div>
+                      <div className="text-xs text-gray-500 leading-tight">{week.date}</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-200">
+                  <td className="p-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
+                    Activities
+                  </td>
+                  {weeks.map((week) => (
+                    <td
+                      key={week.week}
+                      className="p-2 border-r border-gray-200 min-h-[60px] align-top"
+                    >
+                      <div className="space-y-0.5">
+                        {getActivitiesForWeek(week.week, selectedRole).map((activity, index) => (
+                          <div
+                            key={index}
+                            className="text-xs bg-blue-50 text-blue-700 px-1 py-0.5 rounded leading-tight"
+                          >
+                            {activity}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="p-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
+                    Notes
+                  </td>
+                  {weeks.map((week, index) => (
+                    <td
+                      key={week.week}
+                      className="p-2 border-r border-gray-200"
+                    >
+                      <textarea
+                        value={week.notes}
+                        onChange={(e) => updateWeekNotes(index, e.target.value)}
+                        placeholder="Add notes..."
+                        className="w-full h-14 text-xs border border-gray-300 rounded p-1 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
