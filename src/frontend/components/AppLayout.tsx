@@ -29,7 +29,9 @@ function AppLayout({ children }: AppLayoutProps) {
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Hamburger */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white shadow z-50">
-        <div className="text-2xl font-bold text-red-500">Rhythm90</div>
+        <Link to="/app/dashboard" className="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
+          Rhythm90
+        </Link>
         <button
           className="text-gray-700 focus:outline-none"
           onClick={() => setSidebarOpen(true)}
@@ -47,7 +49,9 @@ function AppLayout({ children }: AppLayoutProps) {
           <div className="flex flex-col h-full">
             {/* Logo */}
             <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-              <div className="text-2xl font-bold text-red-500">Rhythm90</div>
+              <Link to="/app/dashboard" className="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
+                Rhythm90
+              </Link>
             </div>
             {/* Team Selector */}
             {teams.length > 0 && (
@@ -136,7 +140,9 @@ function AppLayout({ children }: AppLayoutProps) {
             <div className="fixed inset-0 bg-black bg-opacity-30" onClick={() => setSidebarOpen(false)} />
             <div className="relative w-64 bg-white shadow-lg h-full flex flex-col">
               <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                <div className="text-2xl font-bold text-red-500">Rhythm90</div>
+                <Link to="/app/dashboard" className="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
+                  Rhythm90
+                </Link>
                 <button
                   className="text-gray-700 focus:outline-none"
                   onClick={() => setSidebarOpen(false)}

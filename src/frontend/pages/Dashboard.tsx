@@ -6,11 +6,6 @@ import {
   ChartBarIcon, 
   UserGroupIcon, 
   DocumentTextIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-  EyeSlashIcon,
   PlayIcon,
   SignalIcon,
   BookOpenIcon,
@@ -37,20 +32,11 @@ interface TeamActivity {
   responseId?: string;
 }
 
-interface Announcement {
-  id: string;
-  title: string;
-  summary: string;
-  body?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+
 
 interface DashboardData {
   stats: DashboardStats;
   teamActivity: TeamActivity[];
-  announcements: Announcement[];
 }
 
 const Dashboard: React.FC = () => {
@@ -58,10 +44,6 @@ const Dashboard: React.FC = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-  const [expandedAnnouncements, setExpandedAnnouncements] = useState<Set<string>>(new Set());
 
   const isAdmin = user?.email === 'kevin.mcgovern@gmail.com';
 
@@ -89,76 +71,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleAddAnnouncement = async (formData: { title: string; summary: string; body?: string }) => {
-    try {
-      console.log('Dashboard: Creating announcement:', formData);
-      const response = await apiClient.createDashboardAnnouncement({ ...formData, is_active: true });
-      console.log('Dashboard: Announcement created successfully');
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      
-      setShowAddModal(false);
-      fetchDashboardData();
-    } catch (err) {
-      console.error('Dashboard: Error creating announcement:', err);
-      setError('Failed to create announcement');
-    }
-  };
 
-  const handleEditAnnouncement = async (id: string, formData: { title: string; summary: string; body?: string }) => {
-    try {
-      console.log('Dashboard: Updating announcement:', id, formData);
-      // Preserve the current is_active status when editing
-      const currentAnnouncement = dashboardData?.announcements.find(a => a.id === id);
-      const response = await apiClient.updateDashboardAnnouncement(id, { 
-        ...formData, 
-        is_active: currentAnnouncement?.is_active ?? true 
-      });
-      console.log('Dashboard: Announcement updated successfully');
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      
-      setShowEditModal(false);
-      setEditingAnnouncement(null);
-      fetchDashboardData();
-    } catch (err) {
-      console.error('Dashboard: Error updating announcement:', err);
-      setError('Failed to update announcement');
-    }
-  };
-
-  const handleDeleteAnnouncement = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return;
-    
-    try {
-      console.log('Dashboard: Deleting announcement:', id);
-      const response = await apiClient.deleteDashboardAnnouncement(id);
-      console.log('Dashboard: Announcement deleted successfully');
-      
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      
-      fetchDashboardData();
-    } catch (err) {
-      console.error('Dashboard: Error deleting announcement:', err);
-      setError('Failed to delete announcement');
-    }
-  };
-
-  const toggleAnnouncementExpansion = (id: string) => {
-    const newExpanded = new Set(expandedAnnouncements);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedAnnouncements(newExpanded);
-  };
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -345,309 +258,15 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Panel - Announcements */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Announcements</h2>
-              {isAdmin && (
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <PlusIcon className="h-4 w-4 mr-1" />
-                  Add
-                </button>
-              )}
-            </div>
-
-            {dashboardData?.announcements && dashboardData.announcements.length > 0 ? (
-              <div className="space-y-4">
-                {dashboardData.announcements
-                  .filter(announcement => announcement.is_active)
-                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                  .map((announcement) => (
-                    <div key={announcement.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-gray-900">{announcement.title}</h3>
-                        {isAdmin && (
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => {
-                                setEditingAnnouncement(announcement);
-                                setShowEditModal(true);
-                              }}
-                              className="text-gray-400 hover:text-gray-600"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAnnouncement(announcement.id)}
-                              className="text-gray-400 hover:text-red-600"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 mb-2">{announcement.summary}</p>
-                      
-                      {announcement.body && (
-                        <div>
-                          {expandedAnnouncements.has(announcement.id) ? (
-                            <div>
-                              <p className="text-sm text-gray-700 mb-2">{announcement.body}</p>
-                              <button
-                                onClick={() => toggleAnnouncementExpansion(announcement.id)}
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center"
-                              >
-                                <EyeSlashIcon className="h-4 w-4 mr-1" />
-                                Show less
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => toggleAnnouncementExpansion(announcement.id)}
-                              className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center"
-                            >
-                              <EyeIcon className="h-4 w-4 mr-1" />
-                              Read more
-                            </button>
-                          )}
-                        </div>
-                      )}
-                      
-                      <p className="text-xs text-gray-500 mt-2">
-                        {formatTimestamp(announcement.created_at)}
-                      </p>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">No announcements</p>
-            )}
-          </div>
+          
         </div>
 
-        {/* Add Announcement Modal */}
-        {showAddModal && (
-          <AddAnnouncementModal
-            onClose={() => setShowAddModal(false)}
-            onSubmit={handleAddAnnouncement}
-          />
-        )}
 
-                 {/* Edit Announcement Modal */}
-         {showEditModal && editingAnnouncement && (
-           <EditAnnouncementModal
-             announcement={editingAnnouncement}
-             onClose={() => {
-               setShowEditModal(false);
-               setEditingAnnouncement(null);
-             }}
-             onSubmit={handleEditAnnouncement}
-           />
-         )}
        </div>
    </AppLayout>
  );
 };
 
-// Add Announcement Modal Component
-interface AddAnnouncementModalProps {
-  onClose: () => void;
-  onSubmit: (data: { title: string; summary: string; body?: string }) => void;
-}
 
-const AddAnnouncementModal: React.FC<AddAnnouncementModalProps> = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({ title: '', summary: '', body: '' });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    const newErrors: Record<string, string> = {};
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.summary.trim()) newErrors.summary = 'Summary is required';
-    if (formData.summary.length > 140) newErrors.summary = 'Summary must be 140 characters or less';
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    onSubmit({
-      title: formData.title.trim(),
-      summary: formData.summary.trim(),
-      body: formData.body.trim() || undefined
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Add Announcement</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Title</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Announcement title"
-              />
-              {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Summary <span className="text-gray-500">({formData.summary.length}/140)</span>
-              </label>
-              <textarea
-                value={formData.summary}
-                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                rows={3}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Brief summary (max 140 characters)"
-              />
-              {errors.summary && <p className="mt-1 text-sm text-red-600">{errors.summary}</p>}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Body (Optional)</label>
-              <textarea
-                value={formData.body}
-                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                rows={4}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Full announcement content"
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Add Announcement
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Edit Announcement Modal Component
-interface EditAnnouncementModalProps {
-  announcement: Announcement;
-  onClose: () => void;
-  onSubmit: (id: string, data: { title: string; summary: string; body?: string }) => void;
-}
-
-const EditAnnouncementModal: React.FC<EditAnnouncementModalProps> = ({ announcement, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({ 
-    title: announcement.title, 
-    summary: announcement.summary, 
-    body: announcement.body || '' 
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    const newErrors: Record<string, string> = {};
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.summary.trim()) newErrors.summary = 'Summary is required';
-    if (formData.summary.length > 140) newErrors.summary = 'Summary must be 140 characters or less';
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    onSubmit(announcement.id, {
-      title: formData.title.trim(),
-      summary: formData.summary.trim(),
-      body: formData.body.trim() || undefined
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div className="mt-3">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Announcement</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Title</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Announcement title"
-              />
-              {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Summary <span className="text-gray-500">({formData.summary.length}/140)</span>
-              </label>
-              <textarea
-                value={formData.summary}
-                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                rows={3}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Brief summary (max 140 characters)"
-              />
-              {errors.summary && <p className="mt-1 text-sm text-red-600">{errors.summary}</p>}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Body (Optional)</label>
-              <textarea
-                value={formData.body}
-                onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                rows={4}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Full announcement content"
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Update Announcement
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default Dashboard; 
