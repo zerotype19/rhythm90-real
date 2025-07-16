@@ -285,7 +285,9 @@ const Dashboard: React.FC = () => {
                     <div className="ml-3">
                       <p className="text-sm font-medium text-purple-600">Most Used Tool</p>
                       <p className="text-lg font-bold text-purple-900">
-                        {dashboardData?.stats.topTools[0]?.toolName || 'None'}
+                        {dashboardData?.stats.topTools && dashboardData.stats.topTools.length > 0 
+                          ? dashboardData.stats.topTools.reduce((max, tool) => tool.count > max.count ? tool : max).toolName 
+                          : 'None'}
                       </p>
                     </div>
                   </div>
