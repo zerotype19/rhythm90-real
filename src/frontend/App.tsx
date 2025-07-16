@@ -23,6 +23,7 @@ import TeamBenchmarking from './pages/TeamBenchmarking';
 import HistoryPage from './pages/HistoryPage';
 import TeamSharedPage from './pages/TeamSharedPage';
 import PublicSharedPage from './pages/PublicSharedPage';
+import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -60,6 +61,7 @@ function App() {
               <Route path="history" element={<HistoryPage />} />
               <Route path="team-shared" element={<TeamSharedPage />} />
               <Route path="team-shared/:slug" element={<TeamSharedPage />} />
+              <Route path="admin" element={<Admin />} />
               <Route index element={<Navigate to="/app/dashboard" replace />} />
             </Route>
             

@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   google_id: string;
+  is_admin: boolean;
   created_at: string;
 }
 

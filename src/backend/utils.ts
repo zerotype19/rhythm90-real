@@ -34,10 +34,10 @@ export async function getUserByGoogleId(db: any, googleId: string): Promise<User
 export async function createUser(db: any, user: Omit<User, 'id' | 'created_at'>): Promise<User> {
   const id = crypto.randomUUID();
   const result = await db.prepare(`
-    INSERT INTO users (id, name, email, google_id)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO users (id, name, email, google_id, is_admin)
+    VALUES (?, ?, ?, ?, ?)
     RETURNING *
-  `).bind(id, user.name, user.email, user.google_id).first();
+  `).bind(id, user.name, user.email, user.google_id, false).first();
   
   return result as User;
 }
@@ -144,7 +144,13 @@ export async function joinTeam(db: any, inviteCode: string, userId: string): Pro
 export async function callOpenAI(messages: any[], env: Env): Promise<string> {
   try {
     console.log('callOpenAI: Final messages array:', JSON.stringify(messages, null, 2));
-    const model = 'gpt-3.5-turbo';
+    
+    // Get current model from system settings
+    const modelResult = await env.DB.prepare(
+      'SELECT setting_value FROM system_settings WHERE setting_key = ?'
+    ).bind('openai_model').first();
+    const model = modelResult?.setting_value || 'gpt-3.5-turbo';
+    
     const startTime = Date.now();
     // Create AbortController for timeout
     const controller = new AbortController();

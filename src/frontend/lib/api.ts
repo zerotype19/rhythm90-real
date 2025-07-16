@@ -503,6 +503,29 @@ class ApiClient {
       credentials: 'include',
     });
   }
+
+  // Admin API
+  async getAdminSettings() {
+    return this.request('/api/admin/settings', {
+      credentials: 'include',
+    });
+  }
+
+  async updateAdminModel(model: string) {
+    return this.request('/api/admin/update-model', {
+      method: 'POST',
+      body: JSON.stringify({ model }),
+      credentials: 'include',
+    });
+  }
+
+  async updateAdminAnnouncement(announcement: string) {
+    return this.request('/api/admin/update-announcement', {
+      method: 'POST',
+      body: JSON.stringify({ announcement }),
+      credentials: 'include',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE); 

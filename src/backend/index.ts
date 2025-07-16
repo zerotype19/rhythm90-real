@@ -10,6 +10,7 @@ import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSet
 import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
 import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
 import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, getLastStripeDebugLog } from './billing';
+import { handleUpdateModel, handleUpdateAnnouncement as handleUpdateSystemAnnouncement, handleGetSettings } from './admin';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -439,6 +440,17 @@ export default {
         const id = path.split('/').pop();
         if (!id) return errorResponse('Missing announcement id', 400);
         return await handleDeleteAnnouncement(request, env, ctx, id);
+      }
+
+      // Admin routes
+      if (path === '/api/admin/settings' && request.method === 'GET') {
+        return await handleGetSettings(request, env);
+      }
+      if (path === '/api/admin/update-model' && request.method === 'POST') {
+        return await handleUpdateModel(request, env);
+      }
+      if (path === '/api/admin/update-announcement' && request.method === 'POST') {
+        return await handleUpdateSystemAnnouncement(request, env);
       }
 
       // Health check

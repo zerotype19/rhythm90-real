@@ -4,6 +4,7 @@ export interface User {
   name: string;
   email: string;
   google_id: string;
+  is_admin: boolean;
   created_at: string;
 }
 
@@ -110,6 +111,23 @@ export interface GenerateRitualPromptsRequest {
 export interface GenerateRitualPromptsResponse {
   agenda: string[];
   prompts: string[];
+}
+
+// System Settings types
+export interface SystemSetting {
+  id: number;
+  setting_key: string;
+  setting_value: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminUpdateModelRequest {
+  model: string;
+}
+
+export interface AdminUpdateAnnouncementRequest {
+  announcement: string;
 }
 
 // Environment variables

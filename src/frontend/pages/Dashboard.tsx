@@ -32,19 +32,13 @@ interface TeamActivity {
   responseId?: string;
 }
 
-interface Announcement {
-  id: number;
-  title: string;
-  body: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+
 
 
 interface DashboardData {
   stats: DashboardStats;
   teamActivity: TeamActivity[];
+  systemAnnouncement: string;
 }
 
 const Dashboard: React.FC = () => {
@@ -54,8 +48,7 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Announcements state
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [systemAnnouncement, setSystemAnnouncement] = useState<string>('');
 
   const isAdmin = user?.email === 'kevin.mcgovern@gmail.com';
 
@@ -63,18 +56,13 @@ const Dashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  // Load announcements
+  // Load system announcement
   useEffect(() => {
     if (!user) return;
-    setAnnouncementsLoading(true);
-    apiClient.getDashboardAnnouncements()
-      .then(res => {
-        if (res.data?.announcements) setAnnouncements(res.data.announcements);
-        else setAnnouncements([]);
-      })
-      .catch(() => setAnnouncements([]))
-      .finally(() => setAnnouncementsLoading(false));
-  }, [user]);
+    if (dashboardData?.systemAnnouncement) {
+      setSystemAnnouncement(dashboardData.systemAnnouncement);
+    }
+  }, [user, dashboardData?.systemAnnouncement]);
 
 
   const fetchDashboardData = async () => {
@@ -284,22 +272,15 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Announcements Panel */}
+          {/* System Announcement Panel */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Announcements</h2>
-            {announcementsLoading ? (
-              <div className="text-gray-500">Loading...</div>
-            ) : announcements.length === 0 ? (
-              <div className="text-gray-500 text-center py-8">No announcements yet.</div>
-            ) : (
-              <div className="space-y-4">
-                {(announcements || []).filter(a => a.is_active).map(a => (
-                  <div key={a.id} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
-                    <div className="font-medium text-gray-900 mb-2">{a.title}</div>
-                    <div className="text-gray-700 whitespace-pre-line">{a.body}</div>
-                  </div>
-                ))}
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">System Announcement</h2>
+            {systemAnnouncement ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="text-blue-900 whitespace-pre-line">{systemAnnouncement}</div>
               </div>
+            ) : (
+              <div className="text-gray-500 text-center py-8">No system announcement</div>
             )}
           </div>
 

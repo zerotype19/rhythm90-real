@@ -100,24 +100,12 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
       LIMIT 5
     `).bind(teamId).all();
 
-    // Active dashboard announcements
-    const announcements = await env.DB.prepare(`
-      SELECT 
-        id,
-        title,
-        content as summary,
-        content as body,
-        link,
-        created_at,
-        author_email,
-        is_active,
-        created_at as updated_at
-      FROM dashboard_announcements
-      WHERE is_active = 1
-      ORDER BY created_at DESC
-    `).all();
+    // Get system announcement
+    const systemAnnouncement = await env.DB.prepare(`
+      SELECT setting_value FROM system_settings WHERE setting_key = ?
+    `).bind('system_announcement').first();
 
-    debugLog(env, 'Dashboard overview data', { toolUsage, savedResponses, teamShared, personal, team, announcements });
+    debugLog(env, 'Dashboard overview data', { toolUsage, savedResponses, teamShared, personal, team, systemAnnouncement });
 
     return jsonResponse({
       stats: {
@@ -139,7 +127,7 @@ export async function handleDashboardOverview(request: Request, env: Env, ctx: a
         timestamp: activity.timestamp,
         responseId: activity.id
       })) || [],
-      announcements: announcements.results || [],
+      systemAnnouncement: systemAnnouncement?.setting_value || '',
     });
   } catch (error) {
     console.error('Dashboard overview error:', error);
