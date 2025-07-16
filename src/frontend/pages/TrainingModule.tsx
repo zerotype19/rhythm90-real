@@ -32,7 +32,7 @@ function TrainingModule() {
               It's designed for teams that want to move fast while staying aligned and learning from every cycle.
             </p>
             <p className="text-gray-700 mb-4">
-              This training module will guide you through the core concepts and tools that make Rhythm90 work. 
+              This Rhythm90 overview will guide you through the core concepts and tools that make Rhythm90 work. 
               <strong className="italic"> Explore sections in any order. Come back anytime to refresh or learn more.</strong>
             </p>
           </div>
@@ -630,7 +630,7 @@ function TrainingModule() {
       <div className="p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Training Module</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Rhythm90 Overview</h1>
           <p className="text-gray-600">
             Learn how to use Rhythm90 to run teams and quarters effectively
           </p>
