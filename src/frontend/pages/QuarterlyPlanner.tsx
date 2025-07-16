@@ -194,7 +194,9 @@ function QuarterlyPlanner() {
               <tbody>
                 <tr className="border-b border-gray-200">
                   <td className="p-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                    <span className="text-xs">Activities</span>
+                    <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">
+                      Activities
+                    </div>
                   </td>
                   {weeks.map((week) => (
                     <td
@@ -205,7 +207,7 @@ function QuarterlyPlanner() {
                         {getActivitiesForWeek(week.week, selectedRole).map((activity, index) => (
                           <div
                             key={index}
-                            className="text-xs bg-blue-50 text-blue-700 px-1 py-0.5 rounded leading-tight"
+                            className="text-xs bg-blue-50 text-blue-700 px-1 py-0.5 rounded leading-tight text-[10px]"
                           >
                             {activity}
                           </div>
@@ -216,7 +218,9 @@ function QuarterlyPlanner() {
                 </tr>
                 <tr>
                   <td className="p-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                    <span className="text-xs">Notes</span>
+                    <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">
+                      Notes
+                    </div>
                   </td>
                   {weeks.map((week, index) => (
                     <td
