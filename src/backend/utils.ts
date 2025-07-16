@@ -193,7 +193,7 @@ export async function callOpenAI(messages: any[], env: Env): Promise<string> {
 // CORS headers
 export const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://rhythm90.io',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Credentials': 'true',
 };
