@@ -110,50 +110,50 @@ function QuarterlyPlannerForm() {
       {
         key: 'objective',
         label: 'Objective',
-        icon: <FaBullseye className="text-red-500 mr-2" />,
+        icon: <FaBullseye className="text-red-500 mr-1" />,
         content: structuredSummary.objective,
       },
       {
         key: 'keyFocusAreas',
         label: 'Key Focus Areas',
-        icon: <FaChartBar className="text-blue-500 mr-2" />,
+        icon: <FaChartBar className="text-blue-500 mr-1" />,
         content: structuredSummary.keyFocusAreas,
         isList: true,
       },
       {
         key: 'plays',
         label: 'Plays to Implement',
-        icon: <FaPlay className="text-green-500 mr-2" />,
+        icon: <FaPlay className="text-green-500 mr-1" />,
         content: structuredSummary.plays,
         isPlays: true,
       },
       {
         key: 'learningGoals',
         label: 'Learning Goals',
-        icon: <FaGraduationCap className="text-purple-500 mr-2" />,
+        icon: <FaGraduationCap className="text-purple-500 mr-1" />,
         content: structuredSummary.learningGoals,
         isList: true,
       },
       {
         key: 'signalsToWatch',
         label: 'Signals to Watch',
-        icon: <FaChartLine className="text-orange-500 mr-2" />,
+        icon: <FaChartLine className="text-orange-500 mr-1" />,
         content: structuredSummary.signalsToWatch,
         isList: true,
       },
       {
         key: 'nextSteps',
         label: 'Next Steps',
-        icon: <FaArrowRight className="text-emerald-500 mr-2" />,
+        icon: <FaArrowRight className="text-emerald-500 mr-1" />,
         content: structuredSummary.nextSteps,
         isList: true,
       },
     ];
 
     return (
-      <div className="space-y-4">
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-red-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{structuredSummary.title}</h3>
+      <div className="space-y-3">
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 p-3 rounded-lg border border-red-200">
+          <h3 className="text-base font-bold text-gray-900 mb-1">{structuredSummary.title}</h3>
         </div>
         
         {sections.map((section) => {
@@ -162,25 +162,25 @@ function QuarterlyPlannerForm() {
           }
 
           return (
-            <div key={section.key} className="bg-white rounded-md shadow-sm p-3">
-              <div className="flex items-center mb-2">
+            <div key={section.key} className="bg-white rounded-md shadow-sm p-2">
+              <div className="flex items-center mb-1">
                 {section.icon}
-                <span className="font-bold text-sm text-gray-900">{section.label}</span>
+                <span className="font-semibold text-xs text-gray-900">{section.label}</span>
               </div>
-              <div className="text-xs text-gray-800 leading-relaxed">
+              <div className="text-xs text-gray-800 leading-tight">
                 {section.isList && Array.isArray(section.content) ? (
-                  <ul className="ml-5 space-y-1 list-disc">
+                  <ul className="ml-4 space-y-0.5 list-disc">
                     {section.content.map((item: string, index: number) => (
-                      <li key={index}>{item}</li>
+                      <li key={index} className="text-xs">{item}</li>
                     ))}
                   </ul>
                 ) : section.isPlays && Array.isArray(section.content) ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {section.content.map((play: any, index: number) => (
-                      <div key={index} className="border-l-2 border-blue-200 pl-3">
-                        <h4 className="font-semibold text-gray-900 mb-1">{play.title}</h4>
-                        <p className="text-gray-700 mb-2">{play.description}</p>
-                        <div className="text-xs text-gray-600">
+                      <div key={index} className="border-l-2 border-blue-200 pl-2">
+                        <h4 className="font-medium text-xs text-gray-900 mb-0.5">{play.title}</h4>
+                        <p className="text-xs text-gray-700 mb-1">{play.description}</p>
+                        <div className="text-xs text-gray-600 mb-0.5">
                           <span className="font-medium">Leads:</span> {play.leads.join(', ')}
                         </div>
                         <div className="text-xs text-gray-600">
@@ -190,7 +190,7 @@ function QuarterlyPlannerForm() {
                     ))}
                   </div>
                 ) : (
-                  <p>{section.content}</p>
+                  <p className="text-xs">{section.content}</p>
                 )}
               </div>
             </div>
@@ -256,17 +256,17 @@ function QuarterlyPlannerForm() {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 What's your team's biggest challenge this quarter?
               </label>
               <textarea
                 value={inputs.bigChallenge}
                 onChange={(e) => updateInput('bigChallenge', e.target.value)}
                 placeholder="E.g., improve customer retention by 20%"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                rows={4}
+                className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-xs sm:text-sm"
+                rows={3}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Describe the main challenge or goal your team needs to tackle this quarter.
@@ -277,12 +277,12 @@ function QuarterlyPlannerForm() {
 
       case 2:
         return (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 What do you want to learn or improve this quarter?
               </label>
-              <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-3">
                 {learningGoalOptions.map((goal) => (
                   <button
                     key={goal}
@@ -294,7 +294,7 @@ function QuarterlyPlannerForm() {
                         updateInput('learningGoals', [...inputs.learningGoals, goal]);
                       }
                     }}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                    className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                       inputs.learningGoals.includes(goal)
                         ? 'bg-red-100 text-red-700 border border-red-300'
                         : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
@@ -511,23 +511,23 @@ function QuarterlyPlannerForm() {
 
   return (
     <AppLayout>
-      <div className="p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Quarterly Planner</h1>
+      <div className="p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Quarterly Planner</h1>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
           {/* Input Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Plan Your Quarter</h2>
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Plan Your Quarter</h2>
             
             {/* Progress indicator */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Step {currentStep} of 7</span>
-                <span className="text-sm text-gray-500">{Math.round((currentStep / 7) * 100)}%</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-700">Step {currentStep} of 7</span>
+                <span className="text-xs sm:text-sm text-gray-500">{Math.round((currentStep / 7) * 100)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                 <div 
-                  className="bg-red-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-red-600 h-1.5 sm:h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(currentStep / 7) * 100}%` }}
                 ></div>
               </div>
@@ -547,11 +547,11 @@ function QuarterlyPlannerForm() {
             </AnimatePresence>
 
             {/* Navigation */}
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between mt-4 sm:mt-6">
               <button
                 onClick={prevStep}
                 disabled={currentStep === 1}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
@@ -563,7 +563,7 @@ function QuarterlyPlannerForm() {
                   (currentStep === 5 && inputs.signalsToWatch.length === 0) ||
                   (currentStep === 7 && isLoading)
                 }
-                className="px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-red-600 text-white text-xs sm:text-sm rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {currentStep === 7 ? (isLoading ? 'Generating...' : 'Generate Summary') : 'Next'}
               </button>
@@ -571,21 +571,21 @@ function QuarterlyPlannerForm() {
           </div>
 
           {/* Output Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
               <FaLightbulb className="text-yellow-400" /> Quarterly Summary
             </h2>
             
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
-                <p className="text-gray-500">Generating your quarterly summary...</p>
+              <div className="text-center py-6 sm:py-8">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-red-600 mx-auto mb-3 sm:mb-4"></div>
+                <p className="text-xs sm:text-sm text-gray-500">Generating your quarterly summary...</p>
               </div>
             ) : structuredSummary ? (
               <div>
                 {renderStructuredSummary()}
                 {/* Action buttons for saving/favoriting/sharing */}
-                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                <div className="bg-gray-50 rounded-lg p-2 mt-2 sm:mt-3">
                   <SavedResponseActions
                     toolName="Quarterly Planner"
                     responseData={structuredSummary}
@@ -597,10 +597,10 @@ function QuarterlyPlannerForm() {
             ) : summary ? (
               <div>
                 <div className="prose max-w-none text-xs">
-                  <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100">{summary}</pre>
+                  <pre style={{whiteSpace: 'pre-wrap'}} className="bg-gray-50 rounded-md p-2 border border-gray-100 text-xs">{summary}</pre>
                 </div>
                 {/* Action buttons for saving/favoriting/sharing */}
-                <div className="bg-gray-50 rounded-lg p-2 mt-3">
+                <div className="bg-gray-50 rounded-lg p-2 mt-2 sm:mt-3">
                   <SavedResponseActions
                     toolName="Quarterly Planner"
                     responseData={{ summary }}
@@ -610,11 +610,11 @@ function QuarterlyPlannerForm() {
                 </div>
               </div>
             ) : (
-              <div className="text-center text-gray-500 py-8">
-                <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="text-center text-gray-500 py-6 sm:py-8">
+                <svg className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <p>Complete the steps to generate your quarterly planning summary</p>
+                <p className="text-xs sm:text-sm">Complete the steps to generate your quarterly planning summary</p>
               </div>
             )}
           </div>
