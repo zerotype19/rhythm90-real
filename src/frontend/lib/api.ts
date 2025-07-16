@@ -460,15 +460,15 @@ class ApiClient {
     });
   }
 
-  async createDashboardAnnouncement(payload: { title: string; summary: string; body?: string }) {
+  async createDashboardAnnouncement(payload: { title: string; summary: string; body?: string; is_active?: boolean }) {
     return this.request('/api/dashboard/announcements', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, is_active: payload.is_active ?? true }),
       credentials: 'include',
     });
   }
 
-  async updateDashboardAnnouncement(id: string, payload: { title: string; summary: string; body?: string }) {
+  async updateDashboardAnnouncement(id: string, payload: { title: string; summary: string; body?: string; is_active?: boolean }) {
     return this.request(`/api/dashboard/announcements/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),

@@ -92,7 +92,7 @@ const Dashboard: React.FC = () => {
   const handleAddAnnouncement = async (formData: { title: string; summary: string; body?: string }) => {
     try {
       console.log('Dashboard: Creating announcement:', formData);
-      const response = await apiClient.createDashboardAnnouncement(formData);
+      const response = await apiClient.createDashboardAnnouncement({ ...formData, is_active: true });
       console.log('Dashboard: Announcement created successfully');
       
       if (response.error) {
@@ -110,7 +110,12 @@ const Dashboard: React.FC = () => {
   const handleEditAnnouncement = async (id: string, formData: { title: string; summary: string; body?: string }) => {
     try {
       console.log('Dashboard: Updating announcement:', id, formData);
-      const response = await apiClient.updateDashboardAnnouncement(id, formData);
+      // Preserve the current is_active status when editing
+      const currentAnnouncement = dashboardData?.announcements.find(a => a.id === id);
+      const response = await apiClient.updateDashboardAnnouncement(id, { 
+        ...formData, 
+        is_active: currentAnnouncement?.is_active ?? true 
+      });
       console.log('Dashboard: Announcement updated successfully');
       
       if (response.error) {
