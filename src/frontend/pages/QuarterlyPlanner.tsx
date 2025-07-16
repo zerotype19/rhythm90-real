@@ -177,7 +177,7 @@ function QuarterlyPlanner() {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="py-2 font-semibold text-gray-900 border-r border-gray-200 text-center w-12">
+                  <th className="py-1 font-semibold text-gray-900 border-r border-gray-200 text-center w-10">
                     <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">Week</div>
                   </th>
                   {weeks.map((week) => (
@@ -193,7 +193,7 @@ function QuarterlyPlanner() {
               </thead>
               <tbody>
                 <tr className="border-b border-gray-200">
-                  <td className="py-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
+                  <td className="py-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
                     <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">
                       Activities
                     </div>
@@ -217,7 +217,7 @@ function QuarterlyPlanner() {
                   ))}
                 </tr>
                 <tr>
-                  <td className="py-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
+                  <td className="py-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
                     <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">
                       Notes
                     </div>
