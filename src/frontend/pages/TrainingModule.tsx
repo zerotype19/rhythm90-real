@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import AppLayout from '../components/AppLayout';
 
 interface Section {
@@ -538,11 +537,8 @@ function TrainingModule() {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            <motion.div
+            <div
               key={activeSection}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-8"
             >
               {currentSection && (
@@ -557,7 +553,7 @@ function TrainingModule() {
                   {currentSection.content}
                 </>
               )}
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
