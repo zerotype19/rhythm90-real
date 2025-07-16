@@ -177,8 +177,8 @@ function QuarterlyPlanner() {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="py-1 font-semibold text-gray-900 border-r border-gray-200 text-center w-10">
-                    <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">Week</div>
+                  <th className="py-0.5 font-semibold text-gray-900 border-r border-gray-200 text-center w-6">
+                    <div className="text-[10px] transform -rotate-90 whitespace-nowrap text-center leading-none">Week</div>
                   </th>
                   {weeks.map((week) => (
                     <th
@@ -193,8 +193,8 @@ function QuarterlyPlanner() {
               </thead>
               <tbody>
                 <tr className="border-b border-gray-200">
-                  <td className="py-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                    <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">
+                  <td className="py-0.5 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50 w-6">
+                    <div className="text-[10px] transform -rotate-90 whitespace-nowrap text-center leading-none">
                       Activities
                     </div>
                   </td>
@@ -217,8 +217,8 @@ function QuarterlyPlanner() {
                   ))}
                 </tr>
                 <tr>
-                  <td className="py-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                    <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">
+                  <td className="py-0.5 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50 w-6">
+                    <div className="text-[10px] transform -rotate-90 whitespace-nowrap text-center leading-none">
                       Notes
                     </div>
                   </td>
