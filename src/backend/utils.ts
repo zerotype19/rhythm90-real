@@ -87,11 +87,11 @@ export async function createTeam(db: any, team: Omit<Team, 'id' | 'created_at' |
   const memberId = crypto.randomUUID();
   const inviteCode = await generateUniqueInviteCode(db);
   
-  // Create team
+  // Create team with new profile fields
   await db.prepare(`
-    INSERT INTO teams (id, name, industry, owner_id, invite_code)
-    VALUES (?, ?, ?, ?, ?)
-  `).bind(teamId, team.name, team.industry, ownerId, inviteCode).run();
+    INSERT INTO teams (id, name, industry, focus_areas, team_description, owner_id, invite_code)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(teamId, team.name, team.industry, team.focus_areas || '[]', team.team_description || '', ownerId, inviteCode).run();
   
   // Add owner as team member
   await db.prepare(`

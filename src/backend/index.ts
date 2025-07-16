@@ -1,6 +1,6 @@
 import { Env } from './types';
 import { handleGoogleAuth, handleGoogleCallback, handleGetSession, handleLogout } from './auth';
-import { handleCreateTeam, handleGetTeams, handleJoinTeam } from './teams';
+import { handleCreateTeam, handleGetTeams, handleJoinTeam, handleUpdateTeam } from './teams';
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handlePersonaAsk, handleFocusGroupAsk, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
@@ -93,6 +93,11 @@ export default {
 
       if (path === '/api/teams/join' && request.method === 'POST') {
         return await handleJoinTeam(request, env);
+      }
+
+      // Team update route (PATCH /api/teams/:id)
+      if (path.match(/^\/api\/teams\/[^\/]+$/) && request.method === 'PATCH') {
+        return await handleUpdateTeam(request, env);
       }
 
       // AI routes

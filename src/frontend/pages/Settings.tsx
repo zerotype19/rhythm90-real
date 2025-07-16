@@ -23,6 +23,8 @@ interface TeamSettings {
     id: string;
     name: string;
     industry: string;
+    focus_areas: string; // JSON string array
+    team_description: string;
     created_at: string;
   };
   user_role: 'owner' | 'member';
@@ -63,6 +65,11 @@ function Settings() {
   // Team settings
   const [teamSettings, setTeamSettings] = useState<TeamSettings | null>(null);
   const [teamForm, setTeamForm] = useState({ name: '' });
+  const [teamProfileForm, setTeamProfileForm] = useState({ 
+    industry: '', 
+    focus_areas: [] as string[], 
+    team_description: '' 
+  });
   const [inviteForm, setInviteForm] = useState({ email: '' });
   const [showInviteForm, setShowInviteForm] = useState(false);
 
@@ -96,6 +103,22 @@ function Settings() {
       if (teamRes.data) {
         setTeamSettings(teamRes.data);
         setTeamForm({ name: teamRes.data.team.name });
+        
+        // Parse focus areas from JSON string
+        let focusAreas: string[] = [];
+        try {
+          if (teamRes.data.team.focus_areas && teamRes.data.team.focus_areas !== '[]') {
+            focusAreas = JSON.parse(teamRes.data.team.focus_areas);
+          }
+        } catch (e) {
+          console.error('Failed to parse focus areas:', e);
+        }
+        
+        setTeamProfileForm({
+          industry: teamRes.data.team.industry,
+          focus_areas: focusAreas,
+          team_description: teamRes.data.team.team_description || ''
+        });
       }
 
       if (billingRes.data) {
@@ -176,6 +199,46 @@ function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTeamProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+
+    try {
+      const response = await apiClient.updateTeam(teamSettings!.team.id, teamProfileForm);
+      if (response.data) {
+        showSuccess('Team profile updated successfully');
+        if (teamSettings) {
+          setTeamSettings({
+            ...teamSettings,
+            team: { 
+              ...teamSettings.team, 
+              industry: teamProfileForm.industry,
+              focus_areas: JSON.stringify(teamProfileForm.focus_areas),
+              team_description: teamProfileForm.team_description
+            }
+          });
+        }
+      } else {
+        showError(response.error || 'Failed to update team profile');
+      }
+    } catch (err) {
+      console.error('Failed to update team profile:', err);
+      showError('Failed to update team profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleFocusAreaChange = (area: string) => {
+    setTeamProfileForm(prev => ({
+      ...prev,
+      focus_areas: prev.focus_areas.includes(area)
+        ? prev.focus_areas.filter(a => a !== area)
+        : [...prev.focus_areas, area]
+    }));
   };
 
   const handleInviteMember = async (e: React.FormEvent) => {
@@ -520,6 +583,91 @@ function Settings() {
                         {teamSettings.user_role !== 'owner' && (
                           <p className="mt-1 text-sm text-gray-500">Only team owners can update the team name</p>
                         )}
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Team Profile */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Team Profile</h3>
+                    <form onSubmit={handleTeamProfileUpdate} className="space-y-4">
+                      <div>
+                        <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
+                          Industry / Vertical
+                        </label>
+                        <select
+                          id="industry"
+                          value={teamProfileForm.industry}
+                          onChange={(e) => setTeamProfileForm({ ...teamProfileForm, industry: e.target.value })}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                          disabled={teamSettings.user_role !== 'owner'}
+                        >
+                          <option value="">Select an industry</option>
+                          <option value="Retail">Retail</option>
+                          <option value="Travel & Hospitality">Travel & Hospitality</option>
+                          <option value="Financial Services">Financial Services</option>
+                          <option value="Insurance">Insurance</option>
+                          <option value="Technology">Technology</option>
+                          <option value="Healthcare">Healthcare</option>
+                          <option value="CPG">CPG (Consumer Packaged Goods)</option>
+                          <option value="Media & Entertainment">Media & Entertainment</option>
+                          <option value="Automotive">Automotive</option>
+                          <option value="Nonprofit / Public Sector">Nonprofit / Public Sector</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Team Focus Areas
+                        </label>
+                        <div className="space-y-2 max-h-32 overflow-y-auto border border-gray-300 rounded-md p-3">
+                          {[
+                            'Brand / Strategy',
+                            'Media / Performance',
+                            'CRM / Lifecycle Marketing',
+                            'Product / UX / Digital Experience',
+                            'Analytics / Insights',
+                            'Creative / Content',
+                            'Growth / Acquisition'
+                          ].map((area) => (
+                            <label key={area} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={teamProfileForm.focus_areas.includes(area)}
+                                onChange={() => handleFocusAreaChange(area)}
+                                disabled={teamSettings.user_role !== 'owner'}
+                                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                              />
+                              <span className="text-sm text-gray-700">{area}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label htmlFor="team-description" className="block text-sm font-medium text-gray-700">
+                          Team Description (Optional)
+                        </label>
+                        <textarea
+                          id="team-description"
+                          value={teamProfileForm.team_description}
+                          onChange={(e) => setTeamProfileForm({ ...teamProfileForm, team_description: e.target.value })}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                          rows={3}
+                          placeholder="e.g., We're an agency pod focused on paid search + social, with support from creative and analytics."
+                          disabled={teamSettings.user_role !== 'owner'}
+                        />
+                      </div>
+
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={saving || teamSettings.user_role !== 'owner'}
+                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                        >
+                          {saving ? 'Saving...' : 'Update Profile'}
+                        </button>
                       </div>
                     </form>
                   </div>

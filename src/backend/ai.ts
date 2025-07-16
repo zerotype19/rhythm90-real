@@ -2,6 +2,52 @@ import { Env, GeneratePlayRequest, GeneratePlayResponse, InterpretSignalRequest,
 import { callOpenAI, jsonResponse, errorResponse, logAIUsage } from './utils';
 import { verifyAuth } from './auth';
 
+// Function to get team context for AI prompts
+async function getTeamContext(db: any, userId: string): Promise<string> {
+  try {
+    // Get user's primary team (first team they're a member of)
+    const teamResult = await db.prepare(`
+      SELECT t.* FROM teams t
+      JOIN team_members tm ON t.id = tm.team_id
+      WHERE tm.user_id = ?
+      ORDER BY tm.joined_at ASC
+      LIMIT 1
+    `).bind(userId).first();
+
+    if (!teamResult) {
+      return '';
+    }
+
+    const team = teamResult as any;
+    let context = `This team works in the ${team.industry} vertical`;
+
+    // Add focus areas if available
+    if (team.focus_areas && team.focus_areas !== '[]') {
+      try {
+        const focusAreas = JSON.parse(team.focus_areas);
+        if (Array.isArray(focusAreas) && focusAreas.length > 0) {
+          context += `, with focus areas including ${focusAreas.join(', ')}`;
+        }
+      } catch (e) {
+        // If JSON parsing fails, skip focus areas
+      }
+    }
+
+    // Add team description if available
+    if (team.team_description && team.team_description.trim()) {
+      context += `. Description: ${team.team_description}`;
+    } else {
+      context += '.';
+    }
+
+    context += ' Please tailor your suggestions, examples, and advice to fit this context.';
+    return context;
+  } catch (error) {
+    console.error('Error getting team context:', error);
+    return '';
+  }
+}
+
 const SYSTEM_MESSAGE = {
   role: 'system',
   content: `You are an AI assistant trained to help teams use the Rhythm90 system.\n\nRhythm90 is a quarterly operating system designed to help teams work smarter by defining clear plays (hypotheses), capturing meaningful signals (observations), running sharp rituals (team sessions), and learning from Review & Renew moments.\n\nYour job is to help teams shape strong plays, interpret meaningful signals, and run effective rituals — all aligned to the Rhythm90 framework.`
@@ -79,7 +125,17 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
     // Old fields for fallback
     let extracted_idea = extractField(idea, 'idea');
     let extracted_context = extractField(context, 'context');
+    
+    // Get team context for AI prompt injection
+    const teamContext = await getTeamContext(env.DB, user.id);
+    
     let messages = [PLAY_BUILDER_SYSTEM_MESSAGE];
+    
+    // Add team context if available
+    if (teamContext) {
+      messages.push({ role: 'system', content: teamContext });
+    }
+    
     // If new fields are present, use new prompt structure
     if (extracted_team_type || extracted_quarter_focus || extracted_top_signal || extracted_owner_role || extracted_idea_prompt) {
       let contextMsg = 'Context:';
@@ -251,19 +307,30 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     const { observation, context } = body;
     if (!observation) return errorResponse('Observation is required', 400);
 
+    // Get team context for AI prompt injection
+    const teamContext = await getTeamContext(env.DB, user.id);
+
     // --- Prompt Assembly ---
     const SIGNAL_LAB_SYSTEM_MESSAGE = {
       role: 'system',
-      content: `You are a Rhythm90 Signal Lab assistant.\n\nYour job is to help teams interpret signals — unexpected outcomes, surprising data, or emerging patterns — using the Rhythm90 framework.\n\nA good signal interpretation should:\n- Describe what the signal might indicate (possible meaning).\n- Suggest 2-3 possible causes or contributing factors.\n- Offer 1-2 suggestions for what the team might explore or test next.\n- Highlight if the signal challenges or confirms existing assumptions.\n- Connect to the team’s business or category context if provided.`
+      content: `You are a Rhythm90 Signal Lab assistant.\n\nYour job is to help teams interpret signals — unexpected outcomes, surprising data, or emerging patterns — using the Rhythm90 framework.\n\nA good signal interpretation should:\n- Describe what the signal might indicate (possible meaning).\n- Suggest 2-3 possible causes or contributing factors.\n- Offer 1-2 suggestions for what the team might explore or test next.\n- Highlight if the signal challenges or confirms existing assumptions.\n- Connect to the team's business or category context if provided.`
     };
+    
+    let messages = [SIGNAL_LAB_SYSTEM_MESSAGE];
+    
+    // Add team context if available
+    if (teamContext) {
+      messages.push({ role: 'system', content: teamContext });
+    }
+    
     let contextBlock = `Context:\nObservation: ${observation}`;
     if (context) contextBlock += `\nAdditional Context: ${context}`;
     const userPrompt = `Please return your answer with the following fields:\n1. Possible Meaning (what might this signal indicate?)\n2. Possible Causes (2-3 operational or audience-related drivers)\n3. Challenge or Confirmation (what business assumption does this challenge or confirm?)\n4. Suggested Next Exploration (1-2 ideas for what the team might explore or test next)\n\nFormat your response as JSON with fields: possible_meaning, possible_causes, challenge_or_confirmation, suggested_next_exploration.\n\nIn Possible Causes, include both operational and audience-related factors where applicable.\nIn Challenge or Confirmation, note what business assumption this signal impacts.\nIn Suggested Next Exploration, suggest how the learning might shape future plays.\nIncorporate the Additional Context into all sections. Provide category-specific insights when possible.`;
-    const messages = [
-      SIGNAL_LAB_SYSTEM_MESSAGE,
+    
+    messages.push(
       { role: 'user', content: contextBlock },
       { role: 'user', content: userPrompt }
-    ];
+    );
 
     // --- AI Call ---
     const aiResponse = await callOpenAI(messages, env);
@@ -361,6 +428,9 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
       return errorResponse(`Invalid ritual type. Must be one of: ${validRitualTypes.join(', ')}`, 400);
     }
 
+    // Get team context for AI prompt injection
+    const teamContext = await getTeamContext(env.DB, user.id);
+
     // --- Prompt Assembly ---
     const RITUAL_GUIDE_SYSTEM_MESSAGE = {
       role: 'system',
@@ -379,6 +449,13 @@ Your job is to:
 - Define success in terms of collective team learning, clarity, and forward motion.
 - Connect all recommendations to the team type, business context, top challenges, focus areas, or category context if provided.`
     };
+    
+    let messages = [RITUAL_GUIDE_SYSTEM_MESSAGE];
+    
+    // Add team context if available
+    if (teamContext) {
+      messages.push({ role: 'system', content: teamContext });
+    }
     
     // Build context block with all fields, marking missing ones as "None provided"
     let contextBlock = 'Context:';

@@ -14,6 +14,8 @@ interface Team {
   id: string;
   name: string;
   industry: string;
+  focus_areas: string; // JSON string array
+  team_description: string;
   owner_id: string;
   invite_code: string | null;
   created_at: string;

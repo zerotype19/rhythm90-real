@@ -81,16 +81,24 @@ class ApiClient {
   }
 
   // Teams
-  async createTeam(name: string, industry: string) {
+  async createTeam(name: string, industry: string, focus_areas?: string[], team_description?: string) {
     return this.request('/api/teams', {
       method: 'POST',
-      body: JSON.stringify({ name, industry }),
+      body: JSON.stringify({ name, industry, focus_areas, team_description }),
       credentials: 'include',
     });
   }
 
   async getTeams() {
     return this.request('/api/teams', {
+      credentials: 'include',
+    });
+  }
+
+  async updateTeam(teamId: string, payload: { name?: string; industry?: string; focus_areas?: string[]; team_description?: string }) {
+    return this.request(`/api/teams/${teamId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
       credentials: 'include',
     });
   }

@@ -12,6 +12,8 @@ export interface Team {
   id: string;
   name: string;
   industry: string;
+  focus_areas: string; // JSON string array
+  team_description: string;
   owner_id: string;
   invite_code: string | null;
   created_at: string;
@@ -68,6 +70,15 @@ export interface AuthResponse {
 export interface CreateTeamRequest {
   name: string;
   industry: string;
+  focus_areas?: string[];
+  team_description?: string;
+}
+
+export interface UpdateTeamRequest {
+  name?: string;
+  industry?: string;
+  focus_areas?: string[];
+  team_description?: string;
 }
 
 export interface JoinTeamRequest {
