@@ -74,7 +74,8 @@ const Dashboard: React.FC = () => {
     setAnnouncementsLoading(true);
     apiClient.getDashboardAnnouncements()
       .then(res => {
-        if (res.data) setAnnouncements(res.data);
+        if (res.data?.announcements) setAnnouncements(res.data.announcements);
+        else setAnnouncements([]);
       })
       .catch(() => setAnnouncements([]))
       .finally(() => setAnnouncementsLoading(false));
@@ -119,7 +120,8 @@ const Dashboard: React.FC = () => {
       }
       // Reload
       const res = await apiClient.getDashboardAnnouncements();
-      if (res.data) setAnnouncements(res.data);
+      if (res.data?.announcements) setAnnouncements(res.data.announcements);
+      else setAnnouncements([]);
       handleCloseAnnouncementModal();
     } catch (err: any) {
       setAnnouncementError('Failed to save announcement');
@@ -134,7 +136,8 @@ const Dashboard: React.FC = () => {
     try {
       await apiClient.deleteDashboardAnnouncement(id.toString());
       const res = await apiClient.getDashboardAnnouncements();
-      if (res.data) setAnnouncements(res.data);
+      if (res.data?.announcements) setAnnouncements(res.data.announcements);
+      else setAnnouncements([]);
       handleCloseAnnouncementModal();
     } catch (err: any) {
       setAnnouncementError('Failed to delete announcement');
@@ -370,7 +373,7 @@ const Dashboard: React.FC = () => {
               <div className="text-gray-500">No announcements yet.</div>
             ) : (
               <ul className="space-y-4">
-                {announcements.filter(a => a.is_active).map(a => (
+                {(announcements || []).filter(a => a.is_active).map(a => (
                   <li key={a.id} className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
                       <div className="font-medium text-gray-900">{a.title}</div>
