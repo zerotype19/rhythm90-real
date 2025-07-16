@@ -24,6 +24,8 @@ import HistoryPage from './pages/HistoryPage';
 import TeamSharedPage from './pages/TeamSharedPage';
 import PublicSharedPage from './pages/PublicSharedPage';
 import Admin from './pages/Admin';
+import TrainingModule from './pages/TrainingModule';
+import QuarterlyPlanner from './pages/QuarterlyPlanner';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -62,6 +64,8 @@ function App() {
               <Route path="team-shared" element={<TeamSharedPage />} />
               <Route path="team-shared/:slug" element={<TeamSharedPage />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="training" element={<TrainingModule />} />
+              <Route path="tools/planner" element={<QuarterlyPlanner />} />
               <Route index element={<Navigate to="/app/dashboard" replace />} />
             </Route>
             
