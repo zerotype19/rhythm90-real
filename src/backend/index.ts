@@ -21,6 +21,7 @@ export default {
     // Handle CORS preflight requests
     if (request.method === 'OPTIONS') {
       return new Response(null, {
+        status: 200,
         headers: corsHeaders,
       });
     }

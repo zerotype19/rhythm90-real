@@ -18,10 +18,7 @@ export async function handleCreatePlannerSession(request: Request, env: Env): Pr
   try {
     const user = await verifyAuth(request, env);
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('Unauthorized', 401);
     }
 
     // Get user's team
@@ -30,10 +27,7 @@ export async function handleCreatePlannerSession(request: Request, env: Env): Pr
     `).bind(user.id).first();
     
     if (!teamMember?.team_id) {
-      return new Response(JSON.stringify({ error: 'User must belong to a team' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('User must belong to a team', 400);
     }
 
     const body: CreatePlannerSessionRequest = await request.json();
@@ -41,10 +35,7 @@ export async function handleCreatePlannerSession(request: Request, env: Env): Pr
 
     // Validate required fields
     if (!inputs.bigChallenge || !inputs.learningGoals || !inputs.signalsToWatch) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('Missing required fields', 400);
     }
 
     // Get team profile for context
@@ -103,20 +94,14 @@ Quarterly Planning Inputs:
       session.created_at
     ).run();
 
-    return new Response(JSON.stringify({
+    return jsonResponse({
       session,
       summary
-    }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, 201);
 
   } catch (error) {
     console.error('Create planner session error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return errorResponse('Internal server error', 500);
   }
 }
 
@@ -124,10 +109,7 @@ export async function handleGetPlannerSessions(request: Request, env: Env): Prom
   try {
     const user = await verifyAuth(request, env);
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('Unauthorized', 401);
     }
 
     // Get user's team
@@ -136,10 +118,7 @@ export async function handleGetPlannerSessions(request: Request, env: Env): Prom
     `).bind(user.id).first();
     
     if (!teamMember?.team_id) {
-      return new Response(JSON.stringify({ error: 'User must belong to a team' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('User must belong to a team', 400);
     }
 
     const sessions = await env.DB.prepare(`
@@ -150,19 +129,13 @@ export async function handleGetPlannerSessions(request: Request, env: Env): Prom
       LIMIT 50
     `).bind(teamMember.team_id).all();
 
-    return new Response(JSON.stringify({
+    return jsonResponse({
       sessions: sessions.results
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
     console.error('Get planner sessions error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return errorResponse('Internal server error', 500);
   }
 }
 
@@ -170,10 +143,7 @@ export async function handleGetPlannerSession(request: Request, env: Env): Promi
   try {
     const user = await verifyAuth(request, env);
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('Unauthorized', 401);
     }
 
     // Get user's team
@@ -182,20 +152,14 @@ export async function handleGetPlannerSession(request: Request, env: Env): Promi
     `).bind(user.id).first();
     
     if (!teamMember?.team_id) {
-      return new Response(JSON.stringify({ error: 'User must belong to a team' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('User must belong to a team', 400);
     }
 
     const url = new URL(request.url);
     const sessionId = url.pathname.split('/').pop();
 
     if (!sessionId) {
-      return new Response(JSON.stringify({ error: 'Session ID required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return errorResponse('Session ID required', 400);
     }
 
     const session = await env.DB.prepare(`
@@ -218,9 +182,6 @@ export async function handleGetPlannerSession(request: Request, env: Env): Promi
 
   } catch (error) {
     console.error('Get planner session error:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return errorResponse('Internal server error', 500);
   }
 } 
