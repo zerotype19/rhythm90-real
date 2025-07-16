@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { StarIcon, PlayIcon, SignalIcon, CalendarIcon, UserGroupIcon, CogIcon, ChartBarIcon, DocumentTextIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { StarIcon, PlayIcon, SignalIcon, CalendarIcon, UserGroupIcon, CogIcon, ChartBarIcon, DocumentTextIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, DocumentIcon, TableCellsIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import AppLayout from '../components/AppLayout';
 
 interface Section {
@@ -33,7 +33,7 @@ function TrainingModule() {
             </p>
             <p className="text-gray-700 mb-4">
               This training module will guide you through the core concepts and tools that make Rhythm90 work. 
-              <strong> Explore sections in any order. Come back anytime to refresh or learn more.</strong>
+              <strong className="italic"> Explore sections in any order. Come back anytime to refresh or learn more.</strong>
             </p>
           </div>
           
@@ -69,29 +69,29 @@ function TrainingModule() {
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">The Rhythm90 Cycle</h3>
             <div className="grid md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="text-center group">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-red-200 transition-colors cursor-help" title="Define plays and success metrics">
                   <span className="text-red-600 font-bold text-xl">1</span>
                 </div>
                 <h4 className="font-semibold text-gray-900">Plan</h4>
                 <p className="text-sm text-gray-600 mt-1">Define plays and success metrics</p>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="text-center group">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors cursor-help" title="Execute and track signals">
                   <span className="text-blue-600 font-bold text-xl">2</span>
                 </div>
                 <h4 className="font-semibold text-gray-900">Run</h4>
                 <p className="text-sm text-gray-600 mt-1">Execute and track signals</p>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="text-center group">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-green-200 transition-colors cursor-help" title="Review outcomes and insights">
                   <span className="text-green-600 font-bold text-xl">3</span>
                 </div>
                 <h4 className="font-semibold text-gray-900">Learn</h4>
                 <p className="text-sm text-gray-600 mt-1">Review outcomes and insights</p>
               </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="text-center group">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition-colors cursor-help" title="Adjust and plan next cycle">
                   <span className="text-purple-600 font-bold text-xl">4</span>
                 </div>
                 <h4 className="font-semibold text-gray-900">Reset</h4>
@@ -205,8 +205,8 @@ function TrainingModule() {
             <div className="mb-6">
               <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                 <span>Week 1</span>
-                <span>Week 4</span>
-                <span>Week 8</span>
+                <span className="font-semibold text-blue-600">Week 4</span>
+                <span className="font-semibold text-blue-600">Week 8</span>
                 <span>Week 12</span>
               </div>
               <div className="relative h-2 bg-gray-200 rounded-full">
@@ -225,7 +225,7 @@ function TrainingModule() {
                 </p>
               </div>
               <div className="border-l-4 border-blue-500 pl-4">
-                <h4 className="font-semibold text-blue-600">Pulse Check (Week 4, 8)</h4>
+                <h4 className="font-semibold text-blue-600">Pulse Check (Week 4, Week 8)</h4>
                 <p className="text-sm text-gray-700 mt-1">
                   Review in-flight plays, surface blockers, check early signals, and adjust priorities.
                 </p>
@@ -307,25 +307,28 @@ function TrainingModule() {
                 href="https://notion.so/templates" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="block text-yellow-700 hover:text-yellow-800 text-sm"
+                className="flex items-center gap-2 text-yellow-700 hover:text-yellow-800 text-sm"
               >
-                • Notion Board Template
+                <DocumentIcon className="w-4 h-4" />
+                Notion Board Template
               </a>
               <a 
                 href="https://trello.com/templates" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="block text-yellow-700 hover:text-yellow-800 text-sm"
+                className="flex items-center gap-2 text-yellow-700 hover:text-yellow-800 text-sm"
               >
-                • Trello Board Template
+                <Squares2X2Icon className="w-4 h-4" />
+                Trello Board Template
               </a>
               <a 
                 href="https://sheets.google.com/templates" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="block text-yellow-700 hover:text-yellow-800 text-sm"
+                className="flex items-center gap-2 text-yellow-700 hover:text-yellow-800 text-sm"
               >
-                • Google Sheets Template
+                <TableCellsIcon className="w-4 h-4" />
+                Google Sheets Template
               </a>
             </div>
           </div>
@@ -396,7 +399,7 @@ function TrainingModule() {
               Use our Play Builder tool to create structured, actionable plays for your team.
             </p>
             <p className="text-green-700 text-sm mb-4">
-              Generate plays with clear goals, owners, timelines, and success metrics tailored to your business context.
+              Use our Play Builder to generate plays with clear goals, owners, timelines, and success metrics.
             </p>
             <Link 
               to="/app/play-builder"
@@ -452,7 +455,7 @@ function TrainingModule() {
               <h4 className="font-semibold text-blue-800 mb-3">Example Logged Signals</h4>
               <div className="space-y-2 text-sm text-blue-700">
                 <p>• "Users drop off at Step 3 of onboarding"</p>
-                <p>• "Promo code email drove 2x click rate"</p>
+                <p>• <strong>"Promo code email drove 2x click rate"</strong></p>
                 <p>• "Call center flagged mobile error in checkout"</p>
                 <p>• "Enterprise customers asking for SSO integration"</p>
                 <p>• "Support tickets down 30% after UI update"</p>
@@ -594,7 +597,7 @@ function TrainingModule() {
             <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-sm text-blue-700">
                 <InformationCircleIcon className="w-4 h-4 inline mr-1" />
-                Your plan can be saved and shared with your team.
+                Your plan can be saved and shared with your team. <span className="text-xs text-blue-600">(Coming soon)</span>
               </p>
             </div>
           </div>
