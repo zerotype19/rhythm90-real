@@ -53,14 +53,9 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 1. Re-add state for announcements
+  // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [announcementsLoading, setAnnouncementsLoading] = useState(false);
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', body: '', is_active: true });
-  const [announcementSaving, setAnnouncementSaving] = useState(false);
-  const [announcementError, setAnnouncementError] = useState<string | null>(null);
 
   const isAdmin = user?.email === 'kevin.mcgovern@gmail.com';
 
@@ -68,7 +63,7 @@ const Dashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  // 2. Re-add effect to load announcements
+  // Load announcements
   useEffect(() => {
     if (!user) return;
     setAnnouncementsLoading(true);
@@ -80,71 +75,6 @@ const Dashboard: React.FC = () => {
       .catch(() => setAnnouncements([]))
       .finally(() => setAnnouncementsLoading(false));
   }, [user]);
-
-  // 3. Re-add announcement handlers
-  const handleOpenAnnouncementModal = (a?: Announcement) => {
-    setEditingAnnouncement(a || null);
-    setAnnouncementForm(a ? { title: a.title, body: a.body, is_active: a.is_active } : { title: '', body: '', is_active: true });
-    setShowAnnouncementModal(true);
-  };
-  const handleCloseAnnouncementModal = () => {
-    setShowAnnouncementModal(false);
-    setEditingAnnouncement(null);
-    setAnnouncementForm({ title: '', body: '', is_active: true });
-    setAnnouncementError(null);
-  };
-  const handleAnnouncementFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setAnnouncementForm(f => ({ ...f, [e.target.name]: e.target.value }));
-  };
-  const handleAnnouncementActiveChange = (v: boolean) => {
-    setAnnouncementForm(f => ({ ...f, is_active: v }));
-  };
-  const handleSaveAnnouncement = async () => {
-    setAnnouncementSaving(true);
-    setAnnouncementError(null);
-    try {
-      if (editingAnnouncement) {
-        await apiClient.updateDashboardAnnouncement(editingAnnouncement.id.toString(), {
-          title: announcementForm.title,
-          summary: announcementForm.body,
-          body: announcementForm.body,
-          is_active: announcementForm.is_active
-        });
-      } else {
-        await apiClient.createDashboardAnnouncement({
-          title: announcementForm.title,
-          summary: announcementForm.body,
-          body: announcementForm.body,
-          is_active: announcementForm.is_active
-        });
-      }
-      // Reload
-      const res = await apiClient.getDashboardAnnouncements();
-      if (res.data?.announcements) setAnnouncements(res.data.announcements);
-      else setAnnouncements([]);
-      handleCloseAnnouncementModal();
-    } catch (err: any) {
-      setAnnouncementError('Failed to save announcement');
-    } finally {
-      setAnnouncementSaving(false);
-    }
-  };
-  const handleDeleteAnnouncement = async (id: number) => {
-    if (!window.confirm('Delete this announcement?')) return;
-    setAnnouncementSaving(true);
-    setAnnouncementError(null);
-    try {
-      await apiClient.deleteDashboardAnnouncement(id.toString());
-      const res = await apiClient.getDashboardAnnouncements();
-      if (res.data?.announcements) setAnnouncements(res.data.announcements);
-      else setAnnouncements([]);
-      handleCloseAnnouncementModal();
-    } catch (err: any) {
-      setAnnouncementError('Failed to delete announcement');
-    } finally {
-      setAnnouncementSaving(false);
-    }
-  };
 
 
   const fetchDashboardData = async () => {
@@ -355,105 +285,27 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Announcements Panel */}
-          <section className="mt-8">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-gray-900">Announcements</h3>
-              {user?.email === 'kevin.mcgovern@gmail.com' && (
-                <button
-                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-                  onClick={() => handleOpenAnnouncementModal()}
-                >
-                  New Announcement
-                </button>
-              )}
-            </div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Announcements</h2>
             {announcementsLoading ? (
               <div className="text-gray-500">Loading...</div>
             ) : announcements.length === 0 ? (
-              <div className="text-gray-500">No announcements yet.</div>
+              <div className="text-gray-500 text-center py-8">No announcements yet.</div>
             ) : (
-              <ul className="space-y-4">
+              <div className="space-y-4">
                 {(announcements || []).filter(a => a.is_active).map(a => (
-                  <li key={a.id} className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{a.title}</div>
-                      <div className="text-gray-700 mt-1 whitespace-pre-line">{a.body}</div>
-                    </div>
-                    {user?.email === 'kevin.mcgovern@gmail.com' && (
-                      <div className="mt-2 md:mt-0 md:ml-4 flex space-x-2">
-                        <button
-                          className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
-                          onClick={() => handleOpenAnnouncementModal(a)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="px-2 py-1 text-xs bg-gray-100 text-red-600 border border-red-200 rounded hover:bg-red-50"
-                          onClick={() => handleDeleteAnnouncement(a.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </li>
+                  <div key={a.id} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
+                    <div className="font-medium text-gray-900 mb-2">{a.title}</div>
+                    <div className="text-gray-700 whitespace-pre-line">{a.body}</div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
-          </section>
+          </div>
 
         </div>
 
-        {/* Announcement Modal */}
-        {showAnnouncementModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-              <h4 className="text-lg font-semibold mb-4">{editingAnnouncement ? 'Edit' : 'New'} Announcement</h4>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  name="title"
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="Title"
-                  value={announcementForm.title}
-                  onChange={handleAnnouncementFormChange}
-                />
-                <textarea
-                  name="body"
-                  className="w-full border rounded px-3 py-2"
-                  placeholder="Body"
-                  rows={4}
-                  value={announcementForm.body}
-                  onChange={handleAnnouncementFormChange}
-                />
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={announcementForm.is_active}
-                    onChange={e => handleAnnouncementActiveChange(e.target.checked)}
-                  />
-                  <span>Active</span>
-                </label>
-                {announcementError && <div className="text-red-600 text-sm">{announcementError}</div>}
-              </div>
-              <div className="flex justify-end space-x-2 mt-6">
-                <button
-                  className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
-                  onClick={handleCloseAnnouncementModal}
-                  disabled={announcementSaving}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                  onClick={handleSaveAnnouncement}
-                  disabled={announcementSaving}
-                >
-                  {announcementSaving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+
 
        </div>
    </AppLayout>
