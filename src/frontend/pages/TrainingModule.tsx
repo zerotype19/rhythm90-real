@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { StarIcon, PlayIcon, SignalIcon, CalendarIcon, UserGroupIcon, CogIcon, ChartBarIcon, DocumentTextIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import AppLayout from '../components/AppLayout';
 
 interface Section {
@@ -22,14 +23,17 @@ function TrainingModule() {
       content: (
         <div className="space-y-6">
           <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-lg border border-red-200">
-            <h3 className="text-lg font-semibold text-red-800 mb-3">Welcome to Rhythm90</h3>
+            <div className="flex items-center gap-3 mb-3">
+              <StarIcon className="w-6 h-6 text-red-600" />
+              <h3 className="text-lg font-semibold text-red-800">Welcome to Rhythm90</h3>
+            </div>
             <p className="text-gray-700 mb-4">
               Rhythm90 is a system for running teams and quarters with clarity, focus, and continuous learning. 
               It's designed for teams that want to move fast while staying aligned and learning from every cycle.
             </p>
-            <p className="text-gray-700">
+            <p className="text-gray-700 mb-4">
               This training module will guide you through the core concepts and tools that make Rhythm90 work. 
-              You can explore sections in any order and revisit them anytime.
+              <strong> Explore sections in any order. Come back anytime to refresh or learn more.</strong>
             </p>
           </div>
           
@@ -101,8 +105,11 @@ function TrainingModule() {
             <p className="text-blue-800 mb-4">
               Download our comprehensive Quick Start Guide to get your team up and running with Rhythm90.
             </p>
+            <p className="text-blue-700 text-sm mb-4">
+              Covers roles, rituals, plays, signals, and example templates to get your team running Rhythm90 fast.
+            </p>
             <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-              Download Quick Start Guide
+              Download Quick Start Guide (PDF)
             </button>
           </div>
         </div>
@@ -119,7 +126,10 @@ function TrainingModule() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Core Roles</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold text-red-600 mb-2">Rhythm90 Lead</h4>
+                <div className="flex items-center gap-2 mb-2">
+                  <ClockIcon className="w-5 h-5 text-red-600" />
+                  <h4 className="font-semibold text-red-600">Rhythm90 Lead</h4>
+                </div>
                 <ul className="text-sm text-gray-700 space-y-1">
                   <li>• Facilitates rituals and meetings</li>
                   <li>• Ensures team follows the process</li>
@@ -128,7 +138,10 @@ function TrainingModule() {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-blue-600 mb-2">Strategic Lead</h4>
+                <div className="flex items-center gap-2 mb-2">
+                  <ChartBarIcon className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-blue-600">Strategic Lead</h4>
+                </div>
                 <ul className="text-sm text-gray-700 space-y-1">
                   <li>• Defines strategic direction</li>
                   <li>• Sets priorities and goals</li>
@@ -137,7 +150,10 @@ function TrainingModule() {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-green-600 mb-2">Executional Lead</h4>
+                <div className="flex items-center gap-2 mb-2">
+                  <CogIcon className="w-5 h-5 text-green-600" />
+                  <h4 className="font-semibold text-green-600">Executional Lead</h4>
+                </div>
                 <ul className="text-sm text-gray-700 space-y-1">
                   <li>• Manages day-to-day execution</li>
                   <li>• Coordinates team activities</li>
@@ -146,7 +162,10 @@ function TrainingModule() {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-purple-600 mb-2">Signal Owner</h4>
+                <div className="flex items-center gap-2 mb-2">
+                  <SignalIcon className="w-5 h-5 text-purple-600" />
+                  <h4 className="font-semibold text-purple-600">Signal Owner</h4>
+                </div>
                 <ul className="text-sm text-gray-700 space-y-1">
                   <li>• Monitors key metrics</li>
                   <li>• Identifies trends and patterns</li>
@@ -162,8 +181,11 @@ function TrainingModule() {
             <p className="text-green-800 mb-4">
               Get a quick reference guide for all roles and their responsibilities.
             </p>
+            <p className="text-green-700 text-sm mb-4">
+              One-page summary of who does what, when, and how in the Rhythm90 system.
+            </p>
             <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
-              Download Role Cheat Sheet
+              Download Role Cheat Sheet (PDF)
             </button>
           </div>
         </div>
@@ -178,6 +200,23 @@ function TrainingModule() {
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quarterly Rituals</h3>
+            
+            {/* Timeline Bar */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                <span>Week 1</span>
+                <span>Week 4</span>
+                <span>Week 8</span>
+                <span>Week 12</span>
+              </div>
+              <div className="relative h-2 bg-gray-200 rounded-full">
+                <div className="absolute top-0 left-0 w-1/12 h-full bg-red-500 rounded-l-full"></div>
+                <div className="absolute top-0 left-1/3 w-1/12 h-full bg-blue-500"></div>
+                <div className="absolute top-0 left-2/3 w-1/12 h-full bg-blue-500"></div>
+                <div className="absolute top-0 right-0 w-1/12 h-full bg-green-500 rounded-r-full"></div>
+              </div>
+            </div>
+            
             <div className="space-y-4">
               <div className="border-l-4 border-red-500 pl-4">
                 <h4 className="font-semibold text-red-600">Kickoff (Week 1)</h4>
@@ -200,16 +239,19 @@ function TrainingModule() {
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border border-purple-200">
-            <h4 className="font-semibold text-purple-900 mb-3">Ready to Plan Your Rituals?</h4>
-            <p className="text-purple-800 mb-4">
-              Use our Ritual Guide tool to create customized agendas and discussion prompts for your team.
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-lg border border-indigo-200">
+            <h4 className="font-semibold text-indigo-900 mb-3">Plan Your Rituals</h4>
+            <p className="text-indigo-800 mb-4">
+              Use our Ritual Guide tool to create customized agendas and prompts for your team's rituals.
+            </p>
+            <p className="text-indigo-700 text-sm mb-4">
+              Generate step-by-step agendas, discussion prompts, and preparation materials tailored to your team type and context.
             </p>
             <Link 
               to="/app/ritual-guide"
-              className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+              className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
             >
-              Open Ritual Guide
+              Open Ritual Guide Tool
             </Link>
           </div>
         </div>
@@ -219,38 +261,38 @@ function TrainingModule() {
     {
       id: 'the-board',
       title: 'The Board',
-      description: 'What it is, how to use, examples',
+      description: 'Visual workflow and status tracking',
       content: (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">The Rhythm90 Board</h3>
-            <p className="text-gray-700 mb-4">
-              The Board is your team's central command center - a visual representation of your plays, 
-              their status, and the signals that indicate progress or problems.
+            <p className="text-gray-700 mb-6">
+              Your central command center for tracking plays, their status, and the signals that emerge. 
+              Think of it as your team's real-time dashboard for the quarter.
             </p>
             
-            <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className="grid md:grid-cols-3 gap-6 mb-6">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-900 mb-2">Plays Column</h4>
                 <p className="text-sm text-gray-600">Your 1-3 focused initiatives for the quarter</p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-900 mb-2">Status Column</h4>
-                <p className="text-sm text-gray-600">Current state: On Track, At Risk, or Off Track</p>
+                <p className="text-sm text-gray-600">On track, at risk, blocked, or completed</p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-gray-900 mb-2">Signals Column</h4>
-                <p className="text-sm text-gray-600">Key metrics and observations</p>
+                <p className="text-sm text-gray-600">Observations, feedback, and early indicators</p>
               </div>
             </div>
             
             <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
               <h4 className="font-semibold text-yellow-800 mb-2">Pro Tips</h4>
               <ul className="text-sm text-yellow-700 space-y-1">
-                <li>• Keep it visible and updated weekly</li>
-                <li>• Use color coding for quick status recognition</li>
-                <li>• Include both leading and lagging indicators</li>
-                <li>• Review and update during Pulse Checks</li>
+                <li>• Update status weekly, not just during rituals</li>
+                <li>• Capture signals as they happen, not in batches</li>
+                <li>• Use consistent status labels across the team</li>
+                <li>• Link signals to specific plays when possible</li>
               </ul>
             </div>
           </div>
@@ -258,18 +300,33 @@ function TrainingModule() {
           <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-6 rounded-lg border border-yellow-200">
             <h4 className="font-semibold text-yellow-900 mb-3">Board Templates</h4>
             <p className="text-yellow-800 mb-4">
-              Get started with our pre-built templates for Notion, Trello, and Google Sheets.
+              Get started quickly with our pre-built board templates for different team types.
             </p>
             <div className="space-y-2">
-              <button className="block w-full text-left bg-white text-yellow-800 px-4 py-2 rounded-md hover:bg-yellow-100 transition-colors">
-                📋 Notion Template
-              </button>
-              <button className="block w-full text-left bg-white text-yellow-800 px-4 py-2 rounded-md hover:bg-yellow-100 transition-colors">
-                📊 Trello Template
-              </button>
-              <button className="block w-full text-left bg-white text-yellow-800 px-4 py-2 rounded-md hover:bg-yellow-100 transition-colors">
-                📈 Google Sheets Template
-              </button>
+              <a 
+                href="https://notion.so/templates" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block text-yellow-700 hover:text-yellow-800 text-sm"
+              >
+                • Notion Board Template
+              </a>
+              <a 
+                href="https://trello.com/templates" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block text-yellow-700 hover:text-yellow-800 text-sm"
+              >
+                • Trello Board Template
+              </a>
+              <a 
+                href="https://sheets.google.com/templates" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block text-yellow-700 hover:text-yellow-800 text-sm"
+              >
+                • Google Sheets Template
+              </a>
             </div>
           </div>
         </div>
@@ -278,55 +335,74 @@ function TrainingModule() {
     {
       id: 'play-canvas',
       title: 'Play Canvas',
-      description: 'Hypothesis-driven plays, strong play design',
+      description: 'Structure for defining strong plays',
       content: (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Designing Strong Plays</h3>
-            <p className="text-gray-700 mb-4">
-              A play is a hypothesis-driven initiative designed to achieve a specific outcome. 
-              Strong plays are clear, measurable, and aligned with your team's strategic goals.
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Play Canvas Components</h3>
+            <p className="text-gray-700 mb-6">
+              Every play needs clear structure. The Play Canvas helps you define what you're doing, 
+              why it matters, and how you'll know it's working.
             </p>
             
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div>
-                <h4 className="font-semibold text-gray-900 mb-3">Play Components</h4>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li><strong>Hypothesis:</strong> "If we do X, then Y will happen"</li>
-                  <li><strong>Success Metrics:</strong> How we'll measure progress</li>
-                  <li><strong>Timeline:</strong> When we expect to see results</li>
-                  <li><strong>Owner:</strong> Who's responsible for execution</li>
-                  <li><strong>Resources:</strong> What we need to succeed</li>
+                <h4 className="font-semibold text-gray-900 mb-3">Core Elements</h4>
+                <ul className="text-sm text-gray-700 space-y-2">
+                  <li>• <strong>What:</strong> Clear description of the initiative</li>
+                  <li>• <strong>Why:</strong> Business impact and strategic rationale</li>
+                  <li>• <strong>Who:</strong> Owner and key stakeholders</li>
+                  <li>• <strong>When:</strong> Timeline and key milestones</li>
+                  <li>• <strong>How:</strong> Success metrics and signals to watch</li>
                 </ul>
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 mb-3">Strong Play Examples</h4>
-                <div className="space-y-3">
+                <div className="text-sm text-gray-700 space-y-3">
                   <div className="bg-green-50 p-3 rounded border border-green-200">
-                    <p className="text-sm text-green-800">
-                      <strong>Good:</strong> "If we implement feature X, user engagement will increase by 20%"
-                    </p>
+                    <p className="font-medium text-green-800">"Launch mobile app to increase user engagement by 40% by Q3"</p>
                   </div>
-                  <div className="bg-red-50 p-3 rounded border border-red-200">
-                    <p className="text-sm text-red-800">
-                      <strong>Avoid:</strong> "Improve user experience"
-                    </p>
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <p className="font-medium text-blue-800">"Implement customer feedback loop to reduce churn by 25%"</p>
                   </div>
+                  <div className="bg-purple-50 p-3 rounded border border-purple-200">
+                    <p className="font-medium text-purple-800">"Optimize onboarding flow to improve conversion by 30%"</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Mock Play Canvas */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-300">
+              <h4 className="font-semibold text-gray-900 mb-3">Sample Play Canvas</h4>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p><strong>Play:</strong> Launch mobile app</p>
+                  <p><strong>Owner:</strong> Sarah Chen</p>
+                  <p><strong>Timeline:</strong> Q2 2024</p>
+                </div>
+                <div>
+                  <p><strong>Goal:</strong> Increase engagement by 40%</p>
+                  <p><strong>Success Metrics:</strong> Daily active users, session time</p>
+                  <p><strong>Key Signals:</strong> App store reviews, crash reports</p>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg border border-indigo-200">
-            <h4 className="font-semibold text-indigo-900 mb-3">Build Your Plays</h4>
-            <p className="text-indigo-800 mb-4">
-              Use our Play Builder tool to create hypothesis-driven plays with clear success metrics.
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-900 mb-3">Create Your Plays</h4>
+            <p className="text-green-800 mb-4">
+              Use our Play Builder tool to create structured, actionable plays for your team.
+            </p>
+            <p className="text-green-700 text-sm mb-4">
+              Generate plays with clear goals, owners, timelines, and success metrics tailored to your business context.
             </p>
             <Link 
               to="/app/play-builder"
-              className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+              className="inline-block bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
             >
-              Open Play Builder
+              Open Play Builder Tool
             </Link>
           </div>
         </div>
@@ -336,43 +412,51 @@ function TrainingModule() {
     {
       id: 'signal-log',
       title: 'Signal Log',
-      description: 'Signals vs. KPIs, what to log, how to log',
+      description: 'Capturing and tracking signals',
       content: (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Signals vs. KPIs</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Signal Logging</h3>
+            <p className="text-gray-700 mb-6">
+              Signals are the early indicators that tell you if your plays are working or need adjustment. 
+              They're different from KPIs - they're the observations and feedback that happen along the way.
+            </p>
+            
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div>
-                <h4 className="font-semibold text-green-600 mb-2">Signals</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• Early indicators of change</li>
-                  <li>• Qualitative and quantitative</li>
-                  <li>• Help predict outcomes</li>
-                  <li>• Require interpretation</li>
-                  <li>• Can be anecdotal</li>
-                </ul>
+                <h4 className="font-semibold text-gray-900 mb-3">Signals vs. KPIs</h4>
+                <div className="space-y-3">
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <h5 className="font-medium text-blue-800 mb-1">Signals</h5>
+                    <p className="text-sm text-blue-700">Observations, feedback, early indicators</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded border border-green-200">
+                    <h5 className="font-medium text-green-800 mb-1">KPIs</h5>
+                    <p className="text-sm text-green-700">Measurable outcomes and results</p>
+                  </div>
+                </div>
               </div>
               <div>
-                <h4 className="font-semibold text-blue-600 mb-2">KPIs</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">What to Log</h4>
                 <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• Lagging performance metrics</li>
-                  <li>• Quantitative only</li>
-                  <li>• Measure past performance</li>
-                  <li>• Clear targets</li>
-                  <li>• Historical data</li>
+                  <li>• Customer feedback and reactions</li>
+                  <li>• Usage patterns and behaviors</li>
+                  <li>• Market changes and trends</li>
+                  <li>• Team observations and insights</li>
+                  <li>• Unexpected outcomes or blockers</li>
                 </ul>
               </div>
             </div>
             
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h4 className="font-semibold text-blue-800 mb-2">What to Log</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Customer feedback and reactions</li>
-                <li>• Usage patterns and behaviors</li>
-                <li>• Market changes and trends</li>
-                <li>• Team observations and insights</li>
-                <li>• Unexpected outcomes or blockers</li>
-              </ul>
+              <h4 className="font-semibold text-blue-800 mb-3">Example Logged Signals</h4>
+              <div className="space-y-2 text-sm text-blue-700">
+                <p>• "Users drop off at Step 3 of onboarding"</p>
+                <p>• "Promo code email drove 2x click rate"</p>
+                <p>• "Call center flagged mobile error in checkout"</p>
+                <p>• "Enterprise customers asking for SSO integration"</p>
+                <p>• "Support tickets down 30% after UI update"</p>
+              </div>
             </div>
           </div>
           
@@ -381,11 +465,14 @@ function TrainingModule() {
             <p className="text-blue-800 mb-4">
               Use our Signal Lab to capture, categorize, and analyze signals from your plays.
             </p>
+            <p className="text-blue-700 text-sm mb-4">
+              Log signals in real-time, categorize them by play, and track patterns over time to inform your decisions.
+            </p>
             <Link 
               to="/app/signal-lab"
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
             >
-              Open Signal Lab
+              Open Signal Lab Tool
             </Link>
           </div>
         </div>
@@ -405,7 +492,7 @@ function TrainingModule() {
               what didn't, and what you learned. It's the foundation for planning your next quarter.
             </p>
             
-            <div className="space-y-4">
+            <div className="space-y-4 mb-6">
               <div className="border-l-4 border-green-500 pl-4">
                 <h4 className="font-semibold text-green-600">1. Review What Ran</h4>
                 <p className="text-sm text-gray-700 mt-1">
@@ -425,6 +512,28 @@ function TrainingModule() {
                 </p>
               </div>
             </div>
+            
+            {/* Sample R&R Summary */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-300">
+              <h4 className="font-semibold text-gray-900 mb-3">Sample R&R Summary</h4>
+              <div className="text-sm text-gray-700 space-y-3">
+                <div>
+                  <p className="font-medium">What Ran Well:</p>
+                  <p>• Mobile app launch exceeded engagement targets by 15%</p>
+                  <p>• Customer feedback loop reduced churn by 20%</p>
+                </div>
+                <div>
+                  <p className="font-medium">Key Learnings:</p>
+                  <p>• Users prefer mobile over desktop for core features</p>
+                  <p>• Early customer feedback is more valuable than we expected</p>
+                </div>
+                <div>
+                  <p className="font-medium">Next Quarter Focus:</p>
+                  <p>• Double down on mobile-first features</p>
+                  <p>• Expand feedback collection to more touchpoints</p>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-lg border border-emerald-200">
@@ -432,8 +541,11 @@ function TrainingModule() {
             <p className="text-emerald-800 mb-4">
               Use our structured template to capture your R&R insights and plan your next quarter.
             </p>
+            <p className="text-emerald-700 text-sm mb-4">
+              Guided prompts and sections to ensure you capture all key learnings and translate them into actionable next steps.
+            </p>
             <button className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors">
-              Download R&R Template
+              Download R&R Template (PDF)
             </button>
           </div>
         </div>
@@ -478,6 +590,13 @@ function TrainingModule() {
                 <li>• Save and share with team</li>
               </ul>
             </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-700">
+                <InformationCircleIcon className="w-4 h-4 inline mr-1" />
+                Your plan can be saved and shared with your team.
+              </p>
+            </div>
           </div>
           
           <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-lg border border-orange-200">
@@ -485,11 +604,14 @@ function TrainingModule() {
             <p className="text-orange-800 mb-4">
               Create your team's 90-day plan with our interactive Quarterly Planner tool.
             </p>
+            <p className="text-orange-700 text-sm mb-4">
+              Build a comprehensive timeline with rituals, milestones, and role-specific activities for your entire quarter.
+            </p>
             <Link 
               to="/app/tools/planner"
               className="inline-block bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
             >
-              Open Quarterly Planner
+              Open Quarterly Planner Tool
             </Link>
           </div>
         </div>
