@@ -177,29 +177,29 @@ function QuarterlyPlanner() {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="p-2 font-semibold text-gray-900 border-r border-gray-200 text-left w-32">
-                    Week
+                  <th className="p-1 font-semibold text-gray-900 border-r border-gray-200 text-left w-24">
+                    <span className="text-xs">Week</span>
                   </th>
                   {weeks.map((week) => (
                     <th
                       key={week.week}
-                      className="p-2 font-semibold text-gray-900 border-r border-gray-200 text-center min-w-[120px]"
+                      className="p-1 font-semibold text-gray-900 border-r border-gray-200 text-center min-w-[100px]"
                     >
-                      <div className="text-xs">Week {week.week}</div>
-                      <div className="text-xs text-gray-500 leading-tight">{week.date}</div>
+                      <div className="text-xs transform -rotate-1">Week {week.week}</div>
+                      <div className="text-xs text-gray-500 leading-tight transform -rotate-1">{week.date}</div>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b border-gray-200">
-                  <td className="p-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                    Activities
+                  <td className="p-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
+                    <span className="text-xs">Activities</span>
                   </td>
                   {weeks.map((week) => (
                     <td
                       key={week.week}
-                      className="p-2 border-r border-gray-200 min-h-[60px] align-top"
+                      className="p-1 border-r border-gray-200 min-h-[60px] align-top"
                     >
                       <div className="space-y-0.5">
                         {getActivitiesForWeek(week.week, selectedRole).map((activity, index) => (
@@ -215,13 +215,13 @@ function QuarterlyPlanner() {
                   ))}
                 </tr>
                 <tr>
-                  <td className="p-2 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
-                    Notes
+                  <td className="p-1 font-semibold text-gray-900 border-r border-gray-200 bg-gray-50">
+                    <span className="text-xs">Notes</span>
                   </td>
                   {weeks.map((week, index) => (
                     <td
                       key={week.week}
-                      className="p-2 border-r border-gray-200"
+                      className="p-1 border-r border-gray-200"
                     >
                       <textarea
                         value={week.notes}
