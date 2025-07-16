@@ -1,7 +1,7 @@
 import { Env } from './types';
 import { verifyAuth } from './auth';
 import { jsonResponse, errorResponse } from './utils';
-import stripe from './stripe';
+import { getStripeClient } from './stripe';
 
 // Debug logging for Stripe API calls
 let lastStripeDebugLog: any = null;
@@ -59,7 +59,7 @@ export async function handleGetPortalLink(request: Request, env: Env): Promise<R
       };
 
       try {
-        const customer = await stripe.customers.create(customerPayload);
+        const customer = await getStripeClient(env.STRIPE_SECRET_KEY).customers.create(customerPayload);
         logStripeCall('customers.create', customerPayload, customer);
         
         customerId = customer.id;
@@ -84,7 +84,7 @@ export async function handleGetPortalLink(request: Request, env: Env): Promise<R
     };
 
     try {
-      const session = await stripe.billingPortal.sessions.create(portalPayload);
+      const session = await getStripeClient(env.STRIPE_SECRET_KEY).billingPortal.sessions.create(portalPayload);
       logStripeCall('billingPortal.sessions.create', portalPayload, session);
       
       console.log('handleGetPortalLink: Created portal session');
@@ -145,7 +145,7 @@ export async function handleCreateCheckoutSession(request: Request, env: Env): P
       };
 
       try {
-        const customer = await stripe.customers.create(customerPayload);
+        const customer = await getStripeClient(env.STRIPE_SECRET_KEY).customers.create(customerPayload);
         logStripeCall('customers.create', customerPayload, customer);
         
         customerId = customer.id;
@@ -182,7 +182,7 @@ export async function handleCreateCheckoutSession(request: Request, env: Env): P
     };
 
     try {
-      const session = await stripe.checkout.sessions.create(checkoutPayload);
+      const session = await getStripeClient(env.STRIPE_SECRET_KEY).checkout.sessions.create(checkoutPayload);
       logStripeCall('checkout.sessions.create', checkoutPayload, session);
       
       console.log('handleCreateCheckoutSession: Created checkout session');
@@ -232,7 +232,7 @@ export async function handleGetSubscriptionStatus(request: Request, env: Env): P
 
     try {
       // Get customer's subscriptions
-      const subscriptions = await stripe.subscriptions.list({
+      const subscriptions = await getStripeClient(env.STRIPE_SECRET_KEY).subscriptions.list({
         customer: customerId,
         status: 'all',
         limit: 1
