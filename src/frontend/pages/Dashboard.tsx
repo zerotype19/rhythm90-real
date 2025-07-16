@@ -32,6 +32,14 @@ interface TeamActivity {
   responseId?: string;
 }
 
+interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 
 interface DashboardData {
@@ -45,11 +53,86 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 1. Re-add state for announcements
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', body: '', is_active: true });
+  const [announcementSaving, setAnnouncementSaving] = useState(false);
+  const [announcementError, setAnnouncementError] = useState<string | null>(null);
+
   const isAdmin = user?.email === 'kevin.mcgovern@gmail.com';
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  // 2. Re-add effect to load announcements
+  useEffect(() => {
+    if (!user) return;
+    setAnnouncementsLoading(true);
+    apiClient.getAnnouncements()
+      .then(res => {
+        if (res.data) setAnnouncements(res.data);
+      })
+      .catch(() => setAnnouncements([]))
+      .finally(() => setAnnouncementsLoading(false));
+  }, [user]);
+
+  // 3. Re-add announcement handlers
+  const handleOpenAnnouncementModal = (a?: Announcement) => {
+    setEditingAnnouncement(a || null);
+    setAnnouncementForm(a ? { title: a.title, body: a.body, is_active: a.is_active } : { title: '', body: '', is_active: true });
+    setShowAnnouncementModal(true);
+  };
+  const handleCloseAnnouncementModal = () => {
+    setShowAnnouncementModal(false);
+    setEditingAnnouncement(null);
+    setAnnouncementForm({ title: '', body: '', is_active: true });
+    setAnnouncementError(null);
+  };
+  const handleAnnouncementFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setAnnouncementForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  };
+  const handleAnnouncementActiveChange = (v: boolean) => {
+    setAnnouncementForm(f => ({ ...f, is_active: v }));
+  };
+  const handleSaveAnnouncement = async () => {
+    setAnnouncementSaving(true);
+    setAnnouncementError(null);
+    try {
+      if (editingAnnouncement) {
+        await apiClient.updateAnnouncement(editingAnnouncement.id, announcementForm);
+      } else {
+        await apiClient.createAnnouncement(announcementForm);
+      }
+      // Reload
+      const res = await apiClient.getAnnouncements();
+      if (res.data) setAnnouncements(res.data);
+      handleCloseAnnouncementModal();
+    } catch (err: any) {
+      setAnnouncementError('Failed to save announcement');
+    } finally {
+      setAnnouncementSaving(false);
+    }
+  };
+  const handleDeleteAnnouncement = async (id: number) => {
+    if (!window.confirm('Delete this announcement?')) return;
+    setAnnouncementSaving(true);
+    setAnnouncementError(null);
+    try {
+      await apiClient.deleteAnnouncement(id);
+      const res = await apiClient.getAnnouncements();
+      if (res.data) setAnnouncements(res.data);
+      handleCloseAnnouncementModal();
+    } catch (err: any) {
+      setAnnouncementError('Failed to delete announcement');
+    } finally {
+      setAnnouncementSaving(false);
+    }
+  };
+
 
   const fetchDashboardData = async () => {
     try {
@@ -258,9 +341,106 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          
+          {/* Announcements Panel */}
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-900">Announcements</h3>
+              {user?.email === 'kevin.mcgovern@gmail.com' && (
+                <button
+                  className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                  onClick={() => handleOpenAnnouncementModal()}
+                >
+                  New Announcement
+                </button>
+              )}
+            </div>
+            {announcementsLoading ? (
+              <div className="text-gray-500">Loading...</div>
+            ) : announcements.length === 0 ? (
+              <div className="text-gray-500">No announcements yet.</div>
+            ) : (
+              <ul className="space-y-4">
+                {announcements.filter(a => a.is_active).map(a => (
+                  <li key={a.id} className="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900">{a.title}</div>
+                      <div className="text-gray-700 mt-1 whitespace-pre-line">{a.body}</div>
+                    </div>
+                    {user?.email === 'kevin.mcgovern@gmail.com' && (
+                      <div className="mt-2 md:mt-0 md:ml-4 flex space-x-2">
+                        <button
+                          className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                          onClick={() => handleOpenAnnouncementModal(a)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="px-2 py-1 text-xs bg-gray-100 text-red-600 border border-red-200 rounded hover:bg-red-50"
+                          onClick={() => handleDeleteAnnouncement(a.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
         </div>
 
+        {/* Announcement Modal */}
+        {showAnnouncementModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+              <h4 className="text-lg font-semibold mb-4">{editingAnnouncement ? 'Edit' : 'New'} Announcement</h4>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  name="title"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="Title"
+                  value={announcementForm.title}
+                  onChange={handleAnnouncementFormChange}
+                />
+                <textarea
+                  name="body"
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="Body"
+                  rows={4}
+                  value={announcementForm.body}
+                  onChange={handleAnnouncementFormChange}
+                />
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={announcementForm.is_active}
+                    onChange={e => handleAnnouncementActiveChange(e.target.checked)}
+                  />
+                  <span>Active</span>
+                </label>
+                {announcementError && <div className="text-red-600 text-sm">{announcementError}</div>}
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <button
+                  className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200"
+                  onClick={handleCloseAnnouncementModal}
+                  disabled={announcementSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                  onClick={handleSaveAnnouncement}
+                  disabled={announcementSaving}
+                >
+                  {announcementSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
        </div>
    </AppLayout>
