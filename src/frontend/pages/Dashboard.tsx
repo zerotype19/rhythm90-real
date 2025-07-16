@@ -72,7 +72,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     setAnnouncementsLoading(true);
-    apiClient.getAnnouncements()
+    apiClient.getDashboardAnnouncements()
       .then(res => {
         if (res.data) setAnnouncements(res.data);
       })
@@ -103,12 +103,22 @@ const Dashboard: React.FC = () => {
     setAnnouncementError(null);
     try {
       if (editingAnnouncement) {
-        await apiClient.updateAnnouncement(editingAnnouncement.id, announcementForm);
+        await apiClient.updateDashboardAnnouncement(editingAnnouncement.id.toString(), {
+          title: announcementForm.title,
+          summary: announcementForm.body,
+          body: announcementForm.body,
+          is_active: announcementForm.is_active
+        });
       } else {
-        await apiClient.createAnnouncement(announcementForm);
+        await apiClient.createDashboardAnnouncement({
+          title: announcementForm.title,
+          summary: announcementForm.body,
+          body: announcementForm.body,
+          is_active: announcementForm.is_active
+        });
       }
       // Reload
-      const res = await apiClient.getAnnouncements();
+      const res = await apiClient.getDashboardAnnouncements();
       if (res.data) setAnnouncements(res.data);
       handleCloseAnnouncementModal();
     } catch (err: any) {
@@ -122,8 +132,8 @@ const Dashboard: React.FC = () => {
     setAnnouncementSaving(true);
     setAnnouncementError(null);
     try {
-      await apiClient.deleteAnnouncement(id);
-      const res = await apiClient.getAnnouncements();
+      await apiClient.deleteDashboardAnnouncement(id.toString());
+      const res = await apiClient.getDashboardAnnouncements();
       if (res.data) setAnnouncements(res.data);
       handleCloseAnnouncementModal();
     } catch (err: any) {
