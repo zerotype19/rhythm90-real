@@ -177,8 +177,8 @@ function QuarterlyPlanner() {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="p-1 font-semibold text-gray-900 border-r border-gray-200 text-left w-24">
-                    <span className="text-xs">Week</span>
+                  <th className="p-1 font-semibold text-gray-900 border-r border-gray-200 text-center w-16">
+                    <div className="text-xs transform -rotate-90 whitespace-nowrap text-center">Week</div>
                   </th>
                   {weeks.map((week) => (
                     <th
