@@ -88,9 +88,7 @@ function QuarterlyPlannerForm() {
     'Team performance', 'Customer feedback', 'Operational metrics', 'Other'
   ];
 
-  const roleOptions = [
-    'sam', 'dave', 'frank', 'sarah', 'mike', 'jessica', 'alex', 'emma', 'david', 'lisa'
-  ];
+
 
   // Helper to parse AI response
   const parseAIResponse = (response: string): StructuredSummary | null => {
@@ -207,7 +205,7 @@ function QuarterlyPlannerForm() {
     try {
       console.log('Saving planner session with inputs:', inputs);
       
-      const response = await apiClient.planner.createSession({ inputs });
+      const response = await apiClient.createPlannerSession(inputs);
       console.log('API response:', response);
 
       if (response.data?.session && response.data?.summary) {
@@ -284,27 +282,49 @@ function QuarterlyPlannerForm() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 What do you want to learn or improve this quarter?
               </label>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2 mb-3">
                 {learningGoalOptions.map((goal) => (
-                  <label key={goal} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={inputs.learningGoals.includes(goal)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          updateInput('learningGoals', [...inputs.learningGoals, goal]);
-                        } else {
-                          updateInput('learningGoals', inputs.learningGoals.filter(g => g !== goal));
-                        }
-                      }}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">{goal}</span>
-                  </label>
+                  <button
+                    key={goal}
+                    type="button"
+                    onClick={() => {
+                      if (inputs.learningGoals.includes(goal)) {
+                        updateInput('learningGoals', inputs.learningGoals.filter(g => g !== goal));
+                      } else {
+                        updateInput('learningGoals', [...inputs.learningGoals, goal]);
+                      }
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      inputs.learningGoals.includes(goal)
+                        ? 'bg-red-100 text-red-700 border border-red-300'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    {goal}
+                  </button>
                 ))}
               </div>
+              {inputs.learningGoals.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-xs font-medium text-blue-800 mb-1">Selected:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {inputs.learningGoals.map((goal) => (
+                      <span key={goal} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        {goal}
+                        <button
+                          type="button"
+                          onClick={() => updateInput('learningGoals', inputs.learningGoals.filter(g => g !== goal))}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-gray-500 mt-1">
-                Select the areas where your team wants to grow or improve.
+                Click to select the areas where your team wants to grow or improve.
               </p>
             </div>
           </div>
@@ -359,27 +379,49 @@ function QuarterlyPlannerForm() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 What signals should you watch to measure progress?
               </label>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2 mb-3">
                 {signalOptions.map((signal) => (
-                  <label key={signal} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={inputs.signalsToWatch.includes(signal)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          updateInput('signalsToWatch', [...inputs.signalsToWatch, signal]);
-                        } else {
-                          updateInput('signalsToWatch', inputs.signalsToWatch.filter(s => s !== signal));
-                        }
-                      }}
-                      className="mr-2"
-                    />
-                    <span className="text-sm">{signal}</span>
-                  </label>
+                  <button
+                    key={signal}
+                    type="button"
+                    onClick={() => {
+                      if (inputs.signalsToWatch.includes(signal)) {
+                        updateInput('signalsToWatch', inputs.signalsToWatch.filter(s => s !== signal));
+                      } else {
+                        updateInput('signalsToWatch', [...inputs.signalsToWatch, signal]);
+                      }
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                      inputs.signalsToWatch.includes(signal)
+                        ? 'bg-red-100 text-red-700 border border-red-300'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                    }`}
+                  >
+                    {signal}
+                  </button>
                 ))}
               </div>
+              {inputs.signalsToWatch.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-xs font-medium text-blue-800 mb-1">Selected:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {inputs.signalsToWatch.map((signal) => (
+                      <span key={signal} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        {signal}
+                        <button
+                          type="button"
+                          onClick={() => updateInput('signalsToWatch', inputs.signalsToWatch.filter(s => s !== signal))}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-gray-500 mt-1">
-                Select the key metrics and signals you'll monitor this quarter.
+                Click to select the key metrics and signals you'll monitor this quarter.
               </p>
             </div>
           </div>
@@ -416,65 +458,47 @@ function QuarterlyPlannerForm() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600">Rhythm90 Lead</label>
-                  <select
+                  <input
+                    type="text"
                     value={inputs.roles.rhythm90Lead}
                     onChange={(e) => updateRoles('rhythm90Lead', e.target.value)}
+                    placeholder="Enter name"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                  >
-                    <option value="">Select lead</option>
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600">Strategic Leads</label>
-                  <select
-                    multiple
-                    value={inputs.roles.strategicLeads}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      updateRoles('strategicLeads', selected);
-                    }}
+                  <input
+                    type="text"
+                    value={inputs.roles.strategicLeads.join(', ')}
+                    onChange={(e) => updateRoles('strategicLeads', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
+                    placeholder="Enter names separated by commas"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                  >
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600">Executional Leads</label>
-                  <select
-                    multiple
-                    value={inputs.roles.executionalLeads}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      updateRoles('executionalLeads', selected);
-                    }}
+                  <input
+                    type="text"
+                    value={inputs.roles.executionalLeads.join(', ')}
+                    onChange={(e) => updateRoles('executionalLeads', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
+                    placeholder="Enter names separated by commas"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                  >
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600">Signal Owner</label>
-                  <select
+                  <input
+                    type="text"
                     value={inputs.roles.signalOwner}
                     onChange={(e) => updateRoles('signalOwner', e.target.value)}
+                    placeholder="Enter name"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                  >
-                    <option value="">Select owner</option>
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Assign team members to key roles for this quarter's initiatives.
+                Enter team member names for key roles. Use commas to separate multiple names.
               </p>
             </div>
           </div>
