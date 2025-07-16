@@ -434,6 +434,27 @@ class ApiClient {
     });
   }
 
+  // Billing API
+  async getBillingPortalLink() {
+    return this.request('/api/billing/portal-link', {
+      credentials: 'include',
+    });
+  }
+
+  async createCheckoutSession(payload: { priceId: string; successUrl?: string; cancelUrl?: string }) {
+    return this.request('/api/billing/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
+  async getSubscriptionStatus() {
+    return this.request('/api/billing/subscription-status', {
+      credentials: 'include',
+    });
+  }
+
   // Benchmarking API
   async getTeamBenchmarks(period: string = '30d') {
     return this.request(`/api/benchmarking/team?period=${period}`, {

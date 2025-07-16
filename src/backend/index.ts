@@ -9,6 +9,7 @@ import { verifyAuth } from './auth';
 import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
 import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
 import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
+import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, getLastStripeDebugLog } from './billing';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -67,6 +68,17 @@ export default {
       }
       if (path === '/api/settings/billing/cancel' && request.method === 'POST') {
         return await handleCancelSubscription(request, env);
+      }
+
+      // Billing routes
+      if (path === '/api/billing/portal-link' && request.method === 'GET') {
+        return await handleGetPortalLink(request, env);
+      }
+      if (path === '/api/billing/create-checkout-session' && request.method === 'POST') {
+        return await handleCreateCheckoutSession(request, env);
+      }
+      if (path === '/api/billing/subscription-status' && request.method === 'GET') {
+        return await handleGetSubscriptionStatus(request, env);
       }
 
       // Team routes
@@ -199,6 +211,16 @@ export default {
           return jsonResponse(debugLog);
         } else {
           return jsonResponse({ error: 'No benchmark debug log found.' }, 404);
+        }
+      }
+
+      // Stripe Debugger: Last Stripe API call
+      if (path === '/api/debug/last-stripe-log' && request.method === 'GET') {
+        const debugLog = getLastStripeDebugLog();
+        if (debugLog) {
+          return jsonResponse(debugLog);
+        } else {
+          return jsonResponse({ error: 'No Stripe debug log found.' }, 404);
         }
       }
 

@@ -40,6 +40,15 @@ interface BillingInfo {
   } | null;
 }
 
+interface StripeSubscriptionStatus {
+  status: string;
+  plan: string;
+  customerId: string | null;
+  subscriptionId?: string;
+  currentPeriodEnd?: number;
+  cancelAtPeriodEnd?: boolean;
+}
+
 function Settings() {
   const [activeTab, setActiveTab] = useState<'account' | 'team' | 'billing'>('account');
   const [loading, setLoading] = useState(true);
@@ -60,6 +69,8 @@ function Settings() {
   // Billing settings
   const [billingInfo, setBillingInfo] = useState<BillingInfo | null>(null);
   const [billingForm, setBillingForm] = useState({ plan: 'free', seat_count: 1 });
+  const [stripeSubscription, setStripeSubscription] = useState<StripeSubscriptionStatus | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -70,10 +81,11 @@ function Settings() {
     setError(null);
     
     try {
-      const [accountRes, teamRes, billingRes] = await Promise.all([
+      const [accountRes, teamRes, billingRes, stripeRes] = await Promise.all([
         apiClient.getAccountSettings(),
         apiClient.getTeamSettings(),
-        apiClient.getBillingInfo()
+        apiClient.getBillingInfo(),
+        apiClient.getSubscriptionStatus()
       ]);
 
       if (accountRes.data) {
@@ -94,6 +106,10 @@ function Settings() {
             seat_count: billingRes.data.subscription.seat_count
           });
         }
+      }
+
+      if (stripeRes.data) {
+        setStripeSubscription(stripeRes.data);
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
@@ -291,6 +307,49 @@ function Settings() {
       showError('Failed to cancel subscription');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setBillingLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiClient.getBillingPortalLink();
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        showError(response.error || 'Failed to open billing portal');
+      }
+    } catch (err) {
+      console.error('Failed to open billing portal:', err);
+      showError('Failed to open billing portal');
+    } finally {
+      setBillingLoading(false);
+    }
+  };
+
+  const handleUpgradePlan = async (priceId: string) => {
+    setBillingLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiClient.createCheckoutSession({
+        priceId,
+        successUrl: `${window.location.origin}/app/settings?tab=billing&success=true`,
+        cancelUrl: `${window.location.origin}/app/settings?tab=billing&canceled=true`
+      });
+      
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        showError(response.error || 'Failed to create checkout session');
+      }
+    } catch (err) {
+      console.error('Failed to create checkout session:', err);
+      showError('Failed to create checkout session');
+    } finally {
+      setBillingLoading(false);
     }
   };
 
@@ -589,11 +648,135 @@ function Settings() {
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Billing & Subscription</h2>
               
-              {billingInfo && (
-                <div className="space-y-8">
-                  {/* Current Plan */}
+              <div className="space-y-8">
+                {/* Stripe Subscription Status */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Subscription</h3>
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    {stripeSubscription ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-lg font-medium text-gray-900 capitalize">
+                              {stripeSubscription.plan === 'no_subscription' ? 'Free' : `${stripeSubscription.plan} Plan`}
+                            </h4>
+                            <p className="text-sm text-gray-500">
+                              Status: <span className={`font-medium ${
+                                stripeSubscription.status === 'active' ? 'text-green-600' : 
+                                stripeSubscription.status === 'no_subscription' ? 'text-gray-600' : 'text-red-600'
+                              }`}>
+                                {stripeSubscription.status === 'no_subscription' ? 'Free Plan' : stripeSubscription.status}
+                              </span>
+                            </p>
+                            {stripeSubscription.currentPeriodEnd && (
+                              <p className="text-sm text-gray-500">
+                                Next billing: {new Date(stripeSubscription.currentPeriodEnd * 1000).toLocaleDateString()}
+                              </p>
+                            )}
+                            {stripeSubscription.cancelAtPeriodEnd && (
+                              <p className="text-sm text-orange-600 font-medium">
+                                Subscription will cancel at period end
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            {stripeSubscription.customerId && (
+                              <>
+                                <p className="text-sm text-gray-500">Customer ID</p>
+                                <p className="text-xs font-mono text-gray-900">{stripeSubscription.customerId.slice(-8)}</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500">Loading subscription status...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Billing Actions */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Billing Management</h3>
+                  <div className="space-y-4">
+                    {stripeSubscription?.customerId && (
+                      <button
+                        onClick={handleManageSubscription}
+                        disabled={billingLoading}
+                        className="w-full px-4 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
+                      >
+                        {billingLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Opening Portal...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Manage Subscription
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    {stripeSubscription?.status === 'no_subscription' && (
+                      <div className="space-y-3">
+                        <h4 className="text-md font-medium text-gray-900">Upgrade Your Plan</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <button
+                            onClick={() => handleUpgradePlan('price_pro_monthly')}
+                            disabled={billingLoading}
+                            className="px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
+                          >
+                            {billingLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Loading...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Upgrade to Pro
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleUpgradePlan('price_enterprise_monthly')}
+                            disabled={billingLoading}
+                            className="px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
+                          >
+                            {billingLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Loading...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                Enterprise Plan
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Legacy Billing Info (if needed) */}
+                {billingInfo && (
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Current Plan</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Legacy Billing Information</h3>
                     <div className="bg-gray-50 rounded-lg p-6">
                       {billingInfo.subscription ? (
                         <div className="space-y-4">
@@ -623,88 +806,31 @@ function Settings() {
                         </div>
                       ) : (
                         <div className="text-center py-8">
-                          <p className="text-gray-500">No active subscription found</p>
+                          <p className="text-gray-500">No legacy subscription found</p>
                         </div>
                       )}
                     </div>
                   </div>
+                )}
 
-                  {/* Plan Management */}
-                  {teamSettings?.user_role === 'owner' && (
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">Manage Plan</h3>
-                      <form onSubmit={handleUpdateSubscription} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor="plan" className="block text-sm font-medium text-gray-700">
-                              Plan
-                            </label>
-                            <select
-                              id="plan"
-                              value={billingForm.plan}
-                              onChange={(e) => setBillingForm({ ...billingForm, plan: e.target.value })}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                            >
-                              <option value="free">Free</option>
-                              <option value="pro">Pro</option>
-                              <option value="enterprise">Enterprise</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label htmlFor="seat_count" className="block text-sm font-medium text-gray-700">
-                              Number of Seats
-                            </label>
-                            <input
-                              type="number"
-                              id="seat_count"
-                              min="1"
-                              value={billingForm.seat_count}
-                              onChange={(e) => setBillingForm({ ...billingForm, seat_count: parseInt(e.target.value) })}
-                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex space-x-4">
-                          <button
-                            type="submit"
-                            disabled={saving}
-                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
-                          >
-                            {saving ? 'Updating...' : 'Update Plan'}
-                          </button>
-                          {billingInfo.subscription && (
-                            <button
-                              type="button"
-                              onClick={handleCancelSubscription}
-                              disabled={saving}
-                              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50"
-                            >
-                              {saving ? 'Cancelling...' : 'Cancel Subscription'}
-                            </button>
-                          )}
-                        </div>
-                      </form>
-                    </div>
-                  )}
-
-                  {teamSettings?.user_role !== 'owner' && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm text-yellow-800">
-                            Only team owners can manage billing and subscription settings.
-                          </p>
-                        </div>
+                {/* Access Control */}
+                {teamSettings?.user_role !== 'owner' && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-yellow-800">
+                          Only team owners can manage billing and subscription settings.
+                        </p>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
