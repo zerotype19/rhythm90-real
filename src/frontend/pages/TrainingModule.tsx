@@ -57,6 +57,19 @@ function TrainingModule() {
               </ul>
             </div>
           </div>
+          
+          <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-6 rounded-lg border border-purple-200">
+            <h4 className="font-semibold text-purple-900 mb-3">Quarterly Planning Module</h4>
+            <p className="text-purple-800 mb-4">
+              Get started with structured quarterly planning using our interactive tool.
+            </p>
+            <p className="text-purple-700 text-sm mb-4">
+              Define challenges, learning goals, plays, signals, and assign roles with AI-powered guidance.
+            </p>
+            <Link to="/app/quarterly-planner" className="inline-block bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
+              Sketch a Quarterly Plan
+            </Link>
+          </div>
         </div>
       )
     },
