@@ -11,7 +11,7 @@ export async function sendTeamInviteEmail(
 ): Promise<void> {
   // Check if MailerSend is properly configured
   if (!env.MAILERSEND_API_KEY || env.MAILERSEND_API_KEY === '') {
-    throw new Error('MailerSend API key is not configured');
+    throw new Error('MailerSend API key is not configured. Please add MAILERSEND_API_KEY to environment variables.');
   }
 
   if (!env.MAILERSEND_FROM_EMAIL || !env.MAILERSEND_FROM_NAME) {
@@ -153,7 +153,7 @@ export async function handleInviteTeamMember(request: Request, env: Env): Promis
       
       // Provide specific error messages based on the error type
       if (emailError.message.includes('not configured')) {
-        return errorResponse('Email service is not configured. Please contact support.', 500);
+        return errorResponse('Email service is not configured. Please contact support to set up the MailerSend API key.', 500);
       } else if (emailError.message.includes('trial mode')) {
         return errorResponse('Email service is in trial mode. Please contact support to enable team invites.', 500);
       } else {
