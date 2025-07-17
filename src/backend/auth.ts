@@ -232,7 +232,7 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
         console.log('handleGoogleCallback: Attempting to join team with invite code:', inviteCode);
         // Join the team using the invite code
         const result = await env.DB.prepare(`
-          INSERT INTO team_members (id, team_id, user_id, role, is_admin, created_at)
+          INSERT INTO team_members (id, team_id, user_id, role, is_admin, joined_at)
           SELECT ?, t.id, ?, 'member', FALSE, datetime('now')
           FROM teams t
           WHERE t.invite_code = ?
