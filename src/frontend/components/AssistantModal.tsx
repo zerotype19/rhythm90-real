@@ -93,10 +93,10 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
       });
 
       if (response.data) {
-        // Replace the temporary user message with the real one and add assistant response
+        // Keep the user message and add the assistant response
         setMessages(prev => {
           const withoutTemp = prev.filter(msg => msg.id !== userMessage.id);
-          return [...withoutTemp, response.data.new_message];
+          return [...withoutTemp, userMessage, response.data.new_message];
         });
       }
     } catch (error) {
