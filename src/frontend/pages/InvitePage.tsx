@@ -39,9 +39,9 @@ const InvitePage: React.FC = () => {
 
   const fetchTeamInfo = async () => {
     try {
-      const response = await apiClient.get(`/api/invite/${inviteCode}`);
-      if (response.valid) {
-        setTeam(response.team);
+      const response = await apiClient.getInviteInfo(inviteCode!);
+      if (response.data?.valid) {
+        setTeam(response.data.team);
       } else {
         setError('Invalid or expired invite link');
       }

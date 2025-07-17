@@ -405,6 +405,15 @@ class ApiClient {
     });
   }
 
+  /**
+   * Get invite information by invite code
+   */
+  async getInviteInfo(inviteCode: string) {
+    return this.request(`/api/invite/${inviteCode}`, {
+      credentials: 'include',
+    });
+  }
+
   // Settings API
   async getAccountSettings() {
     return this.request('/api/settings/account', {
