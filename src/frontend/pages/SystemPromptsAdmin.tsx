@@ -65,7 +65,15 @@ const SystemPromptsAdmin: React.FC = () => {
       setLoading(true);
       const response = await apiClient.getSystemPrompts();
       if (response.data) {
-        setPrompts(response.data);
+        // Filter out prompts with null IDs and log a warning
+        const validPrompts = response.data.filter((prompt: SystemPrompt) => {
+          if (!prompt.id) {
+            console.warn(`Prompt with tool_name "${prompt.tool_name}" has null ID and will be filtered out`);
+            return false;
+          }
+          return true;
+        });
+        setPrompts(validPrompts);
         setEditingId(null);
         setEditingFields(null);
       }
