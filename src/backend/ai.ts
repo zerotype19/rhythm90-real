@@ -210,7 +210,7 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
     // Log prettified prompt
     console.log('[AI DEBUG] PlayBuilder Final Prompt:', JSON.stringify(messages, null, 2));
     // Call OpenAI
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'play_builder');
     // Log full OpenAI response
     console.log('[AI DEBUG] PlayBuilder Raw OpenAI Response:', aiResponse);
     
@@ -353,7 +353,7 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     );
 
     // --- AI Call ---
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'signal_lab');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'signal_lab');
@@ -526,7 +526,7 @@ Additional Refinements:
     // --- AI Call ---
     let aiResponse: string;
     try {
-      aiResponse = await callOpenAI(messages, env);
+      aiResponse = await callOpenAI(messages, env, 'ritual_guide');
     } catch (error) {
       console.log('OpenAI call failed:', error);
       throw error; // Re-throw the error instead of using mock response
@@ -673,7 +673,7 @@ Do not include markdown fences, code blocks, or extra explanation.`
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'plain_english_translator');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_plain_english_translator');
@@ -788,7 +788,7 @@ export async function handleGetToByGenerator(request: Request, env: Env): Promis
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'get_to_by_generator');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_get_to_by_generator');
@@ -878,7 +878,7 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'creative_tension_finder');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_creative_tension_finder');
@@ -990,7 +990,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'persona_generator');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_persona_generator');
@@ -1145,7 +1145,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'journey_builder');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_journey_builder');
@@ -1280,7 +1280,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'test_learn_scale');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_test_learn_scale');
@@ -1444,7 +1444,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'agile_sprint_planner');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_agile_sprint_planner');
@@ -1587,7 +1587,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'connected_media_matrix');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_connected_media_matrix');
@@ -1705,7 +1705,7 @@ Replace Persona1, Age1, etc. with real values. Return ONLY raw JSON.`
     };
 
     const messages = [systemMessage, userMessage];
-    const aiResponse = await callOpenAI(messages, env);
+    const aiResponse = await callOpenAI(messages, env, 'synthetic_focus_group');
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_synthetic_focus_group');

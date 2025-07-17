@@ -141,7 +141,7 @@ export async function joinTeam(db: any, inviteCode: string, userId: string): Pro
 /**
  * If any sensitive user data is added later, consider redacting logs.
  */
-export async function callOpenAI(messages: any[], env: Env): Promise<string> {
+export async function callOpenAI(messages: any[], env: Env, toolName?: string): Promise<string> {
   try {
     console.log('callOpenAI: Final messages array:', JSON.stringify(messages, null, 2));
     
@@ -150,6 +150,29 @@ export async function callOpenAI(messages: any[], env: Env): Promise<string> {
       'SELECT setting_value FROM system_settings WHERE setting_key = ?'
     ).bind('openai_model').first();
     const model = modelResult?.setting_value || 'gpt-3.5-turbo';
+    
+    // Get system prompt parameters if toolName is provided
+    let maxTokens = 1000;
+    let temperature = 0.7;
+    let topP = 1.0;
+    let frequencyPenalty = 0.0;
+    let presencePenalty = 0.0;
+    
+    if (toolName) {
+      try {
+        const { getSystemPrompt } = await import('./systemPrompts');
+        const systemPrompt = await getSystemPrompt(env.DB, toolName);
+        if (systemPrompt) {
+          maxTokens = systemPrompt.max_tokens || 1000;
+          temperature = systemPrompt.temperature || 0.7;
+          topP = systemPrompt.top_p || 1.0;
+          frequencyPenalty = systemPrompt.frequency_penalty || 0.0;
+          presencePenalty = systemPrompt.presence_penalty || 0.0;
+        }
+      } catch (error) {
+        console.warn(`Failed to get system prompt parameters for ${toolName}, using defaults:`, error);
+      }
+    }
     
     const startTime = Date.now();
     // Create AbortController for timeout
@@ -164,8 +187,11 @@ export async function callOpenAI(messages: any[], env: Env): Promise<string> {
       body: JSON.stringify({
         model,
         messages,
-        max_tokens: 800,
-        temperature: 0.7,
+        max_tokens: maxTokens,
+        temperature: temperature,
+        top_p: topP,
+        frequency_penalty: frequencyPenalty,
+        presence_penalty: presencePenalty,
       }),
       signal: controller.signal,
     });

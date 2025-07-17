@@ -179,6 +179,19 @@ export interface AdminUpdateAnnouncementRequest {
   announcement: string;
 }
 
+// System Prompt types
+export interface SystemPrompt {
+  id: string;
+  tool_name: string;
+  prompt_text: string;
+  max_tokens: number;
+  temperature: number;
+  top_p: number;
+  frequency_penalty: number;
+  presence_penalty: number;
+  updated_at: string;
+}
+
 // Environment variables
 export interface Env {
   DB: any; // D1Database type from Cloudflare Workers

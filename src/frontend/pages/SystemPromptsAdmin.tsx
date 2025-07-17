@@ -8,6 +8,11 @@ interface SystemPrompt {
   id: string;
   tool_name: string;
   prompt_text: string;
+  max_tokens: number;
+  temperature: number;
+  top_p: number;
+  frequency_penalty: number;
+  presence_penalty: number;
   updated_at: string;
 }
 
@@ -23,7 +28,15 @@ const SystemPromptsAdmin: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState('');
+  const [editingFields, setEditingFields] = useState<{
+    prompt_text: string;
+    max_tokens: number;
+    temperature: number;
+    top_p: number;
+    frequency_penalty: number;
+    presence_penalty: number;
+  } | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [showPlaceholders, setShowPlaceholders] = useState<string | null>(null);
   const [placeholders, setPlaceholders] = useState<Placeholders | null>(null);
 
@@ -60,32 +73,69 @@ const SystemPromptsAdmin: React.FC = () => {
 
   const startEditing = (prompt: SystemPrompt) => {
     setEditingId(prompt.id);
-    setEditingText(prompt.prompt_text);
+    setEditingFields({
+      prompt_text: prompt.prompt_text,
+      max_tokens: prompt.max_tokens,
+      temperature: prompt.temperature,
+      top_p: prompt.top_p,
+      frequency_penalty: prompt.frequency_penalty,
+      presence_penalty: prompt.presence_penalty,
+    });
+    setValidationError(null);
   };
 
   const cancelEditing = () => {
     setEditingId(null);
-    setEditingText('');
+    setEditingFields(null);
+    setValidationError(null);
+  };
+
+  const defaultParams = {
+    max_tokens: 1000,
+    temperature: 0.7,
+    top_p: 1.0,
+    frequency_penalty: 0.0,
+    presence_penalty: 0.0,
+  };
+  const resetToDefault = () => {
+    if (!editingFields) return;
+    setEditingFields({
+      ...editingFields,
+      ...defaultParams,
+    });
+  };
+
+  const validateFields = (fields: typeof editingFields) => {
+    if (!fields) return 'Missing fields';
+    if (fields.max_tokens < 1 || fields.max_tokens > 4000) return 'Max tokens must be 1–4000';
+    if (fields.temperature < 0 || fields.temperature > 1) return 'Temperature must be 0–1';
+    if (fields.top_p < 0 || fields.top_p > 1) return 'Top-p must be 0–1';
+    if (fields.frequency_penalty < -2 || fields.frequency_penalty > 2) return 'Frequency penalty must be -2 to 2';
+    if (fields.presence_penalty < -2 || fields.presence_penalty > 2) return 'Presence penalty must be -2 to 2';
+    return null;
   };
 
   const savePrompt = async () => {
-    if (!editingId) return;
-    
+    if (!editingId || !editingFields) return;
+    const error = validateFields(editingFields);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
     try {
       setSaving(true);
       setMessage(null);
-      
-      const response = await apiClient.updateSystemPrompt(editingId, editingText);
+      const response = await apiClient.updateSystemPrompt(editingId, editingFields);
       if (response.data?.success) {
         setMessage({ type: 'success', text: 'System prompt updated successfully' });
         setEditingId(null);
-        setEditingText('');
-        loadPrompts(); // Reload to get updated data
+        setEditingFields(null);
+        setValidationError(null);
+        loadPrompts();
       } else {
         setMessage({ type: 'error', text: 'Failed to update system prompt' });
       }
     } catch (error) {
-      console.error('Failed to update system prompt:', error);
       setMessage({ type: 'error', text: 'Failed to update system prompt' });
     } finally {
       setSaving(false);
@@ -203,13 +253,61 @@ const SystemPromptsAdmin: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       {editingId === prompt.id ? (
-                        <textarea
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          rows={4}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                          placeholder="Enter system prompt..."
-                        />
+                        <div className="space-y-2">
+                          <textarea
+                            value={editingFields?.prompt_text || ''}
+                            onChange={e => setEditingFields(f => f ? { ...f, prompt_text: e.target.value } : f)}
+                            rows={4}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                            placeholder="Enter system prompt..."
+                          />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Max Tokens
+                                <span className="ml-1 text-gray-400" title="Max length of response in tokens (~4 tokens ≈ 3 words)">?</span>
+                              </label>
+                              <input type="number" min={1} max={4000} value={editingFields?.max_tokens ?? 1000}
+                                onChange={e => setEditingFields(f => f ? { ...f, max_tokens: Number(e.target.value) } : f)}
+                                className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Temperature
+                                <span className="ml-1 text-gray-400" title="Controls creativity (0 = deterministic, 1 = random)">?</span>
+                              </label>
+                              <input type="number" min={0} max={1} step={0.01} value={editingFields?.temperature ?? 0.7}
+                                onChange={e => setEditingFields(f => f ? { ...f, temperature: Number(e.target.value) } : f)}
+                                className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Top-p
+                                <span className="ml-1 text-gray-400" title="Controls diversity via nucleus sampling">?</span>
+                              </label>
+                              <input type="number" min={0} max={1} step={0.01} value={editingFields?.top_p ?? 1.0}
+                                onChange={e => setEditingFields(f => f ? { ...f, top_p: Number(e.target.value) } : f)}
+                                className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Frequency Penalty
+                                <span className="ml-1 text-gray-400" title="Discourages repetition">?</span>
+                              </label>
+                              <input type="number" min={-2} max={2} step={0.01} value={editingFields?.frequency_penalty ?? 0.0}
+                                onChange={e => setEditingFields(f => f ? { ...f, frequency_penalty: Number(e.target.value) } : f)}
+                                className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700">Presence Penalty
+                                <span className="ml-1 text-gray-400" title="Encourages introducing new topics">?</span>
+                              </label>
+                              <input type="number" min={-2} max={2} step={0.01} value={editingFields?.presence_penalty ?? 0.0}
+                                onChange={e => setEditingFields(f => f ? { ...f, presence_penalty: Number(e.target.value) } : f)}
+                                className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm" />
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <button type="button" onClick={resetToDefault} className="text-xs text-blue-600 hover:underline">Reset to default</button>
+                            {validationError && <span className="text-xs text-red-600">{validationError}</span>}
+                          </div>
+                        </div>
                       ) : (
                         <div className="text-sm text-gray-900 max-w-md">
                           {prompt.prompt_text.length > 200 

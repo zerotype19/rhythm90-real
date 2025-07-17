@@ -16,18 +16,24 @@ async function verifyAdmin(request: Request, env: Env) {
   return user;
 }
 
-// Get system prompt by tool name
-export async function getSystemPrompt(db: any, toolName: string): Promise<string | null> {
+// Get system prompt by tool name (returns full prompt object)
+export async function getSystemPrompt(db: any, toolName: string): Promise<any | null> {
   try {
     const result = await db.prepare(
-      'SELECT prompt_text FROM ai_system_prompts WHERE tool_name = ?'
+      'SELECT id, tool_name, prompt_text, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, updated_at FROM ai_system_prompts WHERE tool_name = ?'
     ).bind(toolName).first();
     
-    return result ? result.prompt_text : null;
+    return result;
   } catch (error) {
     console.error('Error getting system prompt:', error);
     return null;
   }
+}
+
+// Get system prompt text only (for backward compatibility)
+export async function getSystemPromptText(db: any, toolName: string): Promise<string | null> {
+  const prompt = await getSystemPrompt(db, toolName);
+  return prompt ? prompt.prompt_text : null;
 }
 
 // Replace placeholders in prompt text with form data
@@ -51,7 +57,7 @@ export async function buildSystemPrompt(db: any, toolName: string, formData: Rec
     throw new Error(`System prompt not found for tool: ${toolName}`);
   }
   
-  return replacePlaceholders(promptRow, formData);
+  return replacePlaceholders(promptRow.prompt_text, formData);
 }
 
 // Get all system prompts (admin only)
@@ -63,7 +69,7 @@ export async function handleGetSystemPrompts(request: Request, env: Env): Promis
 
   try {
     const prompts = await env.DB.prepare(
-      'SELECT id, tool_name, prompt_text, updated_at FROM ai_system_prompts ORDER BY tool_name'
+      'SELECT id, tool_name, prompt_text, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, updated_at FROM ai_system_prompts ORDER BY tool_name'
     ).all();
     
     return jsonResponse(prompts.results || []);
@@ -82,16 +88,49 @@ export async function handleUpdateSystemPrompt(request: Request, env: Env): Prom
 
   try {
     const body = await request.json();
-    const { id, prompt_text } = body;
+    const { 
+      id, 
+      prompt_text, 
+      max_tokens, 
+      temperature, 
+      top_p, 
+      frequency_penalty, 
+      presence_penalty 
+    } = body;
 
     if (!id || !prompt_text) {
       return errorResponse('ID and prompt_text are required', 400);
     }
 
-    // Update the prompt
+    // Validate parameter ranges
+    if (max_tokens !== undefined && (max_tokens < 1 || max_tokens > 4000)) {
+      return errorResponse('max_tokens must be between 1 and 4000', 400);
+    }
+    if (temperature !== undefined && (temperature < 0 || temperature > 1)) {
+      return errorResponse('temperature must be between 0 and 1', 400);
+    }
+    if (top_p !== undefined && (top_p < 0 || top_p > 1)) {
+      return errorResponse('top_p must be between 0 and 1', 400);
+    }
+    if (frequency_penalty !== undefined && (frequency_penalty < -2 || frequency_penalty > 2)) {
+      return errorResponse('frequency_penalty must be between -2 and 2', 400);
+    }
+    if (presence_penalty !== undefined && (presence_penalty < -2 || presence_penalty > 2)) {
+      return errorResponse('presence_penalty must be between -2 and 2', 400);
+    }
+
+    // Update the prompt with all parameters
     const result = await env.DB.prepare(
-      'UPDATE ai_system_prompts SET prompt_text = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    ).bind(prompt_text, id).run();
+      `UPDATE ai_system_prompts 
+       SET prompt_text = ?, 
+           max_tokens = COALESCE(?, max_tokens),
+           temperature = COALESCE(?, temperature),
+           top_p = COALESCE(?, top_p),
+           frequency_penalty = COALESCE(?, frequency_penalty),
+           presence_penalty = COALESCE(?, presence_penalty),
+           updated_at = CURRENT_TIMESTAMP 
+       WHERE id = ?`
+    ).bind(prompt_text, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, id).run();
 
     if (result.changes === 0) {
       return errorResponse('System prompt not found', 404);
@@ -132,7 +171,7 @@ export async function handleGetPlaceholders(request: Request, env: Env): Promise
     const placeholders = new Set<string>();
     let match;
     
-    while ((match = placeholderRegex.exec(prompt)) !== null) {
+    while ((match = placeholderRegex.exec(prompt.prompt_text)) !== null) {
       placeholders.add(match[1]);
     }
 

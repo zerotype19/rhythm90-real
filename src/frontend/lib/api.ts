@@ -575,15 +575,21 @@ class ApiClient {
   // System Prompts (Admin only)
   async getSystemPrompts() {
     return this.request('/api/admin/system-prompts', {
-      method: 'GET',
       credentials: 'include',
     });
   }
 
-  async updateSystemPrompt(id: string, promptText: string) {
-    return this.request('/api/admin/system-prompts', {
-      method: 'POST',
-      body: JSON.stringify({ id, prompt_text: promptText }),
+  async updateSystemPrompt(id: string, prompt: {
+    prompt_text: string;
+    max_tokens: number;
+    temperature: number;
+    top_p: number;
+    frequency_penalty: number;
+    presence_penalty: number;
+  }) {
+    return this.request(`/api/admin/system-prompts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...prompt }),
       credentials: 'include',
     });
   }
