@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import { apiClient } from '../lib/api';
 import { Link } from 'react-router-dom';
+import AppLayout from '../components/AppLayout';
 
 interface AdminSettings {
   model: string;
@@ -18,12 +19,14 @@ const Admin: React.FC = () => {
   // Check if user is admin
   if (!user?.is_admin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access the admin panel.</p>
+      <AppLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+            <p className="text-gray-600">You don't have permission to access the admin panel.</p>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     );
   }
 
@@ -86,15 +89,18 @@ const Admin: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading admin settings...</div>
-      </div>
+      <AppLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-gray-600">Loading admin settings...</div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <AppLayout>
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
           <p className="mt-2 text-gray-600">Manage system settings and announcements</p>
@@ -199,8 +205,9 @@ const Admin: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
