@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { StarIcon, PlayIcon, SignalIcon, CalendarIcon, UserGroupIcon, CogIcon, ChartBarIcon, DocumentTextIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, DocumentIcon, TableCellsIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
+import { StarIcon, PlayIcon, SignalIcon, CalendarIcon, UserGroupIcon, CogIcon, ChartBarIcon, DocumentTextIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, DocumentIcon, TableCellsIcon, Squares2X2Icon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import AppLayout from '../components/AppLayout';
 
 interface Section {
@@ -15,6 +15,7 @@ interface Section {
 function TrainingModule() {
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState('intro');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Handle URL parameter to open specific section
   useEffect(() => {
@@ -596,6 +597,26 @@ function TrainingModule() {
   ];
 
   const currentSection = sections.find(s => s.id === activeSection);
+  const currentIndex = sections.findIndex(s => s.id === activeSection);
+  const nextSection = currentIndex < sections.length - 1 ? sections[currentIndex + 1] : null;
+  const prevSection = currentIndex > 0 ? sections[currentIndex - 1] : null;
+
+  const handleSectionChange = (sectionId: string) => {
+    setActiveSection(sectionId);
+    setIsDropdownOpen(false);
+  };
+
+  const handleNextSection = () => {
+    if (nextSection) {
+      setActiveSection(nextSection.id);
+    }
+  };
+
+  const handlePrevSection = () => {
+    if (prevSection) {
+      setActiveSection(prevSection.id);
+    }
+  };
 
   return (
     <AppLayout>
@@ -609,8 +630,53 @@ function TrainingModule() {
         </div>
 
         <div className="grid lg:grid-cols-4 gap-8">
-          {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
+          {/* Mobile Dropdown Navigation */}
+          <div className="lg:hidden">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 text-left bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {currentSection?.title || 'Select Section'}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {currentSection?.description || ''}
+                  </div>
+                </div>
+                <ChevronDownIcon 
+                  className={`w-5 h-5 text-gray-400 transition-transform ${
+                    isDropdownOpen ? 'rotate-180' : ''
+                  }`} 
+                />
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="mt-2 border border-gray-200 rounded-md bg-white shadow-lg">
+                  <nav className="py-2">
+                    {sections.map((section) => (
+                      <button
+                        key={section.id}
+                        onClick={() => handleSectionChange(section.id)}
+                        className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors hover:bg-gray-50 ${
+                          activeSection === section.id
+                            ? 'bg-red-50 text-red-700 border-r-2 border-red-500'
+                            : 'text-gray-600'
+                        }`}
+                      >
+                        <div className="font-medium">{section.title}</div>
+                        <div className="text-xs text-gray-500 mt-1">{section.description}</div>
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Sidebar Navigation */}
+          <div className="hidden lg:block lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Sections</h2>
               <nav className="space-y-2">
@@ -648,6 +714,41 @@ function TrainingModule() {
                   </div>
                   
                   {currentSection.content}
+
+                  {/* Navigation Buttons */}
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <button
+                        onClick={handlePrevSection}
+                        disabled={!prevSection}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          prevSection
+                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                        {prevSection ? `Previous: ${prevSection.title}` : 'Previous'}
+                      </button>
+                      
+                      <div className="text-sm text-gray-500">
+                        {currentIndex + 1} of {sections.length}
+                      </div>
+                      
+                      <button
+                        onClick={handleNextSection}
+                        disabled={!nextSection}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          nextSection
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        {nextSection ? `Next: ${nextSection.title}` : 'Next'}
+                        <ChevronRightIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
