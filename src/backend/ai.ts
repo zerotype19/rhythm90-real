@@ -315,7 +315,7 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
     const body: InterpretSignalRequest = await request.json();
-    const { observation, context } = body;
+    const { observation, context, team_type, session_purpose, challenges } = body;
     if (!observation) return errorResponse('Observation is required', 400);
 
     // Get team context for AI prompt injection
