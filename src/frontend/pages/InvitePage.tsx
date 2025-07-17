@@ -73,9 +73,13 @@ const InvitePage: React.FC = () => {
   };
 
   const handleSignIn = () => {
-    // Redirect to login with return URL
-    const returnUrl = encodeURIComponent(window.location.href);
-    window.location.href = `/login?returnUrl=${returnUrl}`;
+    // Start Google OAuth with invite code in state parameter
+    const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const OAUTH_REDIRECT_URI = 'https://api.rhythm90.io/api/auth/callback/google';
+    const scope = 'email profile';
+    const state = encodeURIComponent(JSON.stringify({ inviteCode }));
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${state}`;
+    window.location.href = authUrl;
   };
 
   if (loading) {

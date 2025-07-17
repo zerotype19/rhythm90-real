@@ -150,6 +150,7 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     const url = new URL(request.url);
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
+    const state = url.searchParams.get('state');
     const appUrl = env.APP_URL || '';
     if (!appUrl) {
       // Fallback if APP_URL is missing
@@ -158,6 +159,17 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     if (error || !code) {
       console.error('OAuth callback missing code or error param:', { code, error });
       return Response.redirect(`${appUrl}/login?error=oauth_failed`, 302);
+    }
+
+    // Parse state parameter for invite code
+    let inviteCode: string | null = null;
+    if (state) {
+      try {
+        const stateData = JSON.parse(decodeURIComponent(state));
+        inviteCode = stateData.inviteCode || null;
+      } catch (err) {
+        console.error('Failed to parse state parameter:', err);
+      }
     }
     // Exchange code for access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -209,7 +221,40 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     // Set cookie
     const cookie = setAuthCookie(jwt);
     console.log('handleGoogleCallback: Setting cookie:', cookie);
-    // Redirect based on team membership
+
+    // Handle invite code if present
+    if (inviteCode) {
+      try {
+        // Join the team using the invite code
+        await env.DB.prepare(`
+          INSERT INTO team_members (id, team_id, user_id, role, is_admin, created_at)
+          SELECT ?, t.id, ?, 'member', FALSE, datetime('now')
+          FROM teams t
+          WHERE t.invite_code = ?
+        `).bind(crypto.randomUUID(), user.id, inviteCode).run();
+        
+        console.log('handleGoogleCallback: Successfully joined team with invite code:', inviteCode);
+        return new Response(null, { 
+          status: 302, 
+          headers: { 
+            'Location': `${appUrl}/app/dashboard`, 
+            'Set-Cookie': cookie 
+          } 
+        });
+      } catch (err) {
+        console.error('handleGoogleCallback: Failed to join team with invite code:', err);
+        // If joining fails, redirect to dashboard anyway (user might already be a member)
+        return new Response(null, { 
+          status: 302, 
+          headers: { 
+            'Location': `${appUrl}/app/dashboard`, 
+            'Set-Cookie': cookie 
+          } 
+        });
+      }
+    }
+
+    // Redirect based on team membership (no invite code)
     const redirectUrl = teams.length === 0 ? `${appUrl}/app/onboarding` : `${appUrl}/app/dashboard`;
     console.log('handleGoogleCallback: Redirecting to:', redirectUrl);
     return new Response(null, { status: 302, headers: { 'Location': redirectUrl, 'Set-Cookie': cookie } });
