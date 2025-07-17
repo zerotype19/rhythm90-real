@@ -9,6 +9,15 @@ export async function sendTeamInviteEmail(
   teamName: string,
   inviteCode: string
 ): Promise<void> {
+  // Check if MailerSend is properly configured
+  if (!env.MAILERSEND_API_KEY || env.MAILERSEND_API_KEY === '') {
+    throw new Error('MailerSend API key is not configured');
+  }
+
+  if (!env.MAILERSEND_FROM_EMAIL || !env.MAILERSEND_FROM_NAME) {
+    throw new Error('MailerSend from email/name is not configured');
+  }
+
   const inviteLink = `https://rhythm90.io/invite?code=${inviteCode}`;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -60,6 +69,8 @@ The Rhythm90 Team
     text
   };
 
+  console.log('Sending MailerSend email with payload:', JSON.stringify(payload, null, 2));
+
   const response = await fetch('https://api.mailersend.com/v1/email', {
     method: 'POST',
     headers: {
@@ -71,8 +82,20 @@ The Rhythm90 Team
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error('MailerSend API error response:', errorText);
+    
+    // Handle trial account limitations
+    if (response.status === 422) {
+      const errorData = JSON.parse(errorText);
+      if (errorData.message && errorData.message.includes('Trial accounts can only send emails to the administrator')) {
+        throw new Error('Email service is in trial mode and can only send to verified addresses. Please contact support to upgrade the account.');
+      }
+    }
+    
     throw new Error(`MailerSend API error: ${response.status} ${errorText}`);
   }
+
+  console.log('MailerSend email sent successfully');
 }
 
 // Validate email format
@@ -127,7 +150,15 @@ export async function handleInviteTeamMember(request: Request, env: Env): Promis
       await sendTeamInviteEmail(env, email, teamMember.team_name, teamMember.invite_code);
     } catch (emailError) {
       console.error('Failed to send invite email:', emailError);
-      return errorResponse('Failed to send invite email. Please try again.', 500);
+      
+      // Provide specific error messages based on the error type
+      if (emailError.message.includes('not configured')) {
+        return errorResponse('Email service is not configured. Please contact support.', 500);
+      } else if (emailError.message.includes('trial mode')) {
+        return errorResponse('Email service is in trial mode. Please contact support to enable team invites.', 500);
+      } else {
+        return errorResponse('Failed to send invite email. Please try again later.', 500);
+      }
     }
 
     const response: InviteTeamMemberResponse = {
