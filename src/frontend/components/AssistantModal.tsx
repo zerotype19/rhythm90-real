@@ -60,8 +60,8 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
   const loadSession = async () => {
     setIsLoading(true);
     try {
-      const response = await apiCall('/api/assistant/sessions', 'GET');
-      if (response.success) {
+      const response = await apiCall('/api/assistant/sessions', { method: 'GET' });
+      if (response.data) {
         setSession(response.data.session);
         setMessages(response.data.messages || []);
       }
@@ -77,11 +77,12 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
 
     setIsSending(true);
     try {
-      const response = await apiCall('/api/assistant/sessions/message', 'POST', {
-        message: content
+      const response = await apiCall('/api/assistant/sessions/message', {
+        method: 'POST',
+        body: JSON.stringify({ message: content })
       });
 
-      if (response.success) {
+      if (response.data) {
         setMessages(prev => [...prev, response.data.new_message]);
         setInputMessage('');
       }
@@ -104,8 +105,8 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
 
   const handleClearConversation = async () => {
     try {
-      const response = await apiCall('/api/assistant/sessions/clear', 'POST');
-      if (response.success) {
+      const response = await apiCall('/api/assistant/sessions/clear', { method: 'POST' });
+      if (response.data) {
         setSession(response.data.session);
         setMessages([]);
       }
