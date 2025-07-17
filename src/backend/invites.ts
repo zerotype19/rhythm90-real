@@ -151,11 +151,20 @@ export async function handleInviteTeamMember(request: Request, env: Env): Promis
     } catch (emailError) {
       console.error('Failed to send invite email:', emailError);
       
-      // Provide specific error messages based on the error type
+      // Handle trial account limitations gracefully
+      if (emailError.message.includes('trial mode')) {
+        // For trial accounts, we'll still return success but with a warning
+        const response: InviteTeamMemberResponse = {
+          success: true,
+          message: `Invitation created successfully for ${email}. Note: Email delivery is limited in trial mode - please share the invite link manually: https://rhythm90.io/invite?code=${teamMember.invite_code}`,
+          warning: 'Email service is in trial mode. Please upgrade to send emails automatically.'
+        };
+        return jsonResponse(response);
+      }
+      
+      // Provide specific error messages for other issues
       if (emailError.message.includes('not configured')) {
         return errorResponse('Email service is not configured. Please contact support to set up the MailerSend API key.', 500);
-      } else if (emailError.message.includes('trial mode')) {
-        return errorResponse('Email service is in trial mode. Please contact support to enable team invites.', 500);
       } else {
         return errorResponse('Failed to send invite email. Please try again later.', 500);
       }

@@ -102,6 +102,7 @@ export interface InviteTeamMemberRequest {
 export interface InviteTeamMemberResponse {
   success: boolean;
   message: string;
+  warning?: string;
 }
 
 export interface GetInviteInfoRequest {
