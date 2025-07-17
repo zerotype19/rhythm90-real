@@ -121,7 +121,7 @@ export async function handleGetTeamSettings(request: Request, env: Env) {
     
     // Get user's team membership
     const teamMember = await env.DB.prepare(`
-      SELECT tm.team_id, tm.role, t.name as team_name, t.industry, t.focus_areas, t.team_description, t.created_at
+      SELECT tm.team_id, tm.role, tm.is_admin, t.name as team_name, t.industry, t.focus_areas, t.team_description, t.created_at
       FROM team_members tm
       JOIN teams t ON tm.team_id = t.id
       WHERE tm.user_id = ?
@@ -135,7 +135,7 @@ export async function handleGetTeamSettings(request: Request, env: Env) {
 
     // Get all team members
     const teamMembers = await env.DB.prepare(`
-      SELECT tm.id, tm.user_id, tm.role, tm.joined_at, u.name, u.email
+      SELECT tm.id, tm.user_id, tm.role, tm.is_admin, tm.joined_at, u.name, u.email
       FROM team_members tm
       JOIN users u ON tm.user_id = u.id
       WHERE tm.team_id = ?
@@ -152,12 +152,14 @@ export async function handleGetTeamSettings(request: Request, env: Env) {
         created_at: teamMember.created_at
       },
       user_role: teamMember.role,
+      user_is_admin: teamMember.is_admin,
       members: teamMembers.results.map((member: any) => ({
         id: member.id,
         user_id: member.user_id,
         name: member.name,
         email: member.email,
         role: member.role,
+        is_admin: member.is_admin,
         joined_at: member.joined_at
       }))
     };
@@ -355,9 +357,9 @@ export async function handleInviteTeamMember(request: Request, env: Env) {
       return errorResponse('Valid email is required', 400);
     }
 
-    // Check if user is team owner
+    // Check if user is team admin
     const teamMember = await env.DB.prepare(`
-      SELECT tm.team_id, tm.role, t.name as team_name
+      SELECT tm.team_id, tm.is_admin, t.name as team_name, t.invite_code
       FROM team_members tm
       JOIN teams t ON tm.team_id = t.id
       WHERE tm.user_id = ?
@@ -369,9 +371,9 @@ export async function handleInviteTeamMember(request: Request, env: Env) {
       return errorResponse('User must belong to a team', 400);
     }
 
-    if (teamMember.role !== 'owner') {
-      console.log('handleInviteTeamMember: User is not team owner');
-      return errorResponse('Only team owners can invite members', 403);
+    if (!teamMember.is_admin) {
+      console.log('handleInviteTeamMember: User is not team admin');
+      return errorResponse('Only team admins can invite members', 403);
     }
 
     // Check if user already exists
@@ -392,9 +394,16 @@ export async function handleInviteTeamMember(request: Request, env: Env) {
       }
     }
 
-    // For now, we'll just return a success message
-    // In a real implementation, you'd send an email invitation
-    console.log('handleInviteTeamMember: Success - invitation would be sent to:', email);
+    // Send invite email using MailerSend
+    try {
+      const { sendTeamInviteEmail } = await import('./invites');
+      await sendTeamInviteEmail(env, email, teamMember.team_name, teamMember.invite_code);
+    } catch (emailError) {
+      console.error('handleInviteTeamMember: Failed to send invite email:', emailError);
+      return errorResponse('Failed to send invite email. Please try again.', 500);
+    }
+
+    console.log('handleInviteTeamMember: Success - invitation sent to:', email);
     lastSettingsDebugLog = {
       endpoint: '/api/settings/team/invite',
       method: 'POST',
@@ -403,16 +412,14 @@ export async function handleInviteTeamMember(request: Request, env: Env) {
       input: body,
       result: { 
         success: true, 
-        message: 'Invitation sent successfully',
-        invite_link: `${env.APP_URL}/join?team=${teamMember.team_id}&email=${encodeURIComponent(email)}`
+        message: 'Invitation sent successfully'
       },
       timestamp: new Date().toISOString()
     };
 
     return jsonResponse({ 
       success: true, 
-      message: 'Invitation sent successfully',
-      invite_link: `${env.APP_URL}/join?team=${teamMember.team_id}&email=${encodeURIComponent(email)}`
+      message: 'Invitation sent successfully'
     });
   } catch (error) {
     console.error('handleInviteTeamMember: Error:', error);

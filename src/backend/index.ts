@@ -14,6 +14,7 @@ import { handleUpdateModel, handleUpdateAnnouncement as handleUpdateSystemAnnoun
 import { handleGetSystemPrompts, handleUpdateSystemPrompt, handleGetPlaceholders } from './systemPrompts';
 import { handleCreatePlannerSession, handleGetPlannerSessions, handleGetPlannerSession } from './planner';
 import { handleGetSession as handleGetAssistantSession, handleSendMessage, handleClearConversation } from './assistant';
+import { handleGetInviteInfo } from './invites';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -105,6 +106,11 @@ export default {
       // Team update route (PATCH /api/teams/:id)
       if (path.match(/^\/api\/teams\/[^\/]+$/) && request.method === 'PATCH') {
         return await handleUpdateTeam(request, env);
+      }
+
+      // Invite routes
+      if (path.match(/^\/api\/invite\/[^\/]+$/) && request.method === 'GET') {
+        return await handleGetInviteInfo(request, env);
       }
 
       // AI routes

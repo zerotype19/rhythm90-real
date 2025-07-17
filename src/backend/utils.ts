@@ -93,11 +93,11 @@ export async function createTeam(db: any, team: Omit<Team, 'id' | 'created_at' |
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).bind(teamId, team.name, team.industry, team.focus_areas || '[]', team.team_description || '', ownerId, inviteCode).run();
   
-  // Add owner as team member
+  // Add owner as team member (with admin privileges)
   await db.prepare(`
-    INSERT INTO team_members (id, user_id, team_id, role)
-    VALUES (?, ?, ?, ?)
-  `).bind(memberId, ownerId, teamId, 'owner').run();
+    INSERT INTO team_members (id, user_id, team_id, role, is_admin)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(memberId, ownerId, teamId, 'owner', true).run();
   
   // Create default subscription
   const subscriptionId = crypto.randomUUID();
@@ -127,12 +127,12 @@ export async function joinTeam(db: any, inviteCode: string, userId: string): Pro
     throw new Error('User already a member of this team');
   }
   
-  // Add user as team member
+  // Add user as team member (not admin by default)
   const memberId = crypto.randomUUID();
   await db.prepare(`
-    INSERT INTO team_members (id, user_id, team_id, role)
-    VALUES (?, ?, ?, ?)
-  `).bind(memberId, userId, team.id, 'member').run();
+    INSERT INTO team_members (id, user_id, team_id, role, is_admin)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(memberId, userId, team.id, 'member', false).run();
   
   return team as Team;
 }

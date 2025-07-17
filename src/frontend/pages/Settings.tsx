@@ -15,6 +15,7 @@ interface TeamMember {
   name: string;
   email: string;
   role: 'owner' | 'member';
+  is_admin: boolean;
   joined_at: string;
 }
 
@@ -28,6 +29,7 @@ interface TeamSettings {
     created_at: string;
   };
   user_role: 'owner' | 'member';
+  user_is_admin: boolean;
   members: TeamMember[];
 }
 
@@ -676,7 +678,7 @@ function Settings() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-medium text-gray-900">Team Members</h3>
-                      {teamSettings.user_role === 'owner' && (
+                      {teamSettings.user_is_admin && (
                         <button
                           onClick={() => setShowInviteForm(!showInviteForm)}
                           className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
@@ -687,7 +689,7 @@ function Settings() {
                     </div>
 
                     {/* Invite Form */}
-                    {showInviteForm && teamSettings.user_role === 'owner' && (
+                    {showInviteForm && teamSettings.user_is_admin && (
                       <form onSubmit={handleInviteMember} className="mb-6 p-4 bg-gray-50 rounded-md">
                         <div className="flex space-x-4">
                           <div className="flex-1">
@@ -731,7 +733,7 @@ function Settings() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Joined
                             </th>
-                            {teamSettings.user_role === 'owner' && (
+                            {teamSettings.user_is_admin && (
                               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                               </th>
@@ -759,7 +761,7 @@ function Settings() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {new Date(member.joined_at).toLocaleDateString()}
                               </td>
-                              {teamSettings.user_role === 'owner' && (
+                              {teamSettings.user_is_admin && (
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   {member.role !== 'owner' && (
                                     <div className="flex items-center justify-end space-x-2">

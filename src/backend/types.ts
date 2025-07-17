@@ -24,6 +24,7 @@ export interface TeamMember {
   user_id: string;
   team_id: string;
   role: 'owner' | 'member';
+  is_admin: boolean;
   joined_at: string;
 }
 
@@ -92,6 +93,24 @@ export interface UpdateTeamRequest {
 
 export interface JoinTeamRequest {
   invite_code: string;
+}
+
+export interface InviteTeamMemberRequest {
+  email: string;
+}
+
+export interface InviteTeamMemberResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface GetInviteInfoRequest {
+  invite_code: string;
+}
+
+export interface GetInviteInfoResponse {
+  team: Team;
+  valid: boolean;
 }
 
 export interface GeneratePlayRequest {
@@ -201,4 +220,7 @@ export interface Env {
   JWT_SECRET: string;
   APP_URL: string;
   ENVIRONMENT: string;
+  MAILERSEND_API_KEY: string;
+  MAILERSEND_FROM_EMAIL: string;
+  MAILERSEND_FROM_NAME: string;
 } 

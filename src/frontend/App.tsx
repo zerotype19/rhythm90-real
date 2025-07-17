@@ -28,6 +28,7 @@ import SystemPromptsAdmin from './pages/SystemPromptsAdmin';
 import TrainingModule from './pages/TrainingModule';
 import QuarterlyPlanner from './pages/QuarterlyPlanner';
 import QuarterlyPlannerForm from './pages/QuarterlyPlannerForm';
+import InvitePage from './pages/InvitePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
@@ -41,6 +42,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/shared/:slug" element={<PublicSharedPage />} />
+            <Route path="/invite" element={<InvitePage />} />
             
             {/* Protected app routes */}
             <Route path="/app" element={<ProtectedRoute />}>
