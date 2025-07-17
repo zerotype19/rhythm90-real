@@ -11,6 +11,7 @@ import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkD
 import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
 import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, getLastStripeDebugLog } from './billing';
 import { handleUpdateModel, handleUpdateAnnouncement as handleUpdateSystemAnnouncement, handleGetSettings } from './admin';
+import { handleGetSystemPrompts, handleUpdateSystemPrompt, handleGetPlaceholders } from './systemPrompts';
 import { handleCreatePlannerSession, handleGetPlannerSessions, handleGetPlannerSession } from './planner';
 
 export default {
@@ -458,6 +459,17 @@ export default {
       }
       if (path === '/api/admin/update-announcement' && request.method === 'POST') {
         return await handleUpdateSystemAnnouncement(request, env);
+      }
+      
+      // System Prompts routes (admin only)
+      if (path === '/api/admin/system-prompts' && request.method === 'GET') {
+        return await handleGetSystemPrompts(request, env);
+      }
+      if (path === '/api/admin/system-prompts' && request.method === 'POST') {
+        return await handleUpdateSystemPrompt(request, env);
+      }
+      if (path === '/api/admin/system-prompts/placeholders' && request.method === 'GET') {
+        return await handleGetPlaceholders(request, env);
       }
 
       // Planner routes

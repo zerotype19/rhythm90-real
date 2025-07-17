@@ -24,6 +24,7 @@ import HistoryPage from './pages/HistoryPage';
 import TeamSharedPage from './pages/TeamSharedPage';
 import PublicSharedPage from './pages/PublicSharedPage';
 import Admin from './pages/Admin';
+import SystemPromptsAdmin from './pages/SystemPromptsAdmin';
 import TrainingModule from './pages/TrainingModule';
 import QuarterlyPlanner from './pages/QuarterlyPlanner';
 import QuarterlyPlannerForm from './pages/QuarterlyPlannerForm';
@@ -65,6 +66,7 @@ function App() {
               <Route path="team-shared" element={<TeamSharedPage />} />
               <Route path="team-shared/:slug" element={<TeamSharedPage />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="admin/prompts" element={<SystemPromptsAdmin />} />
               <Route path="training" element={<TrainingModule />} />
               <Route path="quarterly-planner" element={<QuarterlyPlannerForm />} />
               <Route path="tools/planner" element={<QuarterlyPlanner />} />

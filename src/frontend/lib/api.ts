@@ -572,6 +572,29 @@ class ApiClient {
     });
   }
 
+  // System Prompts (Admin only)
+  async getSystemPrompts() {
+    return this.request('/api/admin/system-prompts', {
+      method: 'GET',
+      credentials: 'include',
+    });
+  }
+
+  async updateSystemPrompt(id: string, promptText: string) {
+    return this.request('/api/admin/system-prompts', {
+      method: 'POST',
+      body: JSON.stringify({ id, prompt_text: promptText }),
+      credentials: 'include',
+    });
+  }
+
+  async getPlaceholders(toolName: string) {
+    return this.request(`/api/admin/system-prompts/placeholders?tool_name=${encodeURIComponent(toolName)}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+  }
+
   // Planner API methods
   async createPlannerSession(inputs: any) {
     return this.request('/api/planner/sessions', {

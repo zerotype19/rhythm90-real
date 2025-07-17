@@ -1,6 +1,7 @@
 import { Env, GeneratePlayRequest, GeneratePlayResponse, InterpretSignalRequest, InterpretSignalResponse, GenerateRitualPromptsRequest, GenerateRitualPromptsResponse } from './types';
 import { callOpenAI, jsonResponse, errorResponse, logAIUsage } from './utils';
 import { verifyAuth } from './auth';
+import { buildSystemPrompt } from './systemPrompts';
 
 // Function to get team context for AI prompts
 async function getTeamContext(db: any, userId: string): Promise<string> {
@@ -129,7 +130,17 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
     // Get team context for AI prompt injection
     const teamContext = await getTeamContext(env.DB, user.id);
     
-    let messages = [PLAY_BUILDER_SYSTEM_MESSAGE];
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'play_builder', {
+      team_type: extracted_team_type,
+      quarter_focus: extracted_quarter_focus,
+      top_signal: extracted_top_signal,
+      owner_role: extracted_owner_role,
+      idea_prompt: extracted_idea_prompt,
+      context: extracted_context
+    });
+    
+    let messages = [{ role: 'system', content: systemPromptText }];
     
     // Add team context if available
     if (teamContext) {
@@ -316,7 +327,16 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
       content: `You are a Rhythm90 Signal Lab assistant.\n\nYour job is to help teams interpret signals — unexpected outcomes, surprising data, or emerging patterns — using the Rhythm90 framework.\n\nA good signal interpretation should:\n- Describe what the signal might indicate (possible meaning).\n- Suggest 2-3 possible causes or contributing factors.\n- Offer 1-2 suggestions for what the team might explore or test next.\n- Highlight if the signal challenges or confirms existing assumptions.\n- Connect to the team's business or category context if provided.`
     };
     
-    let messages = [SIGNAL_LAB_SYSTEM_MESSAGE];
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'signal_lab', {
+      observation,
+      context,
+      team_type,
+      session_purpose,
+      challenges: Array.isArray(challenges) ? challenges.join(', ') : challenges
+    });
+    
+    let messages = [{ role: 'system', content: systemPromptText }];
     
     // Add team context if available
     if (teamContext) {
@@ -488,8 +508,17 @@ Additional Refinements:
 
 ⚠️ CRITICAL: Return ONLY raw JSON — no markdown fences, no code blocks, no comments, no explanation text. Do not wrap output like \`\`\`json ... \`\`\`. Return the JSON object directly.`;
     
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'ritual_guide', {
+      ritual_type,
+      team_type,
+      top_challenges,
+      focus_areas,
+      additional_context
+    });
+    
     const messages = [
-      RITUAL_GUIDE_SYSTEM_MESSAGE,
+      { role: 'system', content: systemPromptText },
       { role: 'user', content: contextBlock },
       { role: 'user', content: userPrompt }
     ];
@@ -603,21 +632,14 @@ export async function handlePlainEnglishTranslator(request: Request, env: Env): 
     const { original_text } = body;
     if (!original_text) return errorResponse('Original text is required', 400);
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'plain_english_translator', {
+      original_text
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: `You are a MadMarketing Plain-English Translator assistant. Your job is to:
-
-1. Rewrite marketing and business jargon into clear, human language
-2. Identify specific jargon phrases and explain what they really mean
-3. Create a comprehensive breakdown that helps people understand corporate speak
-
-When analyzing text:
-- Look for buzzwords, corporate jargon, and overly complex language
-- Break down each jargon phrase into simple, everyday language
-- Provide at least 3-5 specific examples in the side-by-side table
-- Be thorough and detailed in your analysis
-
-Do not be lazy or use placeholder text like "...". Always provide real, specific translations.`
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -748,9 +770,16 @@ export async function handleGetToByGenerator(request: Request, env: Env): Promis
       return errorResponse('All fields are required', 400);
     }
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'get_to_by_generator', {
+      audience_description,
+      behavioral_or_emotional_insight,
+      brand_product_role
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Get/To/By Generator assistant. Generate a sharp Get/To/By statement. Define audience behaviorally, not just demographics. The "by" must reference a real brand action.'
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -833,9 +862,14 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     const { problem_or_strategy_summary } = body;
     if (!problem_or_strategy_summary) return errorResponse('Problem or strategy summary is required', 400);
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'creative_tension_finder', {
+      problem_or_strategy_summary
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Creative-Tension Finder assistant. Generate 4–6 potent creative tensions and optional platform names. Focus on real human contradictions. Platform name optional, max 5 words.'
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -919,9 +953,14 @@ export async function handlePersonaGenerator(request: Request, env: Env): Promis
     console.log(`[DEBUG] PersonaGenerator called with user_id: ${user.id}`);
     if (!audience_seed) return errorResponse('Audience seed is required', 400);
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'persona_generator', {
+      audience_seed
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Persona Generator assistant. Build a synthetic persona sheet and enter Ask Mode.'
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -1066,9 +1105,16 @@ export async function handleJourneyBuilder(request: Request, env: Env): Promise<
       return errorResponse('Product/service and primary objective are required', 400);
     }
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'journey_builder', {
+      product_or_service,
+      primary_objective,
+      key_barrier
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Journey Builder assistant. Map a customer journey with actionable marketing guidance.'
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -1188,9 +1234,15 @@ export async function handleTestLearnScale(request: Request, env: Env): Promise<
       return errorResponse('Campaign or product context is required', 400);
     }
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'test_learn_scale', {
+      campaign_or_product_context,
+      resources_or_constraints
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Test-Learn-Scale assistant. Design an experimentation plan.'
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -1349,9 +1401,16 @@ export async function handleAgileSprintPlanner(request: Request, env: Env): Prom
       return errorResponse('Challenge statement, time horizon, and team size/roles are required', 400);
     }
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'agile_sprint_planner', {
+      challenge_statement,
+      time_horizon,
+      team_size_roles
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Agile Sprint Planner assistant. Outline an agile sprint plan for a marketing challenge.'
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -1489,9 +1548,16 @@ export async function handleConnectedMediaMatrix(request: Request, env: Env): Pr
       return errorResponse('Audience snapshot and primary conversion action are required', 400);
     }
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'connected_media_matrix', {
+      audience_snapshot,
+      primary_conversion_action,
+      seasonal_or_contextual_triggers
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Connected-Media Moment Matrix assistant. Create a moment-based media plan.'
+      content: systemPromptText
     };
 
     const userMessage = {
@@ -1603,9 +1669,16 @@ export async function handleSyntheticFocusGroup(request: Request, env: Env): Pro
       return errorResponse('Topic/category and audience seed info are required', 400);
     }
 
+    // Get system prompt from database
+    const systemPromptText = await buildSystemPrompt(env.DB, 'synthetic_focus_group', {
+      topic_or_category,
+      audience_seed_info,
+      must_include_segments
+    });
+    
     const systemMessage = {
       role: 'system',
-      content: 'You are a MadMarketing Synthetic Focus Group assistant. Create a synthetic focus group of five personas and enter Ask Mode.'
+      content: systemPromptText
     };
 
     const userMessage = {
