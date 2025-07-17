@@ -12,6 +12,11 @@ function AppLayout({ children }: AppLayoutProps) {
   const { user, teams, currentTeam, setCurrentTeam, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Rhythm90 Guide Section
+  const rhythm90Guide = [
+    { name: 'Rhythm90 Guide', href: '/app/training', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+  ];
+
   // Working Tools Section
   const workingTools = [
     { name: 'Dashboard', href: '/app/dashboard', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z' },
@@ -131,6 +136,7 @@ function AppLayout({ children }: AppLayoutProps) {
             )}
             {/* Navigation */}
             <nav className="flex-1 px-4 py-6 space-y-2">
+              {renderNavigationSection(rhythm90Guide)}
               {renderNavigationSection(workingTools, 'Working Tools')}
               {renderNavigationSection(collaboration, 'Collaboration')}
               {renderNavigationSection(system, 'System')}
@@ -205,6 +211,7 @@ function AppLayout({ children }: AppLayoutProps) {
               )}
               {/* Navigation */}
               <nav className="flex-1 px-4 py-6 space-y-2">
+                {renderNavigationSection(rhythm90Guide)}
                 {renderNavigationSection(workingTools, 'Working Tools')}
                 {renderNavigationSection(collaboration, 'Collaboration')}
                 {renderNavigationSection(system, 'System')}
