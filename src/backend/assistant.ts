@@ -325,19 +325,12 @@ export async function handleSendMessage(request: Request, env: Env) {
     // Call OpenAI
     let assistantResponse: string;
     try {
-      const aiResult = await callOpenAI({
-        messages: [
-          { role: 'system', content: processedPrompt },
-          ...conversationHistory
-        ],
-        max_tokens: systemPrompt.max_tokens,
-        temperature: systemPrompt.temperature,
-        top_p: systemPrompt.top_p,
-        frequency_penalty: systemPrompt.frequency_penalty,
-        presence_penalty: systemPrompt.presence_penalty
-      }, env);
-
-      assistantResponse = aiResult.content;
+      const messages = [
+        { role: 'system', content: processedPrompt },
+        ...conversationHistory
+      ];
+      
+      assistantResponse = await callOpenAI(messages, env, 'rhythm90_assistant');
     } catch (aiError) {
       console.error('AI call failed:', aiError);
       assistantResponse = "The Assistant is currently unavailable. Please try again shortly.";
