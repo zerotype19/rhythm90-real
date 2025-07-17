@@ -761,9 +761,9 @@ function Settings() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {new Date(member.joined_at).toLocaleDateString()}
                               </td>
-                              {teamSettings.user_is_admin && (
+                              {teamSettings.user_role === 'owner' && (
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  {member.role !== 'owner' && (
+                                  {member.user_id !== teamSettings.members.find(m => m.role === 'owner')?.user_id && (
                                     <div className="flex items-center justify-end space-x-2">
                                       <select
                                         value={member.role}

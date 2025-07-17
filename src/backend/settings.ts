@@ -571,11 +571,13 @@ export async function handleSetMemberRole(request: Request, env: Env) {
 
     console.log('handleSetMemberRole: Updating role for member:', memberToUpdate.name);
     
+    // Update both role and is_admin columns
+    const isAdmin = role === 'owner' ? 1 : 0;
     const result = await env.DB.prepare(`
       UPDATE team_members 
-      SET role = ? 
+      SET role = ?, is_admin = ? 
       WHERE id = ?
-    `).bind(role, member_id).run();
+    `).bind(role, isAdmin, member_id).run();
 
     if (result.changes === 0) {
       console.log('handleSetMemberRole: No member found to update');
