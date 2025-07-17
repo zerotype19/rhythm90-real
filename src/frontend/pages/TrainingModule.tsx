@@ -220,7 +220,7 @@ function TrainingModule() {
               Interactive timeline with rituals, milestones, and role-specific activities for your entire quarter.
             </p>
             <Link 
-              to="/app/quarterly-planner"
+              to="/app/tools/planner"
               className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
             >
               View a Quarter
