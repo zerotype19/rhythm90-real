@@ -468,6 +468,9 @@ export default {
       if (path === '/api/admin/system-prompts' && request.method === 'POST') {
         return await handleUpdateSystemPrompt(request, env);
       }
+      if (path.match(/^\/api\/admin\/system-prompts\/[^\/]+$/) && request.method === 'PUT') {
+        return await handleUpdateSystemPrompt(request, env);
+      }
       if (path === '/api/admin/system-prompts/placeholders' && request.method === 'GET') {
         return await handleGetPlaceholders(request, env);
       }
