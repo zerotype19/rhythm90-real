@@ -13,6 +13,8 @@ const QUICK_PROMPTS = [
 
 // Get or create a session for a team
 async function getOrCreateSession(env: Env, teamId: string) {
+  console.log('getOrCreateSession: Starting with teamId:', teamId);
+  
   // Check if team has an active session
   const existingSession = await env.DB.prepare(`
     SELECT id, created_at, updated_at 
@@ -22,7 +24,10 @@ async function getOrCreateSession(env: Env, teamId: string) {
     LIMIT 1
   `).bind(teamId).first();
 
+  console.log('getOrCreateSession: Existing session:', existingSession);
+
   if (existingSession) {
+    console.log('getOrCreateSession: Returning existing session:', existingSession.id);
     return existingSession;
   }
 
@@ -30,17 +35,29 @@ async function getOrCreateSession(env: Env, teamId: string) {
   const sessionId = crypto.randomUUID();
   const now = new Date().toISOString();
   
-  await env.DB.prepare(`
-    INSERT INTO assistant_chat_sessions (id, team_id, created_at, updated_at) 
-    VALUES (?, ?, ?, ?)
-  `).bind(sessionId, teamId, now, now).run();
+  console.log('getOrCreateSession: Creating new session with ID:', sessionId);
+  
+  try {
+    await env.DB.prepare(`
+      INSERT INTO assistant_chat_sessions (id, team_id, created_at, updated_at) 
+      VALUES (?, ?, ?, ?)
+    `).bind(sessionId, teamId, now, now).run();
+    
+    console.log('getOrCreateSession: Successfully inserted session');
+  } catch (error) {
+    console.error('getOrCreateSession: Error inserting session:', error);
+    throw error;
+  }
 
   // Return the session we just created
-  return {
+  const newSession = {
     id: sessionId,
     created_at: now,
     updated_at: now
   };
+  
+  console.log('getOrCreateSession: Returning new session:', newSession);
+  return newSession;
 }
 
 // Get team context for AI
@@ -97,14 +114,25 @@ async function getRecentMessages(env: Env, sessionId: string) {
 
 // Store a message
 async function storeMessage(env: Env, sessionId: string, role: 'user' | 'assistant', content: string) {
+  console.log('storeMessage: Starting with sessionId:', sessionId, 'role:', role);
+  
   const messageId = crypto.randomUUID();
   const now = new Date().toISOString();
   
+  console.log('storeMessage: Generated messageId:', messageId);
+  
   // Insert message
-  await env.DB.prepare(`
-    INSERT INTO assistant_chat_messages (id, session_id, role, content, created_at) 
-    VALUES (?, ?, ?, ?, ?)
-  `).bind(messageId, sessionId, role, content, now).run();
+  try {
+    await env.DB.prepare(`
+      INSERT INTO assistant_chat_messages (id, session_id, role, content, created_at) 
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(messageId, sessionId, role, content, now).run();
+    
+    console.log('storeMessage: Successfully inserted message');
+  } catch (error) {
+    console.error('storeMessage: Error inserting message:', error);
+    throw error;
+  }
 
   // Update session timestamp
   await env.DB.prepare(`
@@ -113,12 +141,15 @@ async function storeMessage(env: Env, sessionId: string, role: 'user' | 'assista
     WHERE id = ?
   `).bind(now, sessionId).run();
 
-  return {
+  const message = {
     id: messageId,
     role,
     content,
     created_at: now
   };
+  
+  console.log('storeMessage: Returning message:', message);
+  return message;
 }
 
 // Clean up old messages if over limit (500)
@@ -229,6 +260,9 @@ export async function handleSendMessage(request: Request, env: Env) {
     if (!session) {
       return errorResponse('Failed to create session', 500);
     }
+
+    console.log('handleSendMessage: Session created/retrieved:', session);
+    console.log('handleSendMessage: Session ID:', session.id);
 
     // Store user message
     const userMessage = await storeMessage(env, session.id, 'user', body.message);
