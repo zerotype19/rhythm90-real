@@ -264,7 +264,7 @@ const SystemPromptsAdmin: React.FC = () => {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-xs font-medium text-gray-700">Max Tokens
-                                <span className="ml-1 text-gray-400" title="Max length of response in tokens (~4 tokens ≈ 3 words)">?</span>
+                                <span className="ml-1 text-gray-400 cursor-help" title="Maximum length of the AI response in tokens. ~4 tokens ≈ 3 words. Controls how much the model can 'say.' Typical range: 500–2000.">?</span>
                               </label>
                               <input type="number" min={1} max={4000} value={editingFields?.max_tokens ?? 1000}
                                 onChange={e => setEditingFields(f => f ? { ...f, max_tokens: Number(e.target.value) } : f)}
@@ -272,7 +272,7 @@ const SystemPromptsAdmin: React.FC = () => {
                             </div>
                             <div>
                               <label className="block text-xs font-medium text-gray-700">Temperature
-                                <span className="ml-1 text-gray-400" title="Controls creativity (0 = deterministic, 1 = random)">?</span>
+                                <span className="ml-1 text-gray-400 cursor-help" title="Controls creativity and randomness. 0 = focused and deterministic; 1 = highly creative and exploratory. Lower for precision, higher for idea generation.">?</span>
                               </label>
                               <input type="number" min={0} max={1} step={0.01} value={editingFields?.temperature ?? 0.7}
                                 onChange={e => setEditingFields(f => f ? { ...f, temperature: Number(e.target.value) } : f)}
@@ -280,7 +280,7 @@ const SystemPromptsAdmin: React.FC = () => {
                             </div>
                             <div>
                               <label className="block text-xs font-medium text-gray-700">Top-p
-                                <span className="ml-1 text-gray-400" title="Controls diversity via nucleus sampling">?</span>
+                                <span className="ml-1 text-gray-400 cursor-help" title="Controls diversity of output (nucleus sampling). Typically leave at 1.0 if using temperature. Advanced tuning only.">?</span>
                               </label>
                               <input type="number" min={0} max={1} step={0.01} value={editingFields?.top_p ?? 1.0}
                                 onChange={e => setEditingFields(f => f ? { ...f, top_p: Number(e.target.value) } : f)}
@@ -288,7 +288,7 @@ const SystemPromptsAdmin: React.FC = () => {
                             </div>
                             <div>
                               <label className="block text-xs font-medium text-gray-700">Frequency Penalty
-                                <span className="ml-1 text-gray-400" title="Discourages repetition">?</span>
+                                <span className="ml-1 text-gray-400 cursor-help" title="Discourages repeated phrases or tokens. Range: -2 to 2. Positive values reduce repetition.">?</span>
                               </label>
                               <input type="number" min={-2} max={2} step={0.01} value={editingFields?.frequency_penalty ?? 0.0}
                                 onChange={e => setEditingFields(f => f ? { ...f, frequency_penalty: Number(e.target.value) } : f)}
@@ -296,7 +296,7 @@ const SystemPromptsAdmin: React.FC = () => {
                             </div>
                             <div>
                               <label className="block text-xs font-medium text-gray-700">Presence Penalty
-                                <span className="ml-1 text-gray-400" title="Encourages introducing new topics">?</span>
+                                <span className="ml-1 text-gray-400 cursor-help" title="Encourages introducing new topics or ideas. Range: -2 to 2. Positive values increase novelty.">?</span>
                               </label>
                               <input type="number" min={-2} max={2} step={0.01} value={editingFields?.presence_penalty ?? 0.0}
                                 onChange={e => setEditingFields(f => f ? { ...f, presence_penalty: Number(e.target.value) } : f)}
