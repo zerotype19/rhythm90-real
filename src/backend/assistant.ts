@@ -26,22 +26,21 @@ async function getOrCreateSession(env: Env, teamId: string) {
     return existingSession;
   }
 
-  // Create new session (SQLite doesn't support RETURNING)
+  // Create new session with explicit ID and timestamps
+  const sessionId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  
   await env.DB.prepare(`
     INSERT INTO assistant_chat_sessions (id, team_id, created_at, updated_at) 
-    VALUES (?, ?, datetime('now'), datetime('now'))
-  `).bind(crypto.randomUUID(), teamId).run();
+    VALUES (?, ?, ?, ?)
+  `).bind(sessionId, teamId, now, now).run();
 
-  // Get the newly created session
-  const newSession = await env.DB.prepare(`
-    SELECT id, created_at, updated_at 
-    FROM assistant_chat_sessions 
-    WHERE team_id = ? 
-    ORDER BY created_at DESC 
-    LIMIT 1
-  `).bind(teamId).first();
-
-  return newSession;
+  // Return the session we just created
+  return {
+    id: sessionId,
+    created_at: now,
+    updated_at: now
+  };
 }
 
 // Get team context for AI
@@ -98,20 +97,28 @@ async function getRecentMessages(env: Env, sessionId: string) {
 
 // Store a message
 async function storeMessage(env: Env, sessionId: string, role: 'user' | 'assistant', content: string) {
-  const message = await env.DB.prepare(`
-    INSERT INTO assistant_chat_messages (session_id, role, content) 
-    VALUES (?, ?, ?) 
-    RETURNING id, role, content, created_at
-  `).bind(sessionId, role, content).first();
+  const messageId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  
+  // Insert message
+  await env.DB.prepare(`
+    INSERT INTO assistant_chat_messages (id, session_id, role, content, created_at) 
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(messageId, sessionId, role, content, now).run();
 
   // Update session timestamp
   await env.DB.prepare(`
     UPDATE assistant_chat_sessions 
-    SET updated_at = now() 
+    SET updated_at = ? 
     WHERE id = ?
-  `).bind(sessionId).run();
+  `).bind(now, sessionId).run();
 
-  return message;
+  return {
+    id: messageId,
+    role,
+    content,
+    created_at: now
+  };
 }
 
 // Clean up old messages if over limit (500)
