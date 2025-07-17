@@ -152,7 +152,7 @@ export async function handleInviteTeamMember(request: Request, env: Env): Promis
       console.error('Failed to send invite email:', emailError);
       
       // Handle trial account limitations gracefully
-      if (emailError.message.includes('trial mode')) {
+      if (emailError.message.includes('trial mode') || emailError.message.includes('Trial accounts can only send emails')) {
         // For trial accounts, we'll still return success but with a warning
         const response: InviteTeamMemberResponse = {
           success: true,
