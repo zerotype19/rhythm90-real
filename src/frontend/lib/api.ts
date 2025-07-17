@@ -589,6 +589,7 @@ class ApiClient {
 
   async updateSystemPrompt(id: string, prompt: {
     prompt_text: string;
+    model: string;
     max_tokens: number;
     temperature: number;
     top_p: number;

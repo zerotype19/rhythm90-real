@@ -20,7 +20,7 @@ async function verifyAdmin(request: Request, env: Env) {
 export async function getSystemPrompt(db: any, toolName: string): Promise<any | null> {
   try {
     const result = await db.prepare(
-      'SELECT id, tool_name, prompt_text, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, updated_at FROM ai_system_prompts WHERE tool_name = ?'
+      'SELECT id, tool_name, prompt_text, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, updated_at FROM ai_system_prompts WHERE tool_name = ?'
     ).bind(toolName).first();
     
     return result;
@@ -69,7 +69,7 @@ export async function handleGetSystemPrompts(request: Request, env: Env): Promis
 
   try {
     const prompts = await env.DB.prepare(
-      'SELECT id, tool_name, prompt_text, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, updated_at FROM ai_system_prompts ORDER BY tool_name'
+      'SELECT id, tool_name, prompt_text, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, updated_at FROM ai_system_prompts ORDER BY tool_name'
     ).all();
     
     return jsonResponse(prompts.results || []);
@@ -91,6 +91,7 @@ export async function handleUpdateSystemPrompt(request: Request, env: Env): Prom
     const { 
       id, 
       prompt_text, 
+      model,
       max_tokens, 
       temperature, 
       top_p, 
@@ -100,6 +101,12 @@ export async function handleUpdateSystemPrompt(request: Request, env: Env): Prom
 
     if (!id || !prompt_text) {
       return errorResponse('ID and prompt_text are required', 400);
+    }
+
+    // Validate model
+    const validModels = ['gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-4-turbo', 'gpt-4o'];
+    if (model !== undefined && !validModels.includes(model)) {
+      return errorResponse('Invalid model selection', 400);
     }
 
     // Validate parameter ranges
@@ -123,6 +130,7 @@ export async function handleUpdateSystemPrompt(request: Request, env: Env): Prom
     const result = await env.DB.prepare(
       `UPDATE ai_system_prompts 
        SET prompt_text = ?, 
+           model = COALESCE(?, model),
            max_tokens = COALESCE(?, max_tokens),
            temperature = COALESCE(?, temperature),
            top_p = COALESCE(?, top_p),
@@ -130,14 +138,14 @@ export async function handleUpdateSystemPrompt(request: Request, env: Env): Prom
            presence_penalty = COALESCE(?, presence_penalty),
            updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`
-    ).bind(prompt_text, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, id).run();
+    ).bind(prompt_text, model, max_tokens, temperature, top_p, frequency_penalty, presence_penalty, id).run();
 
     if (result.changes === 0) {
       return errorResponse('System prompt not found', 404);
     }
 
     // Audit log
-    console.log(`[ADMIN] User ${admin.email} updated system prompt: ${id}`);
+    console.log(`[ADMIN] User ${admin.email} updated system prompt: ${id} with model: ${model || 'default'}`);
 
     return jsonResponse({ success: true, id });
   } catch (error) {

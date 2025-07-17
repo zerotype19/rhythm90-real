@@ -9,6 +9,7 @@ interface SystemPrompt {
   id: string;
   tool_name: string;
   prompt_text: string;
+  model: string;
   max_tokens: number;
   temperature: number;
   top_p: number;
@@ -31,6 +32,7 @@ const SystemPromptsAdmin: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingFields, setEditingFields] = useState<{
     prompt_text: string;
+    model: string;
     max_tokens: number;
     temperature: number;
     top_p: number;
@@ -92,6 +94,7 @@ const SystemPromptsAdmin: React.FC = () => {
     setEditingId(prompt.id);
     setEditingFields({
       prompt_text: prompt.prompt_text,
+      model: prompt.model,
       max_tokens: prompt.max_tokens,
       temperature: prompt.temperature,
       top_p: prompt.top_p,
@@ -282,6 +285,22 @@ const SystemPromptsAdmin: React.FC = () => {
                               placeholder="Enter system prompt..."
                             />
                             <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700">
+                                  Model
+                                  <span className="ml-1 text-gray-400 cursor-help" title="Select the OpenAI model. Note: GPT-4o offers best performance, GPT-3.5 is cheaper but less capable.">?</span>
+                                </label>
+                                <select
+                                  value={editingFields?.model ?? 'gpt-4-turbo'}
+                                  onChange={e => setEditingFields(f => f ? { ...f, model: e.target.value } : f)}
+                                  className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                >
+                                  <option value="gpt-4o">GPT-4o (Omni)</option>
+                                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                  <option value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16k</option>
+                                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                              </div>
                               <div>
                                 <label className="block text-xs font-medium text-gray-700">Max Tokens
                                   <span className="ml-1 text-gray-400 cursor-help" title="Maximum length of the AI response in tokens. ~4 tokens ≈ 3 words. Controls how much the model can 'say.' Typical range: 500–2000.">?</span>

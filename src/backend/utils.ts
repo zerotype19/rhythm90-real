@@ -145,18 +145,13 @@ export async function callOpenAI(messages: any[], env: Env, toolName?: string): 
   try {
     console.log('callOpenAI: Final messages array:', JSON.stringify(messages, null, 2));
     
-    // Get current model from system settings
-    const modelResult = await env.DB.prepare(
-      'SELECT setting_value FROM system_settings WHERE setting_key = ?'
-    ).bind('openai_model').first();
-    const model = modelResult?.setting_value || 'gpt-3.5-turbo';
-    
-    // Get system prompt parameters if toolName is provided
+    // Get system prompt parameters and model if toolName is provided
     let maxTokens = 1000;
     let temperature = 0.7;
     let topP = 1.0;
     let frequencyPenalty = 0.0;
     let presencePenalty = 0.0;
+    let model = 'gpt-4-turbo'; // Default fallback
     
     if (toolName) {
       try {
@@ -168,10 +163,17 @@ export async function callOpenAI(messages: any[], env: Env, toolName?: string): 
           topP = systemPrompt.top_p || 1.0;
           frequencyPenalty = systemPrompt.frequency_penalty || 0.0;
           presencePenalty = systemPrompt.presence_penalty || 0.0;
+          model = systemPrompt.model || 'gpt-4-turbo';
         }
       } catch (error) {
         console.warn(`Failed to get system prompt parameters for ${toolName}, using defaults:`, error);
       }
+    } else {
+      // Fallback to system settings for backward compatibility
+      const modelResult = await env.DB.prepare(
+        'SELECT setting_value FROM system_settings WHERE setting_key = ?'
+      ).bind('openai_model').first();
+      model = modelResult?.setting_value || 'gpt-4-turbo';
     }
     
     const startTime = Date.now();
