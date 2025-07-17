@@ -163,10 +163,13 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
 
     // Parse state parameter for invite code
     let inviteCode: string | null = null;
+    console.log('handleGoogleCallback: State parameter:', state);
     if (state) {
       try {
         const stateData = JSON.parse(decodeURIComponent(state));
         inviteCode = stateData.inviteCode || null;
+        console.log('handleGoogleCallback: Parsed state data:', stateData);
+        console.log('handleGoogleCallback: Invite code:', inviteCode);
       } catch (err) {
         console.error('Failed to parse state parameter:', err);
       }
@@ -223,16 +226,19 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
     console.log('handleGoogleCallback: Setting cookie:', cookie);
 
     // Handle invite code if present
+    console.log('handleGoogleCallback: Checking for invite code:', inviteCode);
     if (inviteCode) {
       try {
+        console.log('handleGoogleCallback: Attempting to join team with invite code:', inviteCode);
         // Join the team using the invite code
-        await env.DB.prepare(`
+        const result = await env.DB.prepare(`
           INSERT INTO team_members (id, team_id, user_id, role, is_admin, created_at)
           SELECT ?, t.id, ?, 'member', FALSE, datetime('now')
           FROM teams t
           WHERE t.invite_code = ?
         `).bind(crypto.randomUUID(), user.id, inviteCode).run();
         
+        console.log('handleGoogleCallback: Team join result:', result);
         console.log('handleGoogleCallback: Successfully joined team with invite code:', inviteCode);
         return new Response(null, { 
           status: 302, 
@@ -243,7 +249,30 @@ export async function handleGoogleCallback(request: Request, env: Env): Promise<
         });
       } catch (err) {
         console.error('handleGoogleCallback: Failed to join team with invite code:', err);
-        // If joining fails, redirect to dashboard anyway (user might already be a member)
+        
+        // Check if user is already a member of the team
+        try {
+          const existingMember = await env.DB.prepare(`
+            SELECT tm.* FROM team_members tm
+            JOIN teams t ON tm.team_id = t.id
+            WHERE t.invite_code = ? AND tm.user_id = ?
+          `).bind(inviteCode, user.id).first();
+          
+          if (existingMember) {
+            console.log('handleGoogleCallback: User is already a member of the team');
+            return new Response(null, { 
+              status: 302, 
+              headers: { 
+                'Location': `${appUrl}/app/dashboard`, 
+                'Set-Cookie': cookie 
+              } 
+            });
+          }
+        } catch (checkErr) {
+          console.error('handleGoogleCallback: Error checking existing membership:', checkErr);
+        }
+        
+        // If joining fails and user is not already a member, redirect to dashboard anyway
         return new Response(null, { 
           status: 302, 
           headers: { 
