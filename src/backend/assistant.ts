@@ -64,8 +64,8 @@ async function getOrCreateSession(env: Env, teamId: string) {
 async function getTeamContext(env: Env, teamId: string) {
   const team = await env.DB.prepare(`
     SELECT 
-      team_name,
-      industry_vertical,
+      name,
+      industry,
       focus_areas,
       team_description
     FROM teams 
@@ -89,8 +89,8 @@ async function getTeamContext(env: Env, teamId: string) {
   `).bind(teamId).first();
 
   return {
-    team_name: team.team_name || 'Your team',
-    industry: team.industry_vertical || 'your industry',
+    team_name: team.name || 'Your team',
+    industry: team.industry || 'your industry',
     focus_areas: team.focus_areas || 'your focus areas',
     team_description: team.team_description || '',
     quarter_name: currentQuarter?.quarter_name || 'this quarter',
