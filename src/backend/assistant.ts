@@ -79,23 +79,41 @@ async function getTeamContext(env: Env, teamId: string) {
   // Get current quarter info if available
   const currentQuarter = await env.DB.prepare(`
     SELECT 
-      quarter_name,
-      quarter_goals,
-      quarter_challenges
+      inputs_json,
+      output_summary
     FROM planner_sessions 
     WHERE team_id = ? 
     ORDER BY created_at DESC 
     LIMIT 1
   `).bind(teamId).first();
 
+  let quarterInfo = null;
+  if (currentQuarter && currentQuarter.inputs_json) {
+    try {
+      const inputs = JSON.parse(currentQuarter.inputs_json);
+      quarterInfo = {
+        quarter_name: inputs.quarterName || inputs.quarter_name || 'current quarter',
+        quarter_goals: inputs.goals || inputs.quarter_goals || '',
+        quarter_challenges: inputs.challenges || inputs.quarter_challenges || ''
+      };
+    } catch (error) {
+      console.log('Error parsing planner inputs:', error);
+      quarterInfo = {
+        quarter_name: 'current quarter',
+        quarter_goals: '',
+        quarter_challenges: ''
+      };
+    }
+  }
+
   return {
     team_name: team.name || 'Your team',
     industry: team.industry || 'your industry',
     focus_areas: team.focus_areas || 'your focus areas',
     team_description: team.team_description || '',
-    quarter_name: currentQuarter?.quarter_name || 'this quarter',
-    quarter_goals: currentQuarter?.quarter_goals || '',
-    quarter_challenges: currentQuarter?.quarter_challenges || ''
+    quarter_name: quarterInfo?.quarter_name || 'current quarter',
+    quarter_goals: quarterInfo?.quarter_goals || '',
+    quarter_challenges: quarterInfo?.quarter_challenges || ''
   };
 }
 
