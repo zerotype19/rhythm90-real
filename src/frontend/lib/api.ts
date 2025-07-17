@@ -434,6 +434,14 @@ class ApiClient {
     });
   }
 
+  async updateTeamProfile(payload: { industry: string; focus_areas: string[]; team_description: string }) {
+    return this.request('/api/settings/team/profile', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      credentials: 'include',
+    });
+  }
+
   async inviteTeamMember(payload: { email: string }) {
     return this.request('/api/settings/team/invite', {
       method: 'POST',

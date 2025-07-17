@@ -121,7 +121,7 @@ export async function handleGetTeamSettings(request: Request, env: Env) {
     
     // Get user's team membership
     const teamMember = await env.DB.prepare(`
-      SELECT tm.team_id, tm.role, t.name as team_name, t.industry, t.created_at
+      SELECT tm.team_id, tm.role, t.name as team_name, t.industry, t.focus_areas, t.team_description, t.created_at
       FROM team_members tm
       JOIN teams t ON tm.team_id = t.id
       WHERE tm.user_id = ?
@@ -147,6 +147,8 @@ export async function handleGetTeamSettings(request: Request, env: Env) {
         id: teamMember.team_id,
         name: teamMember.team_name,
         industry: teamMember.industry,
+        focus_areas: teamMember.focus_areas || '[]',
+        team_description: teamMember.team_description || '',
         created_at: teamMember.created_at
       },
       user_role: teamMember.role,
@@ -243,6 +245,93 @@ export async function handleUpdateTeamName(request: Request, env: Env) {
   } catch (error) {
     console.error('handleUpdateTeamName: Error:', error);
     return errorResponse('Failed to update team name', 500);
+  }
+}
+
+export async function handleUpdateTeamProfile(request: Request, env: Env) {
+  console.log('handleUpdateTeamProfile: Starting');
+  
+  const user = await verifyAuth(request, env);
+  if (!user) {
+    console.log('handleUpdateTeamProfile: Unauthorized');
+    return errorResponse('Unauthorized', 401);
+  }
+
+  try {
+    const body = await request.json();
+    console.log('handleUpdateTeamProfile: Request body:', JSON.stringify(body, null, 2));
+
+    const { industry, focus_areas, team_description } = body;
+
+    // Validate industry
+    if (!industry || typeof industry !== 'string' || industry.trim().length === 0) {
+      console.log('handleUpdateTeamProfile: Invalid industry provided');
+      return errorResponse('Industry is required and must be a non-empty string', 400);
+    }
+
+    // Validate focus_areas
+    if (!Array.isArray(focus_areas)) {
+      console.log('handleUpdateTeamProfile: Invalid focus_areas provided');
+      return errorResponse('Focus areas must be an array', 400);
+    }
+
+    // Validate team_description
+    if (team_description !== undefined && typeof team_description !== 'string') {
+      console.log('handleUpdateTeamProfile: Invalid team_description provided');
+      return errorResponse('Team description must be a string', 400);
+    }
+
+    // Check if user is team owner
+    const teamMember = await env.DB.prepare(`
+      SELECT tm.team_id, tm.role
+      FROM team_members tm
+      WHERE tm.user_id = ?
+      LIMIT 1
+    `).bind(user.id).first();
+
+    if (!teamMember) {
+      console.log('handleUpdateTeamProfile: User not part of any team');
+      return errorResponse('User must belong to a team', 400);
+    }
+
+    if (teamMember.role !== 'owner') {
+      console.log('handleUpdateTeamProfile: User is not team owner');
+      return errorResponse('Only team owners can update team profile', 403);
+    }
+
+    console.log('handleUpdateTeamProfile: Updating team profile for team_id:', teamMember.team_id);
+    
+    const result = await env.DB.prepare(`
+      UPDATE teams 
+      SET industry = ?, focus_areas = ?, team_description = ?
+      WHERE id = ?
+    `).bind(
+      industry.trim(), 
+      JSON.stringify(focus_areas), 
+      team_description || '', 
+      teamMember.team_id
+    ).run();
+
+    if (result.changes === 0) {
+      console.log('handleUpdateTeamProfile: No team found to update');
+      return errorResponse('Team not found', 404);
+    }
+
+    console.log('handleUpdateTeamProfile: Success - team profile updated');
+    lastSettingsDebugLog = {
+      endpoint: '/api/settings/team/profile',
+      method: 'POST',
+      user_id: user.id,
+      team_id: teamMember.team_id,
+      input: body,
+      result: { success: true, changes: result.changes },
+      timestamp: new Date().toISOString()
+    };
+
+    return jsonResponse({ success: true, message: 'Team profile updated successfully' });
+  } catch (error) {
+    console.error('handleUpdateTeamProfile: Error:', error);
+    return errorResponse('Failed to update team profile', 500);
   }
 }
 

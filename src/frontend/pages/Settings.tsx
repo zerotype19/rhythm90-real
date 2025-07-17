@@ -207,7 +207,7 @@ function Settings() {
     setError(null);
 
     try {
-      const response = await apiClient.updateTeam(teamSettings!.team.id, teamProfileForm);
+      const response = await apiClient.updateTeamProfile(teamProfileForm);
       if (response.data) {
         showSuccess('Team profile updated successfully');
         if (teamSettings) {

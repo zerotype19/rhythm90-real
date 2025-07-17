@@ -6,7 +6,7 @@ import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
 import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared, getTeamSharedBySlug } from './savedResponses';
 import { verifyAuth } from './auth';
-import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
+import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleUpdateTeamProfile, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
 import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
 import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
 import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, getLastStripeDebugLog } from './billing';
@@ -54,6 +54,9 @@ export default {
       }
       if (path === '/api/settings/team' && request.method === 'POST') {
         return await handleUpdateTeamName(request, env);
+      }
+      if (path === '/api/settings/team/profile' && request.method === 'POST') {
+        return await handleUpdateTeamProfile(request, env);
       }
       if (path === '/api/settings/team/invite' && request.method === 'POST') {
         return await handleInviteTeamMember(request, env);
