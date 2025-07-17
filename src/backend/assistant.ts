@@ -377,28 +377,55 @@ export async function handleClearConversation(request: Request, env: Env) {
 
     const teamId = teamMember.team_id;
 
-    // Archive current session (soft delete by updating team_id to null)
-    await env.DB.prepare(`
-      UPDATE assistant_chat_sessions 
-      SET team_id = NULL 
-      WHERE team_id = ?
-    `).bind(teamId).run();
+    // Delete all messages for the current session
+    const currentSession = await env.DB.prepare(`
+      SELECT id FROM assistant_chat_sessions 
+      WHERE team_id = ? 
+      ORDER BY updated_at DESC 
+      LIMIT 1
+    `).bind(teamId).first();
 
-    // Create new session
-    const newSession = await getOrCreateSession(env, teamId);
-    if (!newSession) {
-      return errorResponse('Failed to create new session', 500);
+    if (currentSession) {
+      // Delete all messages for this session
+      await env.DB.prepare(`
+        DELETE FROM assistant_chat_messages 
+        WHERE session_id = ?
+      `).bind(currentSession.id).run();
+
+      // Update session timestamp to mark it as fresh
+      const now = new Date().toISOString();
+      await env.DB.prepare(`
+        UPDATE assistant_chat_sessions 
+        SET updated_at = ? 
+        WHERE id = ?
+      `).bind(now, currentSession.id).run();
+
+      return jsonResponse({
+        session: {
+          id: currentSession.id,
+          created_at: currentSession.created_at,
+          updated_at: now
+        },
+        messages: [],
+        quick_prompts: QUICK_PROMPTS
+      });
+    } else {
+      // No existing session, create a new one
+      const newSession = await getOrCreateSession(env, teamId);
+      if (!newSession) {
+        return errorResponse('Failed to create new session', 500);
+      }
+
+      return jsonResponse({
+        session: {
+          id: newSession.id,
+          created_at: newSession.created_at,
+          updated_at: newSession.updated_at
+        },
+        messages: [],
+        quick_prompts: QUICK_PROMPTS
+      });
     }
-
-    return jsonResponse({
-      session: {
-        id: newSession.id,
-        created_at: newSession.created_at,
-        updated_at: newSession.updated_at
-      },
-      messages: [],
-      quick_prompts: QUICK_PROMPTS
-    });
 
   } catch (error) {
     console.error('Error clearing conversation:', error);

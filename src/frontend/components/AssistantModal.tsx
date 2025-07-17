@@ -33,6 +33,7 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -126,8 +127,10 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
         setSession(response.data.session);
         setMessages([]);
       }
+      setShowClearConfirm(false);
     } catch (error) {
       console.error('Failed to clear conversation:', error);
+      setShowClearConfirm(false);
     }
   };
 
@@ -191,7 +194,7 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={handleClearConversation}
+              onClick={() => setShowClearConfirm(true)}
               className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 rounded"
             >
               Clear
@@ -298,6 +301,45 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
           </div>
         </div>
       </div>
+
+      {/* Clear Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 bg-black bg-opacity-50"
+            onClick={() => setShowClearConfirm(false)}
+          />
+          <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Clear Conversation
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to clear all saved chats? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClearConversation}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
