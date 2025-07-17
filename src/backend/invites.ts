@@ -1,5 +1,6 @@
 import { Env, InviteTeamMemberRequest, InviteTeamMemberResponse, GetInviteInfoResponse, Team } from './types';
-import { verifyAuth, jsonResponse, errorResponse } from './utils';
+import { verifyAuth } from './auth';
+import { jsonResponse, errorResponse } from './utils';
 
 // Helper function to send invite email using MailerSend HTTP API
 export async function sendTeamInviteEmail(
