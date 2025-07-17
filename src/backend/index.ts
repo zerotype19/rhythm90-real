@@ -13,6 +13,7 @@ import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscription
 import { handleUpdateModel, handleUpdateAnnouncement as handleUpdateSystemAnnouncement, handleGetSettings } from './admin';
 import { handleGetSystemPrompts, handleUpdateSystemPrompt, handleGetPlaceholders } from './systemPrompts';
 import { handleCreatePlannerSession, handleGetPlannerSessions, handleGetPlannerSession } from './planner';
+import { handleGetSession as handleGetAssistantSession, handleSendMessage, handleClearConversation } from './assistant';
 
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
@@ -487,6 +488,17 @@ export default {
       }
       if (path.startsWith('/api/planner/sessions/') && request.method === 'GET') {
         return await handleGetPlannerSession(request, env);
+      }
+
+      // Assistant routes
+      if (path === '/api/assistant/sessions' && request.method === 'GET') {
+        return await handleGetAssistantSession(request, env);
+      }
+      if (path === '/api/assistant/sessions/message' && request.method === 'POST') {
+        return await handleSendMessage(request, env);
+      }
+      if (path === '/api/assistant/sessions/clear' && request.method === 'POST') {
+        return await handleClearConversation(request, env);
       }
 
       // Health check

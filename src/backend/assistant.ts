@@ -1,0 +1,347 @@
+import { Env } from './types';
+import { jsonResponse, errorResponse, callOpenAI } from './utils';
+import { verifyAuth } from './auth';
+
+// Quick prompts for the assistant
+const QUICK_PROMPTS = [
+  "Help us shape this quarter's objectives",
+  "Suggest 3 smart plays",
+  "What signals should we watch?",
+  "Help summarize what we've learned",
+  "We're stuck — what should we prioritize next?"
+];
+
+// Get or create a session for a team
+async function getOrCreateSession(env: Env, teamId: string) {
+  // Check if team has an active session
+  const existingSession = await env.DB.prepare(`
+    SELECT id, created_at, updated_at 
+    FROM assistant_chat_sessions 
+    WHERE team_id = ? 
+    ORDER BY updated_at DESC 
+    LIMIT 1
+  `).bind(teamId).first();
+
+  if (existingSession) {
+    return existingSession;
+  }
+
+  // Create new session
+  const newSession = await env.DB.prepare(`
+    INSERT INTO assistant_chat_sessions (team_id) 
+    VALUES (?) 
+    RETURNING id, created_at, updated_at
+  `).bind(teamId).first();
+
+  return newSession;
+}
+
+// Get team context for AI
+async function getTeamContext(env: Env, teamId: string) {
+  const team = await env.DB.prepare(`
+    SELECT 
+      team_name,
+      industry_vertical,
+      focus_areas,
+      team_description
+    FROM teams 
+    WHERE id = ?
+  `).bind(teamId).first();
+
+  if (!team) {
+    return null;
+  }
+
+  // Get current quarter info if available
+  const currentQuarter = await env.DB.prepare(`
+    SELECT 
+      quarter_name,
+      quarter_goals,
+      quarter_challenges
+    FROM planner_sessions 
+    WHERE team_id = ? 
+    ORDER BY created_at DESC 
+    LIMIT 1
+  `).bind(teamId).first();
+
+  return {
+    team_name: team.team_name || 'Your team',
+    industry: team.industry_vertical || 'your industry',
+    focus_areas: team.focus_areas || 'your focus areas',
+    team_description: team.team_description || '',
+    quarter_name: currentQuarter?.quarter_name || 'this quarter',
+    quarter_goals: currentQuarter?.quarter_goals || '',
+    quarter_challenges: currentQuarter?.quarter_challenges || ''
+  };
+}
+
+// Get recent messages for context (last 10)
+async function getRecentMessages(env: Env, sessionId: string) {
+  const messages = await env.DB.prepare(`
+    SELECT role, content, created_at
+    FROM assistant_chat_messages 
+    WHERE session_id = ? 
+    ORDER BY created_at DESC 
+    LIMIT 10
+  `).bind(sessionId).all();
+
+  return messages.results.reverse(); // Return in chronological order
+}
+
+// Store a message
+async function storeMessage(env: Env, sessionId: string, role: 'user' | 'assistant', content: string) {
+  const message = await env.DB.prepare(`
+    INSERT INTO assistant_chat_messages (session_id, role, content) 
+    VALUES (?, ?, ?) 
+    RETURNING id, role, content, created_at
+  `).bind(sessionId, role, content).first();
+
+  // Update session timestamp
+  await env.DB.prepare(`
+    UPDATE assistant_chat_sessions 
+    SET updated_at = now() 
+    WHERE id = ?
+  `).bind(sessionId).run();
+
+  return message;
+}
+
+// Clean up old messages if over limit (500)
+async function cleanupOldMessages(env: Env, sessionId: string) {
+  const messageCount = await env.DB.prepare(`
+    SELECT COUNT(*) as count 
+    FROM assistant_chat_messages 
+    WHERE session_id = ?
+  `).bind(sessionId).first();
+
+  if (messageCount && messageCount.count > 500) {
+    // Delete oldest messages, keeping the last 500
+    await env.DB.prepare(`
+      DELETE FROM assistant_chat_messages 
+      WHERE session_id = ? 
+      AND id NOT IN (
+        SELECT id FROM assistant_chat_messages 
+        WHERE session_id = ? 
+        ORDER BY created_at DESC 
+        LIMIT 500
+      )
+    `).bind(sessionId, sessionId).run();
+  }
+}
+
+// Get system prompt for rhythm90_assistant
+async function getSystemPrompt(env: Env) {
+  const prompt = await env.DB.prepare(`
+    SELECT prompt_text, max_tokens, temperature, top_p, frequency_penalty, presence_penalty
+    FROM ai_system_prompts 
+    WHERE tool_name = 'rhythm90_assistant'
+  `).first();
+
+  return prompt;
+}
+
+// Handle getting session and messages
+export async function handleGetSession(request: Request, env: Env) {
+  try {
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
+
+    // Get user's team
+    const teamMember = await env.DB.prepare(`
+      SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+    `).bind(user.id).first();
+
+    if (!teamMember?.team_id) {
+      return errorResponse('User must belong to a team', 400);
+    }
+
+    const teamId = teamMember.team_id;
+
+    // Get or create session
+    const session = await getOrCreateSession(env, teamId);
+    if (!session) {
+      return errorResponse('Failed to create session', 500);
+    }
+
+    // Get messages
+    const messages = await env.DB.prepare(`
+      SELECT id, role, content, created_at
+      FROM assistant_chat_messages 
+      WHERE session_id = ? 
+      ORDER BY created_at ASC
+    `).bind(session.id).all();
+
+    return jsonResponse({
+      session: {
+        id: session.id,
+        created_at: session.created_at,
+        updated_at: session.updated_at
+      },
+      messages: messages.results,
+      quick_prompts: QUICK_PROMPTS
+    });
+
+  } catch (error) {
+    console.error('Error getting session:', error);
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+// Handle sending a message
+export async function handleSendMessage(request: Request, env: Env) {
+  try {
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
+
+    const body = await request.json();
+    if (!body.message || typeof body.message !== 'string') {
+      return errorResponse('Message is required', 400);
+    }
+
+    // Get user's team
+    const teamMember = await env.DB.prepare(`
+      SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+    `).bind(user.id).first();
+
+    if (!teamMember?.team_id) {
+      return errorResponse('User must belong to a team', 400);
+    }
+
+    const teamId = teamMember.team_id;
+
+    // Get or create session
+    const session = await getOrCreateSession(env, teamId);
+    if (!session) {
+      return errorResponse('Failed to create session', 500);
+    }
+
+    // Store user message
+    const userMessage = await storeMessage(env, session.id, 'user', body.message);
+    if (!userMessage) {
+      return errorResponse('Failed to store user message', 500);
+    }
+
+    // Get team context
+    const teamContext = await getTeamContext(env, teamId);
+    if (!teamContext) {
+      return errorResponse('Failed to get team context', 500);
+    }
+
+    // Get system prompt
+    const systemPrompt = await getSystemPrompt(env);
+    if (!systemPrompt) {
+      return errorResponse('System prompt not found', 500);
+    }
+
+    // Get recent messages for context
+    const recentMessages = await getRecentMessages(env, session.id);
+
+    // Prepare conversation history for AI
+    const conversationHistory = recentMessages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    // Add the new user message
+    conversationHistory.push({
+      role: 'user',
+      content: body.message
+    });
+
+    // Replace placeholders in system prompt
+    let processedPrompt = systemPrompt.prompt_text
+      .replace(/\{\{team_name\}\}/g, teamContext.team_name)
+      .replace(/\{\{industry\}\}/g, teamContext.industry)
+      .replace(/\{\{focus_areas\}\}/g, teamContext.focus_areas)
+      .replace(/\{\{quarter_challenges\}\}/g, teamContext.quarter_challenges);
+
+    // Call OpenAI
+    let assistantResponse: string;
+    try {
+      const aiResult = await callOpenAI({
+        messages: [
+          { role: 'system', content: processedPrompt },
+          ...conversationHistory
+        ],
+        max_tokens: systemPrompt.max_tokens,
+        temperature: systemPrompt.temperature,
+        top_p: systemPrompt.top_p,
+        frequency_penalty: systemPrompt.frequency_penalty,
+        presence_penalty: systemPrompt.presence_penalty
+      }, env);
+
+      assistantResponse = aiResult.content;
+    } catch (aiError) {
+      console.error('AI call failed:', aiError);
+      assistantResponse = "The Assistant is currently unavailable. Please try again shortly.";
+    }
+
+    // Store assistant response
+    const assistantMessage = await storeMessage(env, session.id, 'assistant', assistantResponse);
+    if (!assistantMessage) {
+      return errorResponse('Failed to store assistant message', 500);
+    }
+
+    // Clean up old messages if needed
+    await cleanupOldMessages(env, session.id);
+
+    return jsonResponse({
+      new_message: {
+        id: assistantMessage.id,
+        role: assistantMessage.role,
+        content: assistantMessage.content,
+        created_at: assistantMessage.created_at
+      }
+    });
+
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+// Handle clearing conversation
+export async function handleClearConversation(request: Request, env: Env) {
+  try {
+    const user = await verifyAuth(request, env);
+    if (!user) return errorResponse('Unauthorized', 401);
+
+    // Get user's team
+    const teamMember = await env.DB.prepare(`
+      SELECT team_id FROM team_members WHERE user_id = ? LIMIT 1
+    `).bind(user.id).first();
+
+    if (!teamMember?.team_id) {
+      return errorResponse('User must belong to a team', 400);
+    }
+
+    const teamId = teamMember.team_id;
+
+    // Archive current session (soft delete by updating team_id to null)
+    await env.DB.prepare(`
+      UPDATE assistant_chat_sessions 
+      SET team_id = NULL 
+      WHERE team_id = ?
+    `).bind(teamId).run();
+
+    // Create new session
+    const newSession = await getOrCreateSession(env, teamId);
+    if (!newSession) {
+      return errorResponse('Failed to create new session', 500);
+    }
+
+    return jsonResponse({
+      session: {
+        id: newSession.id,
+        created_at: newSession.created_at,
+        updated_at: newSession.updated_at
+      },
+      messages: [],
+      quick_prompts: QUICK_PROMPTS
+    });
+
+  } catch (error) {
+    console.error('Error clearing conversation:', error);
+    return errorResponse('Internal server error', 500);
+  }
+} 

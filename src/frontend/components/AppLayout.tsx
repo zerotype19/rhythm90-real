@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { useState } from 'react';
+import AssistantModal from './AssistantModal';
+import FloatingChatIcon from './FloatingChatIcon';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,10 +13,12 @@ function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const { user, teams, currentTeam, setCurrentTeam, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   // Rhythm90 Guide Section
   const rhythm90Guide = [
     { name: 'Rhythm90 Guide', href: '/app/training', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+    { name: 'Rhythm90 Assistant', href: '#', icon: 'M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z', onClick: () => setAssistantOpen(true) },
   ];
 
   // Working Tools Section
@@ -52,6 +56,38 @@ function AppLayout({ children }: AppLayoutProps) {
       )}
       {items.map((item) => {
         const isActive = location.pathname === item.href;
+        
+        if (item.onClick) {
+          return (
+            <button
+              key={item.name}
+              onClick={item.onClick}
+              className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                isActive
+                  ? 'bg-red-100 text-red-700'
+                  : item.deEmphasized
+                  ? 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+            >
+              <svg
+                className="w-5 h-5 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={item.icon}
+                />
+              </svg>
+              {item.name}
+            </button>
+          );
+        }
+        
         return (
           <Link
             key={item.name}
@@ -251,6 +287,15 @@ function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Floating Chat Icon */}
+      <FloatingChatIcon onClick={() => setAssistantOpen(true)} />
+
+      {/* Assistant Modal */}
+      <AssistantModal 
+        isOpen={assistantOpen} 
+        onClose={() => setAssistantOpen(false)} 
+      />
     </div>
   );
 }
