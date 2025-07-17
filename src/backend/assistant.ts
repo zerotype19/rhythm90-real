@@ -26,11 +26,19 @@ async function getOrCreateSession(env: Env, teamId: string) {
     return existingSession;
   }
 
-  // Create new session
+  // Create new session (SQLite doesn't support RETURNING)
+  await env.DB.prepare(`
+    INSERT INTO assistant_chat_sessions (id, team_id, created_at, updated_at) 
+    VALUES (?, ?, datetime('now'), datetime('now'))
+  `).bind(crypto.randomUUID(), teamId).run();
+
+  // Get the newly created session
   const newSession = await env.DB.prepare(`
-    INSERT INTO assistant_chat_sessions (team_id) 
-    VALUES (?) 
-    RETURNING id, created_at, updated_at
+    SELECT id, created_at, updated_at 
+    FROM assistant_chat_sessions 
+    WHERE team_id = ? 
+    ORDER BY created_at DESC 
+    LIMIT 1
   `).bind(teamId).first();
 
   return newSession;
