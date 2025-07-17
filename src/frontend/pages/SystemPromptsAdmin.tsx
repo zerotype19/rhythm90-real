@@ -62,6 +62,8 @@ const SystemPromptsAdmin: React.FC = () => {
       const response = await apiClient.getSystemPrompts();
       if (response.data) {
         setPrompts(response.data);
+        setEditingId(null);
+        setEditingFields(null);
       }
     } catch (error) {
       console.error('Failed to load system prompts:', error);
