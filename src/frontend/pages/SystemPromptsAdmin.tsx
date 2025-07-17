@@ -53,6 +53,10 @@ const SystemPromptsAdmin: React.FC = () => {
   }
 
   useEffect(() => {
+    // Explicitly reset editing state on mount to prevent hot reload issues
+    setEditingId(null);
+    setEditingFields(null);
+    setValidationError(null);
     loadPrompts();
   }, []);
 
