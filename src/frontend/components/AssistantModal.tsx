@@ -75,6 +75,16 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
   const sendMessage = async (content: string) => {
     if (!content.trim() || isSending) return;
 
+    // Add user message immediately for better UX
+    const userMessage: Message = {
+      id: `temp-${Date.now()}`,
+      role: 'user',
+      content: content,
+      created_at: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+
     setIsSending(true);
     try {
       const response = await apiCall('/api/assistant/sessions/message', {
@@ -83,11 +93,17 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
       });
 
       if (response.data) {
-        setMessages(prev => [...prev, response.data.new_message]);
-        setInputMessage('');
+        // Replace the temporary user message with the real one and add assistant response
+        setMessages(prev => {
+          const withoutTemp = prev.filter(msg => msg.id !== userMessage.id);
+          return [...withoutTemp, response.data.new_message];
+        });
       }
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Remove the temporary user message if there was an error
+      setMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
+      setInputMessage(content); // Restore the input
     } finally {
       setIsSending(false);
     }
@@ -127,6 +143,25 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
       hour: '2-digit', 
       minute: '2-digit' 
     });
+  };
+
+  // Simple markdown renderer for basic formatting
+  const renderMarkdown = (text: string) => {
+    return text
+      // Headers
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mb-2">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-2">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-2">$1</h1>')
+      // Bold
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      // Italic
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      // Code blocks
+      .replace(/```(.*?)```/gs, '<pre class="bg-gray-100 p-2 rounded text-sm overflow-x-auto"><code>$1</code></pre>')
+      // Inline code
+      .replace(/`(.*?)`/g, '<code class="bg-gray-100 px-1 rounded text-sm">$1</code>')
+      // Line breaks
+      .replace(/\n/g, '<br>');
   };
 
   if (!isOpen) return null;
@@ -215,7 +250,12 @@ export default function AssistantModal({ isOpen, onClose }: AssistantModalProps)
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div 
+                    className={message.role === 'user' ? 'whitespace-pre-wrap' : ''}
+                    dangerouslySetInnerHTML={message.role === 'assistant' ? { __html: renderMarkdown(message.content) } : undefined}
+                  >
+                    {message.role === 'user' ? message.content : undefined}
+                  </div>
                   <div className={`text-xs mt-1 ${
                     message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
                   }`}>
