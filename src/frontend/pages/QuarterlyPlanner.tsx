@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import AppLayout from '../components/AppLayout';
 
 interface WeekData {
@@ -112,6 +114,17 @@ function QuarterlyPlanner() {
   return (
     <AppLayout>
       <div className="p-6">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <Link
+            to="/app/training?section=setup-roles"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            <span className="text-sm">Back to Setup & Roles</span>
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Quarterly Planner</h1>

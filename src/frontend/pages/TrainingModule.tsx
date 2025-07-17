@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { StarIcon, PlayIcon, SignalIcon, CalendarIcon, UserGroupIcon, CogIcon, ChartBarIcon, DocumentTextIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, DocumentIcon, TableCellsIcon, Squares2X2Icon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { StarIcon, PlayIcon, SignalIcon, CalendarIcon, UserGroupIcon, CogIcon, ChartBarIcon, DocumentTextIcon, ClockIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, DocumentIcon, TableCellsIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import AppLayout from '../components/AppLayout';
 
 interface Section {
@@ -13,70 +13,16 @@ interface Section {
 }
 
 function TrainingModule() {
+  const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState('intro');
-  const [showQuarterlyPlanner, setShowQuarterlyPlanner] = useState(false);
 
-  // Quarterly Planner content
-  const quarterlyPlannerContent = (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quarterly Planning</h3>
-        <p className="text-gray-700 mb-4">
-          The Quarterly Planner helps you map out your entire 90-day cycle, including rituals, 
-          milestones, and role-specific activities. It's your roadmap for the quarter.
-        </p>
-        
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Timeline View</h4>
-            <p className="text-sm text-gray-600">12-week grid with key milestones and rituals</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Role Views</h4>
-            <p className="text-sm text-gray-600">Filter by Rhythm90 Lead, Strategic Lead, Executional Lead, Signal Owner</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-900 mb-2">Export Options</h4>
-            <p className="text-sm text-gray-600">PDF reports and calendar files for easy sharing</p>
-          </div>
-        </div>
-        
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <h4 className="font-semibold text-orange-800 mb-2">Key Features</h4>
-          <ul className="text-sm text-orange-700 space-y-1">
-            <li>• Interactive 12-week timeline</li>
-            <li>• Role-specific activity views</li>
-            <li>• Editable notes and milestones</li>
-            <li>• Export to PDF and calendar</li>
-            <li>• Save and share with team</li>
-          </ul>
-        </div>
-        
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-700">
-            <InformationCircleIcon className="w-4 h-4 inline mr-1" />
-            Your plan can be saved and shared with your team. <span className="text-xs text-blue-600">(Coming soon)</span>
-          </p>
-        </div>
-      </div>
-      
-      <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-lg border border-orange-200">
-        <h4 className="font-semibold text-orange-900 mb-3">Plan Your Quarter</h4>
-        <p className="text-orange-800 mb-4">
-          Create your team's 90-day plan with our interactive Quarterly Planner tool.
-        </p>
-        <p className="text-orange-700 text-sm mb-4">
-          Build a comprehensive timeline with rituals, milestones, and role-specific activities for your entire quarter.
-        </p>
-        <Link 
-          to="/app/tools/planner"
-          className="inline-block bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
-        >
-          Open Quarterly Planner Tool
-        </Link>
-      </div>
-    </div>
-  );
+  // Handle URL parameter to open specific section
+  useEffect(() => {
+    const sectionParam = searchParams.get('section');
+    if (sectionParam) {
+      setActiveSection(sectionParam);
+    }
+  }, [searchParams]);
 
   const sections: Section[] = [
     {
@@ -273,12 +219,12 @@ function TrainingModule() {
             <p className="text-orange-700 text-sm mb-4">
               Interactive timeline with rituals, milestones, and role-specific activities for your entire quarter.
             </p>
-            <button 
-              onClick={() => setShowQuarterlyPlanner(true)}
+            <Link 
+              to="/app/tools/planner"
               className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
             >
               View Quarterly Planner
-            </button>
+            </Link>
           </div>
         </div>
       ),
@@ -692,38 +638,17 @@ function TrainingModule() {
               key={activeSection}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-8"
             >
-              {showQuarterlyPlanner ? (
+              {currentSection && (
                 <>
-                  {/* Breadcrumb */}
                   <div className="mb-6">
-                    <button
-                      onClick={() => setShowQuarterlyPlanner(false)}
-                      className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
-                    >
-                      <ArrowLeftIcon className="w-4 h-4" />
-                      <span className="text-sm">Back to Setup & Roles</span>
-                    </button>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      Quarterly Planner
+                      {currentSection.title}
                     </h2>
-                    <p className="text-gray-600">Full 90-day schedule + role views</p>
+                    <p className="text-gray-600">{currentSection.description}</p>
                   </div>
                   
-                  {quarterlyPlannerContent}
+                  {currentSection.content}
                 </>
-              ) : (
-                currentSection && (
-                  <>
-                    <div className="mb-6">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                        {currentSection.title}
-                      </h2>
-                      <p className="text-gray-600">{currentSection.description}</p>
-                    </div>
-                    
-                    {currentSection.content}
-                  </>
-                )
               )}
             </div>
           </div>
