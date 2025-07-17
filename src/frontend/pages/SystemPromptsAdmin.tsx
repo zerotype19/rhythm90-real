@@ -94,10 +94,15 @@ const SystemPromptsAdmin: React.FC = () => {
 
   const loadPlaceholders = async (toolName: string) => {
     try {
+      console.log('Loading placeholders for tool:', toolName);
       const response = await apiClient.getPlaceholders(toolName);
-      if (response.data) {
+      console.log('Placeholders response:', response);
+      if (response.data && response.data.placeholders) {
         setPlaceholders(response.data);
         setShowPlaceholders(toolName);
+      } else {
+        console.error('Invalid placeholders data:', response.data);
+        setMessage({ type: 'error', text: 'Invalid placeholders data received' });
       }
     } catch (error) {
       console.error('Failed to load placeholders:', error);
@@ -163,7 +168,7 @@ const SystemPromptsAdmin: React.FC = () => {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">System Prompts</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Edit system prompts for each tool. Use {{placeholder}} syntax for dynamic content.
+              Edit system prompts for each tool. Use {'{{placeholder}}'} syntax for dynamic content.
             </p>
           </div>
           
@@ -263,7 +268,7 @@ const SystemPromptsAdmin: React.FC = () => {
         </div>
 
         {/* Placeholders Modal */}
-        {showPlaceholders && placeholders && (
+        {showPlaceholders && placeholders && placeholders.placeholders && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
               <div className="flex items-center justify-between mb-4">
@@ -280,14 +285,14 @@ const SystemPromptsAdmin: React.FC = () => {
               
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-2">
-                  Tool: <span className="font-medium">{formatToolName(placeholders.tool_name)}</span>
+                  Tool: <span className="font-medium">{placeholders?.tool_name ? formatToolName(placeholders.tool_name) : 'Unknown'}</span>
                 </p>
                 <p className="text-sm text-gray-600 mb-4">
-                  These placeholders can be used in the system prompt with {{placeholder}} syntax.
+                  These placeholders can be used in the system prompt with {'{{placeholder}}'} syntax.
                 </p>
               </div>
 
-              {placeholders.placeholders.length > 0 ? (
+              {placeholders?.placeholders && placeholders.placeholders.length > 0 ? (
                 <div className="space-y-2">
                   {placeholders.placeholders.map((placeholder, index) => (
                     <div key={index} className="flex items-center space-x-2">
@@ -321,7 +326,7 @@ const SystemPromptsAdmin: React.FC = () => {
           <h3 className="text-lg font-semibold text-blue-900 mb-2">How to Use Placeholders</h3>
           <div className="text-sm text-blue-800 space-y-2">
             <p>
-              • Use <code className="bg-blue-100 px-1 rounded">{{placeholder_name}}</code> syntax in your prompts
+              • Use <code className="bg-blue-100 px-1 rounded">{'{{placeholder_name}}'}</code> syntax in your prompts
             </p>
             <p>
               • Placeholders will be automatically replaced with actual form data when the AI is called
