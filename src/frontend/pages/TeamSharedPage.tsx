@@ -342,16 +342,13 @@ function TeamSharedPage() {
               Back to Team Shared
             </Link>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center">
-                <FaUsers className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mr-2 sm:mr-3 flex-shrink-0" />
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                    {response.tool_name}
-                  </h1>
-                  <p className="text-sm sm:text-base text-gray-600 mt-1">
-                    {formatDate(response.created_at)} • Shared by {response.user_email || 'Unknown User'}
-                  </p>
-                </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                  {response.tool_name}
+                </h1>
+                <p className="text-sm sm:text-base text-gray-600 mt-1">
+                  {formatDate(response.created_at)} • Shared by {response.user_email || 'Unknown User'}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -554,16 +551,13 @@ function TeamSharedPage() {
             Back to Dashboard
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center">
-              <FaUsers className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mr-2 sm:mr-3 flex-shrink-0" />
-              <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                  Team Shared Responses
-                </h1>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">
-                  AI responses shared with your team
-                </p>
-              </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                Team Shared Responses
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
+                AI responses shared with your team
+              </p>
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
