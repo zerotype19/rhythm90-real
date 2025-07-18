@@ -182,59 +182,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Usage Status Bars */}
-        <div className="mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Tool Usage (This Billing Cycle)</h2>
-              {subscriptionStatus && (
-                <span className="text-sm font-medium text-gray-500 capitalize">
-                  {subscriptionStatus.plan} Plan
-                </span>
-              )}
-            </div>
-            <div className="bg-gray-50 rounded-lg p-6">
-              {usageSummary ? (
-                <div className="space-y-4">
-                  {Object.entries(usageSummary).map(([toolName, usage]) => (
-                    <div key={toolName} className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-900 capitalize">
-                            {toolName.replace('_', ' ')}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            {usage.limit === -1 ? 'Unlimited' : `${usage.used} / ${usage.limit}`}
-                          </span>
-                        </div>
-                        {usage.limit !== -1 && (
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-300 ${
-                                usage.used >= usage.limit ? 'bg-red-500' :
-                                usage.used >= usage.limit * 0.8 ? 'bg-yellow-500' : 'bg-green-500'
-                              }`}
-                              style={{ width: `${Math.min((usage.used / usage.limit) * 100, 100)}%` }}
-                            ></div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : usageLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading usage summary...</p>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">Unable to load usage data</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel - Stats + Team Activity */}
@@ -282,20 +230,57 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Top Tools */}
-              {dashboardData?.stats.topTools && dashboardData.stats.topTools.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Top Tools</h3>
-                  <div className="space-y-2">
-                    {dashboardData.stats.topTools.slice(0, 3).map((tool, index) => (
-                      <div key={tool.toolName} className="flex justify-between items-center py-2">
-                        <span className="text-gray-700">{tool.toolName}</span>
-                        <span className="text-gray-500 font-medium">{tool.count} uses</span>
-                      </div>
-                    ))}
-                  </div>
+              {/* Usage Status Bars */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-medium text-gray-900">Tool Usage (This Billing Cycle)</h3>
+                  {subscriptionStatus && (
+                    <span className="text-sm font-medium text-gray-500 capitalize">
+                      {subscriptionStatus.plan} Plan
+                    </span>
+                  )}
                 </div>
-              )}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  {usageSummary ? (
+                    <div className="space-y-3">
+                      {Object.entries(usageSummary).map(([toolName, usage]) => (
+                        <div key={toolName} className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium text-gray-900 capitalize">
+                                {toolName.replace('_', ' ')}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                {usage.limit === -1 ? 'Unlimited' : `${usage.used} / ${usage.limit}`}
+                              </span>
+                            </div>
+                            {usage.limit !== -1 && (
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full transition-all duration-300 ${
+                                    usage.used >= usage.limit ? 'bg-red-500' :
+                                    usage.used >= usage.limit * 0.8 ? 'bg-yellow-500' : 'bg-green-500'
+                                  }`}
+                                  style={{ width: `${Math.min((usage.used / usage.limit) * 100, 100)}%` }}
+                                ></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : usageLoading ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500 mx-auto mb-2"></div>
+                      <p className="text-gray-500 text-sm">Loading usage summary...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500 text-sm">Unable to load usage data</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Team Activity Feed */}
