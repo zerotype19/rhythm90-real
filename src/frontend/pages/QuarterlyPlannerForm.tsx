@@ -72,6 +72,13 @@ function QuarterlyPlannerForm() {
   const [summary, setSummary] = useState('');
   const [structuredSummary, setStructuredSummary] = useState<StructuredSummary | null>(null);
   const [session, setSession] = useState<any>(null);
+  // Prompt context for saving
+  const [promptContext, setPromptContext] = useState<{
+    system_prompt?: string;
+    user_input?: string;
+    final_prompt?: string;
+    raw_response_text?: string;
+  } | null>(null);
   const { currentTeam } = useAuth();
 
   // Available options
@@ -211,6 +218,13 @@ function QuarterlyPlannerForm() {
       if (response.data?.session && response.data?.summary) {
         setSession(response.data.session);
         setSummary(response.data.summary);
+        
+        // Extract prompt context if available
+        if (response.data._promptContext) {
+          setPromptContext(response.data._promptContext);
+        } else {
+          setPromptContext(null);
+        }
         
         // Try to parse the summary as structured data
         const parsed = parseAIResponse(response.data.summary);
@@ -591,6 +605,10 @@ function QuarterlyPlannerForm() {
                     responseData={structuredSummary}
                     teamId={currentTeam?.id}
                     summary={`Quarterly Plan: "${inputs.bigChallenge.substring(0, 100)}${inputs.bigChallenge.length > 100 ? '...' : ''}"`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>
@@ -606,6 +624,10 @@ function QuarterlyPlannerForm() {
                     responseData={{ summary }}
                     teamId={currentTeam?.id}
                     summary={`Quarterly Plan: "${inputs.bigChallenge.substring(0, 100)}${inputs.bigChallenge.length > 100 ? '...' : ''}"`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>

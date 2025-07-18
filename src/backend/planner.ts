@@ -83,10 +83,11 @@ Quarterly Planning Inputs:
 `;
 
     console.log('Generating AI summary for planner session...');
-    const summary = await callOpenAI([
+    const messages = [
       { role: 'system', content: PLANNER_SYSTEM_PROMPT },
       { role: 'user', content: teamContext + userInputs + '\n\nPlease provide a clear, actionable summary for this team\'s quarterly planning session.' }
-    ], env);
+    ];
+    const summary = await callOpenAI(messages, env);
     console.log('AI summary generated successfully, length:', summary.length);
 
     // Create planner session
@@ -112,9 +113,23 @@ Quarterly Planning Inputs:
       session.created_at
     ).run();
 
+    // Extract prompt context for saving
+    const systemMessages = messages.filter(msg => msg.role === 'system');
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    
+    const systemPrompt = systemMessages.map(msg => msg.content).join('\n\n');
+    const userInput = userMessages.map(msg => msg.content).join('\n\n');
+    const finalPrompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+    
     return jsonResponse({
       session,
-      summary
+      summary,
+      _promptContext: {
+        system_prompt: systemPrompt,
+        user_input: userInput,
+        final_prompt: finalPrompt,
+        raw_response_text: summary
+      }
     }, 201);
 
   } catch (error) {
