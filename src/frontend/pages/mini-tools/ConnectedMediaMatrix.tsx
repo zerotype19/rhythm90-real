@@ -106,6 +106,7 @@ function ConnectedMediaMatrix() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Media matrix for: "${primaryConversionAction}"`}
+            promptContext={output.prompt_context}
           />
         </div>
       </div>

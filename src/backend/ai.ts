@@ -1780,6 +1780,15 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       }
     }
 
+    // Extract prompt context for saving
+    const promptContext = {
+      tool_name: 'Connected Media Matrix',
+      user_input: `Audience Snapshot: ${audience_snapshot}\nPrimary Conversion Action: ${primary_conversion_action}\nSeasonal/Contextual Triggers: ${seasonal_or_contextual_triggers || 'None specified'}`,
+      system_prompt: systemPromptText,
+      user_message: userMessage.content,
+      ai_response: aiResponse
+    };
+
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'connected-media-matrix',
@@ -1792,7 +1801,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    return jsonResponse({
+      ...backendPayload,
+      prompt_context: promptContext
+    });
   } catch (error) {
     console.error('Connected Media Matrix error:', error);
     return errorResponse('Failed to generate media matrix', 500);
