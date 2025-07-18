@@ -1476,6 +1476,15 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       }
     }
 
+    // Extract prompt context for saving
+    const promptContext = {
+      tool_name: 'Test Learn Scale',
+      user_input: `Campaign/Product Context: ${campaign_or_product_context}\nResources/Constraints: ${resources_or_constraints || 'None specified'}`,
+      system_prompt: systemPromptText,
+      user_message: userMessage.content,
+      ai_response: aiResponse
+    };
+
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'test-learn-scale',
@@ -1488,7 +1497,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    return jsonResponse({
+      ...backendPayload,
+      prompt_context: promptContext
+    });
   } catch (error) {
     console.error('Test-Learn-Scale error:', error);
     return errorResponse('Failed to generate roadmap', 500);

@@ -132,6 +132,7 @@ function TestLearnScale() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Test/Learn/Scale roadmap for: "${campaignOrProductContext.substring(0, 100)}${campaignOrProductContext.length > 100 ? '...' : ''}"`}
+            promptContext={output.prompt_context}
           />
         </div>
       </div>
