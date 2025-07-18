@@ -18,7 +18,7 @@ function PrivacyPolicy() {
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Privacy Policy</h1>
           
           <div className="text-sm text-gray-600 mb-8">
-            <strong>Effective Date:</strong> [Insert Date]
+            <strong>Effective Date:</strong> July 1, 2025
           </div>
 
           <div className="prose prose-lg max-w-none">
