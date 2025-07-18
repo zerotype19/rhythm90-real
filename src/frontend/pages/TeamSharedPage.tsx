@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import AppLayout from '../components/AppLayout';
 import { 
   FaSearch, 
@@ -14,7 +14,10 @@ import {
   FaCalendar,
   FaChevronLeft,
   FaChevronRight,
-  FaTimes
+  FaTimes,
+  FaCheck,
+  FaChevronDown,
+  FaChevronUp
 } from 'react-icons/fa';
 import { apiClient } from '../lib/api';
 
@@ -119,6 +122,7 @@ const parseAIResponse = (responseBlob: string): string => {
 
 function TeamSharedPage() {
   const { slug } = useParams<{ slug?: string }>();
+  const navigate = useNavigate();
   const [responses, setResponses] = useState<SavedResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -126,8 +130,14 @@ function TeamSharedPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedResponse, setSelectedResponse] = useState<SavedResponse | null>(null);
-  const [showModal, setShowModal] = useState(false);
+  const [favoriteConfirmations, setFavoriteConfirmations] = useState<{[key: string]: boolean}>({});
+  const [copyConfirmations, setCopyConfirmations] = useState<{[key: string]: boolean}>({});
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
+    system_prompt: true,
+    user_input: true,
+    final_prompt: true,
+    raw_response_text: true
+  });
   
   const [filters, setFilters] = useState<FilterOptions>({
     search: '',
@@ -209,6 +219,12 @@ function TeamSharedPage() {
       setResponses(prev => prev.map(r => 
         r.id === responseId ? { ...r, is_favorite: !currentFavorite } : r
       ));
+      
+      // Show confirmation
+      setFavoriteConfirmations(prev => ({ ...prev, [responseId]: true }));
+      setTimeout(() => {
+        setFavoriteConfirmations(prev => ({ ...prev, [responseId]: false }));
+      }, 2000);
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
     }
@@ -221,6 +237,46 @@ function TeamSharedPage() {
       // You could add a toast notification here
     } catch (err) {
       console.error('Failed to copy link:', err);
+    }
+  };
+
+  const handleCopySection = async (content: string, sectionKey: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopyConfirmations(prev => ({ ...prev, [sectionKey]: true }));
+      setTimeout(() => {
+        setCopyConfirmations(prev => ({ ...prev, [sectionKey]: false }));
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy content:', err);
+    }
+  };
+
+  const handleCopyFullJSON = async (response: SavedResponse) => {
+    try {
+      const fullData = {
+        id: response.id,
+        tool_name: response.tool_name,
+        summary: response.summary,
+        system_prompt: response.system_prompt,
+        user_input: response.user_input,
+        final_prompt: response.final_prompt,
+        raw_response_text: response.raw_response_text,
+        response_blob: response.response_blob,
+        created_at: response.created_at,
+        user_email: response.user_email,
+        is_favorite: response.is_favorite,
+        is_shared_public: response.is_shared_public,
+        is_shared_team: response.is_shared_team
+      };
+      
+      await navigator.clipboard.writeText(JSON.stringify(fullData, null, 2));
+      setCopyConfirmations(prev => ({ ...prev, ['full_json']: true }));
+      setTimeout(() => {
+        setCopyConfirmations(prev => ({ ...prev, ['full_json']: false }));
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy full JSON:', err);
     }
   };
 
@@ -264,46 +320,263 @@ function TeamSharedPage() {
     }
   };
 
+  const toggleSection = (sectionKey: string) => {
+    setExpandedSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+  };
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
+  // If we have a slug, show the detail view
+  if (slug && responses.length > 0) {
+    const response = responses[0];
+    return (
+      <AppLayout>
+        <div className="p-6">
+          {/* Header */}
+          <div className="mb-6">
+            <Link
+              to="/app/team-shared"
+              className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-2"
+            >
+              <FaArrowLeft className="w-4 h-4 mr-2" />
+              ← Back to Team Shared
+            </Link>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center">
+                <FaUsers className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mr-2 sm:mr-3 flex-shrink-0" />
+                <div>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                    {response.tool_name}
+                  </h1>
+                  <p className="text-sm sm:text-base text-gray-600 mt-1">
+                    {formatDate(response.created_at)} • Shared by {response.user_email}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleToggleFavorite(response.id, response.is_favorite)}
+                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    response.is_favorite 
+                      ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200' 
+                      : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  }`}
+                >
+                  <FaHeart className={`w-4 h-4 mr-2 ${response.is_favorite ? 'fill-current' : ''}`} />
+                  {response.is_favorite ? 'Favorited' : 'Favorite'}
+                  {favoriteConfirmations[response.id] && (
+                    <FaCheck className="w-4 h-4 ml-2 text-green-600" />
+                  )}
+                </button>
+                <button
+                  onClick={() => handleCopyFullJSON(response)}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  <FaCopy className="w-4 h-4 mr-2" />
+                  Copy Full JSON
+                  {copyConfirmations['full_json'] && (
+                    <FaCheck className="w-4 h-4 ml-2 text-green-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Detail Content */}
+          <div className="space-y-6">
+            {/* System Prompt Section */}
+            {response.system_prompt && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">System Prompt</h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleCopySection(response.system_prompt!, 'system_prompt')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      <FaCopy className="w-3 h-3 mr-1" />
+                      Copy
+                      {copyConfirmations['system_prompt'] && (
+                        <FaCheck className="w-3 h-3 ml-1 text-green-600" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => toggleSection('system_prompt')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      {expandedSections['system_prompt'] ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+                {expandedSections['system_prompt'] && (
+                  <div className="bg-gray-50 rounded-md p-4 font-mono text-sm text-gray-700 whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                    {response.system_prompt}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* User Input Section */}
+            {response.user_input && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">User Input</h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleCopySection(response.user_input!, 'user_input')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      <FaCopy className="w-3 h-3 mr-1" />
+                      Copy
+                      {copyConfirmations['user_input'] && (
+                        <FaCheck className="w-3 h-3 ml-1 text-green-600" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => toggleSection('user_input')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      {expandedSections['user_input'] ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+                {expandedSections['user_input'] && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 font-mono text-sm text-gray-700 whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                    {response.user_input}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Final Prompt Section */}
+            {response.final_prompt && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Final Prompt</h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleCopySection(response.final_prompt!, 'final_prompt')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      <FaCopy className="w-3 h-3 mr-1" />
+                      Copy
+                      {copyConfirmations['final_prompt'] && (
+                        <FaCheck className="w-3 h-3 ml-1 text-green-600" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => toggleSection('final_prompt')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      {expandedSections['final_prompt'] ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+                {expandedSections['final_prompt'] && (
+                  <div className="bg-gray-50 rounded-md p-4 font-mono text-sm text-gray-700 whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                    {response.final_prompt}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Raw Response Text Section */}
+            {response.raw_response_text && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Raw AI Response</h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleCopySection(response.raw_response_text!, 'raw_response_text')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      <FaCopy className="w-3 h-3 mr-1" />
+                      Copy
+                      {copyConfirmations['raw_response_text'] && (
+                        <FaCheck className="w-3 h-3 ml-1 text-green-600" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => toggleSection('raw_response_text')}
+                      className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      {expandedSections['raw_response_text'] ? <FaChevronUp className="w-3 h-3" /> : <FaChevronDown className="w-3 h-3" />}
+                    </button>
+                  </div>
+                </div>
+                {expandedSections['raw_response_text'] && (
+                  <div className="bg-gray-50 rounded-md p-4 font-mono text-sm text-gray-700 whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                    {response.raw_response_text}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AI Response Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">AI Response</h3>
+                <button
+                  onClick={() => handleCopySection(response.response_blob, 'ai_response')}
+                  className="inline-flex items-center px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  <FaCopy className="w-3 h-3 mr-1" />
+                  Copy
+                  {copyConfirmations['ai_response'] && (
+                    <FaCheck className="w-3 h-3 ml-1 text-green-600" />
+                  )}
+                </button>
+              </div>
+              <div className="bg-gray-50 rounded-md p-4 overflow-x-auto max-h-96 overflow-y-auto">
+                <div 
+                  className="text-sm text-gray-700 whitespace-pre-wrap break-words"
+                  dangerouslySetInnerHTML={{ __html: parseAIResponse(response.response_blob) }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // List view
   return (
     <AppLayout>
       <div className="p-6">
         {/* Header */}
         <div className="mb-6">
           <Link
-            to={slug ? "/app/team-shared" : "/app"}
+            to="/app"
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-2"
           >
             <FaArrowLeft className="w-4 h-4 mr-2" />
-            {slug ? "Back to Team Shared" : "Back to Dashboard"}
+            Back to Dashboard
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center">
               <FaUsers className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                  {slug ? "Shared Response" : "Team Shared Responses"}
+                  Team Shared Responses
                 </h1>
                 <p className="text-sm sm:text-base text-gray-600 mt-1">
-                  {slug ? "Viewing a specific shared response" : "AI responses shared with your team"}
+                  AI responses shared with your team
                 </p>
               </div>
             </div>
-            {!slug && (
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center justify-center px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
-              >
-                <FaFilter className="w-4 h-4 mr-2" />
-                Filters
-              </button>
-            )}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center justify-center px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+            >
+              <FaFilter className="w-4 h-4 mr-2" />
+              Filters
+            </button>
           </div>
         </div>
 
         {/* Filters */}
-        {showFilters && !slug && (
+        {showFilters && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Search */}
@@ -382,12 +655,11 @@ function TeamSharedPage() {
         )}
 
         {/* Results Summary */}
-        {!slug && (
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              {loading ? 'Loading...' : `${totalCount} response${totalCount !== 1 ? 's' : ''} found`}
-            </p>
-            {totalPages > 1 && (
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm text-gray-600">
+            {loading ? 'Loading...' : `${totalCount} response${totalCount !== 1 ? 's' : ''} found`}
+          </p>
+          {totalPages > 1 && (
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -409,7 +681,6 @@ function TeamSharedPage() {
             </div>
           )}
         </div>
-        )}
 
         {/* Results */}
         {loading ? (
@@ -438,104 +709,94 @@ function TeamSharedPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {responses.map((response) => (
-              <div key={response.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-                {/* Title and Badges Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-3">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">
-                    {response.tool_name}
-                  </h3>
-                  
-                  {/* Badges - Right Aligned */}
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                    {response.is_shared_public && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <FaShare className="w-3 h-3 mr-1" />
-                        Public
-                      </span>
-                    )}
-                    {response.is_favorite && (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <FaStar className="w-3 h-3 mr-1" />
-                        Favorite
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Summary */}
-                <p className="text-gray-700 mb-3">
-                  {response.summary}
-                </p>
-                
-                {/* Response Content - Show for slug view */}
-                {slug && response.response_blob && (
-                  <div className="mb-3">
-                    <h4 className="font-semibold text-gray-900 mb-2">Response Content</h4>
-                    <div className="bg-gray-50 rounded-md p-4 overflow-x-auto max-h-[60vh] overflow-y-auto">
-                      <div 
-                        className="text-sm text-gray-700 whitespace-pre-wrap break-words"
-                        dangerouslySetInnerHTML={{ __html: parseAIResponse(response.response_blob) }}
-                      />
-                    </div>
-                  </div>
-                )}
-                
-
-                
-                {/* Metadata - Stacked for mobile */}
-                <div className="mb-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-                    {/* Date and User Info - Smaller font, stacked on mobile */}
-                    <div className="flex flex-col sm:flex-row sm:items-center text-xs text-gray-500">
-                      <div className="flex items-center">
-                        <FaCalendar className="w-3 h-3 mr-1 flex-shrink-0" />
-                        <span>{formatDate(response.created_at)}</span>
-                      </div>
-                      {response.user_email && (
-                        <>
-                          <span className="hidden sm:inline mx-2">•</span>
-                          <span className="sm:ml-0">Shared by {response.user_email}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Action Buttons - Full width on mobile */}
-                <div className="flex items-center gap-2">
-                  {/* Favorite Button */}
-                  <button
-                    onClick={() => handleToggleFavorite(response.id, response.is_favorite)}
-                    className={`flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-md transition-colors ${
-                      response.is_favorite 
-                        ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200' 
-                        : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
-                    }`}
-                  >
-                    <FaHeart className={`w-3 h-3 mr-1 ${response.is_favorite ? 'fill-current' : ''}`} />
-                    {response.is_favorite ? 'Favorited' : 'Favorite'}
-                  </button>
-                  {/* View Button */}
-                  <button
-                    onClick={() => {
-                      setSelectedResponse(response);
-                      setShowModal(true);
-                    }}
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                  >
-                    <FaEye className="w-3 h-3 mr-1" />
-                    View
-                  </button>
-                </div>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Table Header */}
+            <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+              <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-700">
+                <div className="col-span-3">Tool Type</div>
+                <div className="col-span-3">Date/Time</div>
+                <div className="col-span-3">Shared by</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-1">Actions</div>
               </div>
-            ))}
+            </div>
+            
+            {/* Table Rows */}
+            <div className="divide-y divide-gray-200">
+              {responses.map((response) => (
+                <div key={response.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="grid grid-cols-12 gap-4 items-center">
+                    {/* Tool Type */}
+                    <div className="col-span-3">
+                      <div className="font-medium text-gray-900">{response.tool_name}</div>
+                    </div>
+                    
+                    {/* Date/Time */}
+                    <div className="col-span-3">
+                      <div className="text-sm text-gray-600">{formatDate(response.created_at)}</div>
+                    </div>
+                    
+                    {/* Shared by */}
+                    <div className="col-span-3">
+                      <div className="text-sm text-gray-600">{response.user_email}</div>
+                    </div>
+                    
+                    {/* Status */}
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-2">
+                        {response.is_favorite && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <FaStar className="w-3 h-3 mr-1" />
+                            Favorite
+                          </span>
+                        )}
+                        {response.is_shared_public && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <FaShare className="w-3 h-3 mr-1" />
+                            Public
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="col-span-1">
+                      <div className="flex items-center gap-2">
+                        {/* Favorite Button */}
+                        <button
+                          onClick={() => handleToggleFavorite(response.id, response.is_favorite)}
+                          className={`p-2 rounded-md transition-colors ${
+                            response.is_favorite 
+                              ? 'text-yellow-600 hover:text-yellow-700' 
+                              : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                          title={response.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          <FaHeart className={`w-4 h-4 ${response.is_favorite ? 'fill-current' : ''}`} />
+                          {favoriteConfirmations[response.id] && (
+                            <FaCheck className="w-4 h-4 absolute -mt-6 -ml-2 text-green-600" />
+                          )}
+                        </button>
+                        
+                        {/* View Button */}
+                        <Link
+                          to={`/app/team-shared/${response.shared_slug || response.id}`}
+                          className="p-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+                          title="View details"
+                        >
+                          <FaEye className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && !slug && (
+        {totalPages > 1 && (
           <div className="mt-8 flex justify-center">
             <div className="flex items-center space-x-2">
               <button
@@ -570,111 +831,6 @@ function TeamSharedPage() {
               >
                 Next
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Response Details Modal */}
-        {showModal && selectedResponse && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowModal(false)}
-          >
-            <div 
-              className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{selectedResponse.tool_name}</h2>
-                    <p className="text-sm text-gray-500">{formatDate(selectedResponse.created_at)}</p>
-                    {selectedResponse.user_email && (
-                      <p className="text-sm text-gray-500">Shared by {selectedResponse.user_email}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <FaTimes className="w-6 h-6" />
-                  </button>
-                </div>
-
-                {/* User Input Section */}
-                {selectedResponse.user_input && (
-                  <div className="mb-4">
-                    <details className="group">
-                      <summary className="cursor-pointer font-semibold text-gray-900 mb-2 flex items-center">
-                        <span className="mr-2">▼</span>
-                        User Input
-                      </summary>
-                      <div className="bg-blue-50 rounded-md p-4 mt-2">
-                        <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                          {selectedResponse.user_input}
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                )}
-
-                {/* System Prompt Section */}
-                {selectedResponse.system_prompt && (
-                  <div className="mb-4">
-                    <details className="group">
-                      <summary className="cursor-pointer font-semibold text-gray-900 mb-2 flex items-center">
-                        <span className="mr-2">▼</span>
-                        System Prompt
-                      </summary>
-                      <div className="bg-green-50 rounded-md p-4 mt-2">
-                        <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                          {selectedResponse.system_prompt}
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                )}
-
-                {/* AI Response Section */}
-                <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">AI Response</h3>
-                  <div className="bg-gray-50 rounded-md p-4 overflow-x-auto max-h-[60vh] overflow-y-auto">
-                    <div 
-                      className="text-sm text-gray-700 whitespace-pre-wrap break-words"
-                      dangerouslySetInnerHTML={{ __html: parseAIResponse(selectedResponse.response_blob) }}
-                    />
-                  </div>
-                </div>
-
-                {/* Raw Response Text Section (if different from structured response) */}
-                {selectedResponse.raw_response_text && selectedResponse.raw_response_text !== selectedResponse.response_blob && (
-                  <div className="mb-4">
-                    <details className="group">
-                      <summary className="cursor-pointer font-semibold text-gray-900 mb-2 flex items-center">
-                        <span className="mr-2">▼</span>
-                        Raw AI Response
-                      </summary>
-                      <div className="bg-yellow-50 rounded-md p-4 mt-2">
-                        <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                          {selectedResponse.raw_response_text}
-                        </div>
-                      </div>
-                    </details>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-2">
-                  {selectedResponse.is_shared_public && selectedResponse.shared_slug && (
-                    <button
-                      onClick={() => handleCopyPublicLink(selectedResponse.shared_slug!)}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    >
-                      <FaCopy className="w-4 h-4 mr-2" />
-                      Copy Public Link
-                    </button>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         )}
