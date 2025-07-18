@@ -13,25 +13,25 @@ function LoggedInFooter() {
           {/* Policy Links */}
           <div className="flex space-x-6">
             <Link 
-              to="/app/dashboard/terms" 
+              to="/terms" 
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
               Terms of Service
             </Link>
             <Link 
-              to="/app/dashboard/privacy" 
+              to="/privacy" 
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
               Privacy Policy
             </Link>
             <Link 
-              to="/app/dashboard/security" 
+              to="/security" 
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
               Security Policy
             </Link>
             <Link 
-              to="/app/dashboard/faq" 
+              to="/faq" 
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
               FAQ
