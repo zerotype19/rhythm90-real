@@ -5,6 +5,8 @@ import { useState } from 'react';
 import AssistantModal from './AssistantModal';
 import FloatingChatIcon from './FloatingChatIcon';
 import LoggedInFooter from './LoggedInFooter';
+import { useUsageTracking } from '../hooks/useUsageTracking';
+import PlanBadge from './PlanBadge';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -15,6 +17,7 @@ function AppLayout({ children }: AppLayoutProps) {
   const { user, teams, currentTeam, setCurrentTeam, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const { subscriptionStatus } = useUsageTracking();
 
   // Rhythm90 Guide Section
   const rhythm90Guide = [
@@ -188,7 +191,12 @@ function AppLayout({ children }: AppLayoutProps) {
                     </span>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                      {subscriptionStatus && (
+                        <PlanBadge plan={subscriptionStatus.plan} size="small" />
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
                 </div>
@@ -263,7 +271,12 @@ function AppLayout({ children }: AppLayoutProps) {
                       </span>
                     </div>
                     <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                        {subscriptionStatus && (
+                          <PlanBadge plan={subscriptionStatus.plan} size="small" />
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
                   </div>

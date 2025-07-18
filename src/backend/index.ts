@@ -9,7 +9,7 @@ import { verifyAuth } from './auth';
 import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleUpdateTeamProfile, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
 import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
 import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
-import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, getLastStripeDebugLog } from './billing';
+import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, handleGetUsageSummary, handleLogUsage, getLastStripeDebugLog } from './billing';
 import { handleUpdateModel, handleUpdateAnnouncement as handleUpdateSystemAnnouncement, handleGetSettings } from './admin';
 import { handleStripeWebhook, initializePlanTierMapping } from './stripe-webhook';
 import { getUserUsageSummary } from './usage';
@@ -103,6 +103,12 @@ export default {
       // Usage tracking routes
       if (path === '/api/usage/summary' && request.method === 'GET') {
         return await getUserUsageSummary(request, env);
+      }
+      if (path === '/api/usage/log' && request.method === 'POST') {
+        return await handleLogUsage(request, env);
+      }
+      if (path === '/api/billing/usage-summary' && request.method === 'GET') {
+        return await handleGetUsageSummary(request, env);
       }
 
       // Team routes

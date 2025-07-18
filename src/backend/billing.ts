@@ -220,74 +220,235 @@ export async function handleGetSubscriptionStatus(request: Request, env: Env): P
     const { user } = authResult;
     console.log('handleGetSubscriptionStatus: User authenticated:', user.id);
 
-    // Get user's Stripe customer ID
+    // Get user's subscription and payment status
     const userResult = await env.DB.prepare(
-      'SELECT stripe_customer_id FROM users WHERE id = ?'
-    ).bind(user.id).first<{ stripe_customer_id: string | null }>();
+      'SELECT plan_tier, payment_status, trial_end_date, stripe_customer_id FROM users WHERE id = ?'
+    ).bind(user.id).first<{ 
+      plan_tier: string | null, 
+      payment_status: string, 
+      trial_end_date: string | null,
+      stripe_customer_id: string | null 
+    }>();
 
-    if (!userResult || !userResult.stripe_customer_id) {
-      console.log('handleGetSubscriptionStatus: No Stripe customer found');
-      return jsonResponse({
-        status: 'no_subscription',
-        plan: 'free',
-        customerId: null
-      });
+    if (!userResult) {
+      console.log('handleGetSubscriptionStatus: User not found');
+      return errorResponse('User not found', 404);
     }
 
-    const customerId = userResult.stripe_customer_id;
+    const { plan_tier, payment_status, trial_end_date, stripe_customer_id } = userResult;
+
+    // If no Stripe customer, return free plan status
+    if (!stripe_customer_id) {
+      console.log('handleGetSubscriptionStatus: No Stripe customer found');
+      return jsonResponse({
+        status: payment_status,
+        plan: plan_tier || 'free',
+        customerId: null,
+        trialEndDate: trial_end_date
+      });
+    }
 
     try {
       // Get customer's subscriptions
       const subscriptions = await getStripeClient(env.STRIPE_SECRET_KEY).subscriptions.list({
-        customer: customerId,
+        customer: stripe_customer_id,
         status: 'all',
         limit: 1
       });
       
-      logStripeCall('subscriptions.list', { customer: customerId }, subscriptions);
+      logStripeCall('subscriptions.list', { customer: stripe_customer_id }, subscriptions);
 
       if (subscriptions.data.length === 0) {
         console.log('handleGetSubscriptionStatus: No subscriptions found');
         return jsonResponse({
-          status: 'no_subscription',
-          plan: 'free',
-          customerId
+          status: payment_status,
+          plan: plan_tier || 'free',
+          customerId: stripe_customer_id,
+          trialEndDate: trial_end_date
         });
       }
 
       const subscription = subscriptions.data[0];
-      const priceId = subscription.items.data[0]?.price.id;
       
-      // Map price ID to plan name (you'll need to configure this based on your Stripe products)
-      let plan = 'unknown';
-      if (priceId) {
-        // This is a simplified mapping - you should configure this based on your actual Stripe price IDs
-        if (priceId.includes('pro')) {
-          plan = 'pro';
-        } else if (priceId.includes('enterprise')) {
-          plan = 'enterprise';
-        } else if (priceId.includes('team')) {
-          plan = 'team';
-        }
-      }
-
-      console.log('handleGetSubscriptionStatus: Found subscription:', subscription.status, plan);
+      console.log('handleGetSubscriptionStatus: Found subscription:', subscription.status, plan_tier);
       
       return jsonResponse({
         status: subscription.status,
-        plan,
-        customerId,
+        plan: plan_tier || 'free',
+        customerId: stripe_customer_id,
         subscriptionId: subscription.id,
         currentPeriodEnd: subscription.current_period_end,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        trialEndDate: trial_end_date
       });
     } catch (error) {
       console.error('handleGetSubscriptionStatus: Failed to get subscriptions:', error);
-      logStripeCall('subscriptions.list', { customer: customerId }, null, error);
+      logStripeCall('subscriptions.list', { customer: stripe_customer_id }, null, error);
       return errorResponse('Failed to get subscription status', 500);
     }
   } catch (error) {
     console.error('handleGetSubscriptionStatus: Unexpected error:', error);
     return errorResponse('Internal server error', 500);
+  }
+}
+
+// Usage tracking functions
+export async function handleGetUsageSummary(request: Request, env: Env): Promise<Response> {
+  try {
+    console.log('handleGetUsageSummary: Starting');
+    
+    const authResult = await verifyAuth(request, env);
+    if (!authResult.success) {
+      console.log('handleGetUsageSummary: Unauthorized');
+      return errorResponse('Unauthorized', 401);
+    }
+
+    const { user } = authResult;
+    console.log('handleGetUsageSummary: User authenticated:', user.id);
+
+    // Get user's plan tier
+    const userResult = await env.DB.prepare(
+      'SELECT plan_tier FROM users WHERE id = ?'
+    ).bind(user.id).first<{ plan_tier: string | null }>();
+
+    if (!userResult) {
+      return errorResponse('User not found', 404);
+    }
+
+    const planTier = userResult.plan_tier || 'free';
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+
+    // Get usage for current month
+    const usageResult = await env.DB.prepare(`
+      SELECT tool_name, COUNT(*) as used
+      FROM ai_usage_logs 
+      WHERE user_id = ? 
+      AND timestamp >= ? 
+      AND timestamp < ?
+      GROUP BY tool_name
+    `).bind(user.id, `${currentMonth}-01 00:00:00`, `${currentMonth}-32 00:00:00`).all<{ tool_name: string, used: number }>();
+
+    // Initialize usage summary
+    const usageSummary = {
+      play_builder: { used: 0, limit: planTier === 'pro_unlimited' ? -1 : 100 },
+      signal_lab: { used: 0, limit: planTier === 'pro_unlimited' ? -1 : 100 },
+      ritual_guide: { used: 0, limit: planTier === 'pro_unlimited' ? -1 : 100 }
+    };
+
+    // Populate with actual usage
+    usageResult.results.forEach(row => {
+      if (row.tool_name in usageSummary) {
+        usageSummary[row.tool_name as keyof typeof usageSummary].used = row.used;
+      }
+    });
+
+    console.log('handleGetUsageSummary: Returning usage summary for plan:', planTier);
+    return jsonResponse({
+      planTier,
+      usageSummary,
+      currentMonth
+    });
+  } catch (error) {
+    console.error('handleGetUsageSummary: Unexpected error:', error);
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+export async function handleLogUsage(request: Request, env: Env): Promise<Response> {
+  try {
+    console.log('handleLogUsage: Starting');
+    
+    const authResult = await verifyAuth(request, env);
+    if (!authResult.success) {
+      console.log('handleLogUsage: Unauthorized');
+      return errorResponse('Unauthorized', 401);
+    }
+
+    const { user } = authResult;
+    const body = await request.json();
+    const { toolName } = body;
+
+    if (!toolName || !['play_builder', 'signal_lab', 'ritual_guide'].includes(toolName)) {
+      return errorResponse('Invalid tool name', 400);
+    }
+
+    // Check usage limits before logging
+    const usageCheck = await checkUsageLimit(user.id, toolName, env);
+    if (usageCheck.status === 'over_limit') {
+      return jsonResponse({
+        success: false,
+        status: 'over_limit',
+        message: 'Usage limit reached'
+      });
+    }
+
+    // Log the usage
+    await env.DB.prepare(`
+      INSERT INTO ai_usage_logs (user_id, tool_name, timestamp)
+      VALUES (?, ?, datetime('now'))
+    `).bind(user.id, toolName).run();
+
+    console.log('handleLogUsage: Logged usage for tool:', toolName);
+    return jsonResponse({
+      success: true,
+      status: usageCheck.status
+    });
+  } catch (error) {
+    console.error('handleLogUsage: Unexpected error:', error);
+    return errorResponse('Internal server error', 500);
+  }
+}
+
+export async function checkUsageLimit(userId: string, toolName: string, env: Env): Promise<{
+  status: 'ok' | 'near_limit' | 'over_limit';
+  used: number;
+  limit: number;
+}> {
+  try {
+    // Get user's plan tier
+    const userResult = await env.DB.prepare(
+      'SELECT plan_tier FROM users WHERE id = ?'
+    ).bind(userId).first<{ plan_tier: string | null }>();
+
+    if (!userResult) {
+      throw new Error('User not found');
+    }
+
+    const planTier = userResult.plan_tier || 'free';
+    
+    // Free tier has no usage after trial
+    if (planTier === 'free') {
+      return { status: 'over_limit', used: 0, limit: 0 };
+    }
+
+    // Pro Unlimited has no limits
+    if (planTier === 'pro_unlimited') {
+      return { status: 'ok', used: 0, limit: -1 };
+    }
+
+    // Pro Limited has 100 uses per tool per month
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const usageResult = await env.DB.prepare(`
+      SELECT COUNT(*) as used
+      FROM ai_usage_logs 
+      WHERE user_id = ? 
+      AND tool_name = ?
+      AND timestamp >= ? 
+      AND timestamp < ?
+    `).bind(userId, toolName, `${currentMonth}-01 00:00:00`, `${currentMonth}-32 00:00:00`).first<{ used: number }>();
+
+    const used = usageResult?.used || 0;
+    const limit = 100;
+
+    if (used >= limit) {
+      return { status: 'over_limit', used, limit };
+    } else if (used >= limit * 0.8) { // 80% threshold
+      return { status: 'near_limit', used, limit };
+    } else {
+      return { status: 'ok', used, limit };
+    }
+  } catch (error) {
+    console.error('checkUsageLimit: Error:', error);
+    return { status: 'ok', used: 0, limit: 100 }; // Default to allowing usage on error
   }
 } 

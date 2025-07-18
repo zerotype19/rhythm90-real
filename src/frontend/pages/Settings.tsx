@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '../components/AppLayout';
 import { apiClient } from '../lib/api';
+import { useUsageTracking } from '../hooks/useUsageTracking';
+import { useStripeCheckout } from '../hooks/useStripeCheckout';
+import PlanBadge from '../components/PlanBadge';
+import UpgradeModal from '../components/UpgradeModal';
 
 interface AccountSettings {
   id: string;
@@ -59,6 +63,22 @@ function Settings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Usage tracking and subscription management
+  const { usageSummary, subscriptionStatus, isLoading: usageLoading, refreshUsage } = useUsageTracking();
+  const { handleUpgrade } = useStripeCheckout();
+  
+  // Upgrade modal state
+  const [upgradeModal, setUpgradeModal] = useState<{
+    isOpen: boolean;
+    type: 'trial_ended' | 'usage_limit' | 'near_limit' | 'payment_failed';
+    toolName?: string;
+    currentUsage?: number;
+    usageLimit?: number;
+  }>({
+    isOpen: false,
+    type: 'trial_ended'
+  });
 
   // Account settings
   const [accountSettings, setAccountSettings] = useState<AccountSettings | null>(null);
@@ -418,6 +438,16 @@ function Settings() {
     }
   };
 
+  // Upgrade modal handlers
+  const handleUpgradeModalClose = () => {
+    setUpgradeModal({ isOpen: false, type: 'trial_ended' });
+  };
+
+  const handleUpgradeModalUpgrade = async (plan: 'pro_limited' | 'pro_unlimited') => {
+    await handleUpgrade(plan);
+    handleUpgradeModalClose();
+  };
+
   const tabs = [
     { id: 'account', name: 'Account Settings', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     { id: 'team', name: 'Team Management', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
@@ -430,11 +460,22 @@ function Settings() {
         <div className="p-6">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
+                  </div>
+      </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={upgradeModal.isOpen}
+        onClose={handleUpgradeModalClose}
+        onUpgrade={handleUpgradeModalUpgrade}
+        type={upgradeModal.type}
+        toolName={upgradeModal.toolName}
+        currentUsage={upgradeModal.currentUsage}
+        usageLimit={upgradeModal.usageLimit}
+      />
+    </AppLayout>
+  );
+}
 
   return (
     <AppLayout>
@@ -799,41 +840,55 @@ function Settings() {
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Billing & Subscription</h2>
               
               <div className="space-y-8">
-                {/* Stripe Subscription Status */}
+                {/* Current Plan */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Subscription</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Plan</h3>
                   <div className="bg-gray-50 rounded-lg p-6">
-                    {stripeSubscription ? (
+                    {subscriptionStatus ? (
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="text-lg font-medium text-gray-900 capitalize">
-                              {stripeSubscription.plan === 'no_subscription' ? 'Free' : `${stripeSubscription.plan} Plan`}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              Status: <span className={`font-medium ${
-                                stripeSubscription.status === 'active' ? 'text-green-600' : 
-                                stripeSubscription.status === 'no_subscription' ? 'text-gray-600' : 'text-red-600'
-                              }`}>
-                                {stripeSubscription.status === 'no_subscription' ? 'Free Plan' : stripeSubscription.status}
-                              </span>
-                            </p>
-                            {stripeSubscription.currentPeriodEnd && (
-                              <p className="text-sm text-gray-500">
-                                Next billing: {new Date(stripeSubscription.currentPeriodEnd * 1000).toLocaleDateString()}
-                              </p>
-                            )}
-                            {stripeSubscription.cancelAtPeriodEnd && (
-                              <p className="text-sm text-orange-600 font-medium">
-                                Subscription will cancel at period end
-                              </p>
-                            )}
+                            <div className="flex items-center space-x-3">
+                              <PlanBadge plan={subscriptionStatus.plan} size="large" />
+                              <div>
+                                <h4 className="text-lg font-medium text-gray-900 capitalize">
+                                  {subscriptionStatus.plan === 'free' ? 'Free Plan' : 
+                                   subscriptionStatus.plan === 'pro_limited' ? 'Pro Limited' : 'Pro Unlimited'}
+                                </h4>
+                                <p className="text-sm text-gray-500">
+                                  Status: <span className={`font-medium ${
+                                    subscriptionStatus.status === 'active' ? 'text-green-600' : 
+                                    subscriptionStatus.status === 'trial' ? 'text-blue-600' : 
+                                    subscriptionStatus.status === 'failed' ? 'text-red-600' : 'text-gray-600'
+                                  }`}>
+                                    {subscriptionStatus.status === 'trial' ? 'Trial' : 
+                                     subscriptionStatus.status === 'failed' ? 'Payment Failed' : 
+                                     subscriptionStatus.status}
+                                  </span>
+                                </p>
+                                {subscriptionStatus.trialEndDate && (
+                                  <p className="text-sm text-gray-500">
+                                    Trial ends: {new Date(subscriptionStatus.trialEndDate).toLocaleDateString()}
+                                  </p>
+                                )}
+                                {subscriptionStatus.currentPeriodEnd && (
+                                  <p className="text-sm text-gray-500">
+                                    Next billing: {new Date(subscriptionStatus.currentPeriodEnd * 1000).toLocaleDateString()}
+                                  </p>
+                                )}
+                                {subscriptionStatus.cancelAtPeriodEnd && (
+                                  <p className="text-sm text-orange-600 font-medium">
+                                    Subscription will cancel at period end
+                                  </p>
+                                )}
+                              </div>
+                            </div>
                           </div>
                           <div className="text-right">
-                            {stripeSubscription.customerId && (
+                            {subscriptionStatus.customerId && (
                               <>
                                 <p className="text-sm text-gray-500">Customer ID</p>
-                                <p className="text-xs font-mono text-gray-900">{stripeSubscription.customerId.slice(-8)}</p>
+                                <p className="text-xs font-mono text-gray-900">{subscriptionStatus.customerId.slice(-8)}</p>
                               </>
                             )}
                           </div>
@@ -848,11 +903,52 @@ function Settings() {
                   </div>
                 </div>
 
+                {/* Usage Summary */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Usage Summary (This Billing Cycle)</h3>
+                  <div className="bg-gray-50 rounded-lg p-6">
+                    {usageSummary ? (
+                      <div className="space-y-4">
+                        {Object.entries(usageSummary).map(([toolName, usage]) => (
+                          <div key={toolName} className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-medium text-gray-900 capitalize">
+                                  {toolName.replace('_', ' ')}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  {usage.limit === -1 ? 'Unlimited' : `${usage.used} / ${usage.limit}`}
+                                </span>
+                              </div>
+                              {usage.limit !== -1 && (
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className={`h-2 rounded-full ${
+                                      usage.used >= usage.limit ? 'bg-red-500' :
+                                      usage.used >= usage.limit * 0.8 ? 'bg-yellow-500' : 'bg-green-500'
+                                    }`}
+                                    style={{ width: `${Math.min((usage.used / usage.limit) * 100, 100)}%` }}
+                                  ></div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
+                        <p className="text-gray-500">Loading usage summary...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Billing Actions */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Billing Management</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Actions</h3>
                   <div className="space-y-4">
-                    {stripeSubscription?.customerId && (
+                    {subscriptionStatus?.customerId && (
                       <button
                         onClick={handleManageSubscription}
                         disabled={billingLoading}
@@ -866,7 +962,7 @@ function Settings() {
                         ) : (
                           <>
                             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             Manage Subscription
@@ -875,12 +971,12 @@ function Settings() {
                       </button>
                     )}
 
-                    {stripeSubscription?.status === 'no_subscription' && (
+                    {subscriptionStatus?.plan === 'free' && (
                       <div className="space-y-3">
                         <h4 className="text-md font-medium text-gray-900">Upgrade Your Plan</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <button
-                            onClick={() => handleUpgradePlan('price_pro_monthly')}
+                            onClick={() => handleUpgrade('pro_limited')}
                             disabled={billingLoading}
                             className="px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
                           >
@@ -894,14 +990,14 @@ function Settings() {
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
-                                Upgrade to Pro
+                                Pro Limited ($6.99/month)
                               </>
                             )}
                           </button>
                           <button
-                            onClick={() => handleUpgradePlan('price_enterprise_monthly')}
+                            onClick={() => handleUpgrade('pro_unlimited')}
                             disabled={billingLoading}
-                            className="px-4 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
+                            className="px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
                           >
                             {billingLoading ? (
                               <>
@@ -911,13 +1007,38 @@ function Settings() {
                             ) : (
                               <>
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
-                                Enterprise Plan
+                                Pro Unlimited ($11.99/month)
                               </>
                             )}
                           </button>
                         </div>
+                      </div>
+                    )}
+
+                    {subscriptionStatus?.plan === 'pro_limited' && (
+                      <div className="space-y-3">
+                        <h4 className="text-md font-medium text-gray-900">Upgrade to Unlimited</h4>
+                        <button
+                          onClick={() => handleUpgrade('pro_unlimited')}
+                          disabled={billingLoading}
+                          className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center"
+                        >
+                          {billingLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                              Upgrade to Pro Unlimited ($11.99/month)
+                            </>
+                          )}
+                        </button>
                       </div>
                     )}
                   </div>
