@@ -11,6 +11,13 @@ function PlainEnglishTranslator() {
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  // Prompt context for saving
+  const [promptContext, setPromptContext] = useState<{
+    system_prompt?: string;
+    user_input?: string;
+    final_prompt?: string;
+    raw_response_text?: string;
+  } | null>(null);
   const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
@@ -27,6 +34,13 @@ function PlainEnglishTranslator() {
       const response = await apiClient.plainEnglishTranslator(originalText);
 
       if (response.data) {
+        // Extract prompt context if available
+        if (response.data._promptContext) {
+          setPromptContext(response.data._promptContext);
+        } else {
+          setPromptContext(null);
+        }
+        
         setOutput(response.data);
       }
     } catch (err: any) {
@@ -116,6 +130,10 @@ function PlainEnglishTranslator() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Plain English translation of: "${originalText.substring(0, 100)}${originalText.length > 100 ? '...' : ''}"`}
+            systemPrompt={promptContext?.system_prompt}
+            userInput={promptContext?.user_input}
+            finalPrompt={promptContext?.final_prompt}
+            rawResponseText={promptContext?.raw_response_text}
           />
         </div>
       </div>
