@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import SavedResponseActions from '../components/SavedResponseActions';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { apiClient } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { FaLightbulb, FaClipboardList, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
@@ -159,7 +160,11 @@ function SignalLab() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Interpretation</h2>
-            {structured ? (
+            {isLoading ? (
+              <div className="text-center py-12">
+                <LoadingSpinner size="lg" showText text="Interpreting your signal..." />
+              </div>
+            ) : structured ? (
               <div>
                 {renderStructured()}
                 {/* Action buttons for saving/favoriting/sharing */}

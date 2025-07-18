@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import AppLayout from '../components/AppLayout';
 import SavedResponseActions from '../components/SavedResponseActions';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { apiClient } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { FaLightbulb, FaClipboardList, FaCheckCircle, FaChartLine, FaUserTie, FaArrowRight } from 'react-icons/fa';
@@ -473,7 +474,11 @@ function PlayBuilder() {
                 <p className="text-sm text-yellow-800">{userNote}</p>
               </div>
             )}
-            {structured ? (
+            {isLoading ? (
+              <div className="text-center py-12">
+                <LoadingSpinner size="lg" showText text="Generating your hypothesis..." />
+              </div>
+            ) : structured ? (
               <div>
                 {renderStructured()}
                 {/* Action buttons for saving/favoriting/sharing */}
