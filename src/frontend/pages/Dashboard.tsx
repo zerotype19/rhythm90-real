@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import { apiClient } from '../lib/api';
 import AppLayout from '../components/AppLayout';
+import { useUsageTracking } from '../hooks/useUsageTracking';
 import { 
   ChartBarIcon, 
   UserGroupIcon, 
@@ -43,6 +44,7 @@ interface DashboardData {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const { usageSummary, subscriptionStatus, isLoading: usageLoading } = useUsageTracking();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +179,60 @@ const Dashboard: React.FC = () => {
               <WrenchScrewdriverIcon className="h-8 w-8 text-orange-600 group-hover:text-orange-700 mb-2" />
               <span className="text-sm font-medium text-gray-900 group-hover:text-orange-700">Mini Tools</span>
             </a>
+          </div>
+        </div>
+
+        {/* Usage Status Bars */}
+        <div className="mb-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Tool Usage (This Billing Cycle)</h2>
+              {subscriptionStatus && (
+                <span className="text-sm font-medium text-gray-500 capitalize">
+                  {subscriptionStatus.plan} Plan
+                </span>
+              )}
+            </div>
+            <div className="bg-gray-50 rounded-lg p-6">
+              {usageSummary ? (
+                <div className="space-y-4">
+                  {Object.entries(usageSummary).map(([toolName, usage]) => (
+                    <div key={toolName} className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-900 capitalize">
+                            {toolName.replace('_', ' ')}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {usage.limit === -1 ? 'Unlimited' : `${usage.used} / ${usage.limit}`}
+                          </span>
+                        </div>
+                        {usage.limit !== -1 && (
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${
+                                usage.used >= usage.limit ? 'bg-red-500' :
+                                usage.used >= usage.limit * 0.8 ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min((usage.used / usage.limit) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : usageLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading usage summary...</p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Unable to load usage data</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
