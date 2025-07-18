@@ -38,7 +38,7 @@ function LandingPage() {
       </div>
 
       {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-6 pt-12 pb-20">
+      <div className="max-w-7xl mx-auto px-6 pt-12 pb-8">
         <div className="grid md:grid-cols-3 gap-8">
           <div className="text-center group cursor-pointer">
             <div className="bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -73,7 +73,7 @@ function LandingPage() {
       </div>
 
       {/* New Section */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="text-center">
           <h2 className="text-2xl font-semibold mb-4">Built for Teams That Want to Work Smarter</h2>
           <p className="text-gray-300 max-w-3xl mx-auto">
@@ -83,7 +83,7 @@ function LandingPage() {
       </div>
 
       {/* Book Banner Section */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-6 pt-8 pb-16">
         <div className="bg-gradient-to-r from-red-900 to-red-800 rounded-2xl p-8 md:p-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex-1 text-center md:text-left">
