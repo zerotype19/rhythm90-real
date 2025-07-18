@@ -135,6 +135,7 @@ function AgileSprintPlanner() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Sprint plan for: "${challengeStatement.substring(0, 100)}${challengeStatement.length > 100 ? '...' : ''}"`}
+            promptContext={output.prompt_context}
           />
         </div>
       </div>

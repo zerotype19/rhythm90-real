@@ -1647,6 +1647,15 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       }
     }
 
+    // Extract prompt context for saving
+    const promptContext = {
+      tool_name: 'Agile Sprint Planner',
+      user_input: `Challenge Statement: ${challenge_statement}\nTime Horizon: ${time_horizon}\nTeam Size/Roles: ${team_size_roles}`,
+      system_prompt: systemPromptText,
+      user_message: userMessage.content,
+      ai_response: aiResponse
+    };
+
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'agile-sprint-planner',
@@ -1659,7 +1668,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    return jsonResponse({
+      ...backendPayload,
+      prompt_context: promptContext
+    });
   } catch (error) {
     console.error('Agile Sprint Planner error:', error);
     return errorResponse('Failed to generate sprint plan', 500);
