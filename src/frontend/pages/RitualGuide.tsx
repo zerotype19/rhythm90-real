@@ -16,6 +16,13 @@ function RitualGuide() {
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [userNote, setUserNote] = useState('');
+  // Prompt context for saving
+  const [promptContext, setPromptContext] = useState<{
+    system_prompt?: string;
+    user_input?: string;
+    final_prompt?: string;
+    raw_response_text?: string;
+  } | null>(null);
   const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
@@ -41,6 +48,13 @@ function RitualGuide() {
       };
       const response = await apiClient.generateRitualPrompts(payload);
       if (response.data) {
+        // Extract prompt context if available
+        if (response.data._promptContext) {
+          setPromptContext(response.data._promptContext);
+        } else {
+          setPromptContext(null);
+        }
+        
         // Check for user note from backend
         if (response.data.user_note) {
           setUserNote(response.data.user_note);
@@ -255,6 +269,10 @@ function RitualGuide() {
                     responseData={structured}
                     teamId={currentTeam?.id}
                     summary={`${ritualType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ritual for ${teamType || 'team'}`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>
@@ -270,6 +288,10 @@ function RitualGuide() {
                     responseData={{ output }}
                     teamId={currentTeam?.id}
                     summary={`${ritualType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} ritual for ${teamType || 'team'}`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>
