@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
+import { useGoogleAnalytics } from './hooks/useGoogleAnalytics';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import TermsOfService from './pages/TermsOfService';
@@ -36,10 +37,17 @@ import InvitePage from './pages/InvitePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
 
+// Google Analytics wrapper component
+function GoogleAnalyticsWrapper() {
+  useGoogleAnalytics();
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <GoogleAnalyticsWrapper />
         <div className="min-h-screen bg-gray-50">
           <Routes>
             {/* Public routes */}

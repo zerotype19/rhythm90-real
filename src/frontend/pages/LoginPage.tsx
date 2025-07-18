@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { trackLogin } from '../utils/analytics';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const OAUTH_REDIRECT_URI = 'https://api.rhythm90.io/api/auth/callback/google';
@@ -18,6 +19,7 @@ function LoginPage() {
   }, [user, navigate]);
 
   const handleGoogleLogin = () => {
+    trackLogin('google');
     const scope = 'email profile';
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(OAUTH_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(scope)}`;
     window.location.href = authUrl;

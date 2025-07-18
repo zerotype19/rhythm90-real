@@ -4,6 +4,7 @@ import SavedResponseActions from '../components/SavedResponseActions';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { apiClient } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { trackAIGeneration } from '../utils/analytics';
 import { FaLightbulb, FaClipboardList, FaCheckCircle, FaChartLine, FaUserTie, FaArrowRight } from 'react-icons/fa';
 
 const TEAM_TYPE_OPTIONS = [
@@ -263,6 +264,8 @@ function PlayBuilder() {
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
+    
+    trackAIGeneration('play_builder');
     setIsLoading(true);
     try {
       // Helper to extract .value for dropdowns/objects, or use string
