@@ -1297,6 +1297,15 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       }
     }
 
+    // Extract prompt context for saving
+    const promptContext = {
+      tool_name: 'Journey Builder',
+      user_input: `Product/Service: ${product_or_service}\nPrimary Objective: ${primary_objective}\nKey Barrier: ${key_barrier || 'None specified'}`,
+      system_prompt: systemPromptText,
+      user_message: userMessage.content,
+      ai_response: aiResponse
+    };
+
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'journey-builder',
@@ -1309,7 +1318,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    return jsonResponse({
+      ...backendPayload,
+      prompt_context: promptContext
+    });
   } catch (error) {
     console.error('Journey Builder error:', error);
     return errorResponse('Failed to build journey', 500);

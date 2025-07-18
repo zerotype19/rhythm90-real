@@ -103,6 +103,7 @@ function JourneyBuilder() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Journey for: "${productOrService}" - ${primaryObjective}`}
+            promptContext={output.prompt_context}
           />
         </div>
       </div>
