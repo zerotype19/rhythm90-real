@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import SecurityPolicy from './pages/SecurityPolicy';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import PlayBuilder from './pages/PlayBuilder';
@@ -45,6 +46,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/security" element={<SecurityPolicy />} />
             <Route path="/shared/:slug" element={<PublicSharedPage />} />
             <Route path="/invite" element={<InvitePage />} />
             
