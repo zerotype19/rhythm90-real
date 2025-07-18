@@ -9,8 +9,8 @@ interface StripeCheckoutReturn {
 
 // Stripe Price IDs - these should match your Stripe dashboard
 const STRIPE_PRICE_IDS = {
-  pro_limited: 'price_1OqX2X2X2X2X2X2X2X2X2X2X', // Replace with actual price ID
-  pro_unlimited: 'price_1OqX2X2X2X2X2X2X2X2X2X2X' // Replace with actual price ID
+  pro_limited: 'price_1RmHyDBItJBWbjkr1R7L8vGF',
+  pro_unlimited: 'price_1RmHycBItJBWbjkrxYHNuK87'
 };
 
 export const useStripeCheckout = (): StripeCheckoutReturn => {
