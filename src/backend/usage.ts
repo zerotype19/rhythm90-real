@@ -4,12 +4,10 @@ import { jsonResponse, errorResponse } from './utils';
 
 export async function checkUsageLimit(request: Request, env: Env, toolName: string): Promise<{ allowed: boolean; reason?: string; usage?: any }> {
   try {
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       return { allowed: false, reason: 'Unauthorized' };
     }
-
-    const { user } = authResult;
 
     // Get user's current plan and trial status
     const userResult = await env.DB.prepare(`
@@ -84,12 +82,10 @@ export async function checkUsageLimit(request: Request, env: Env, toolName: stri
 
 export async function recordUsage(request: Request, env: Env, toolName: string): Promise<Response> {
   try {
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       return errorResponse('Unauthorized', 401);
     }
-
-    const { user } = authResult;
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1); // First day of current month
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
@@ -147,12 +143,10 @@ export async function getCurrentUsage(userId: string, toolName: string, env: Env
 
 export async function getUserUsageSummary(request: Request, env: Env): Promise<Response> {
   try {
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       return errorResponse('Unauthorized', 401);
     }
-
-    const { user } = authResult;
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);

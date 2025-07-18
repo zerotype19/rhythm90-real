@@ -25,13 +25,11 @@ export async function handleGetPortalLink(request: Request, env: Env): Promise<R
   try {
     console.log('handleGetPortalLink: Starting');
     
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       console.log('handleGetPortalLink: Unauthorized');
       return errorResponse('Unauthorized', 401);
     }
-
-    const { user } = authResult;
     console.log('handleGetPortalLink: User authenticated:', user.id);
 
     // Get user's Stripe customer ID
@@ -104,13 +102,11 @@ export async function handleCreateCheckoutSession(request: Request, env: Env): P
   try {
     console.log('handleCreateCheckoutSession: Starting');
     
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       console.log('handleCreateCheckoutSession: Unauthorized');
       return errorResponse('Unauthorized', 401);
     }
-
-    const { user } = authResult;
     console.log('handleCreateCheckoutSession: User authenticated:', user.id);
 
     const body = await request.json();
@@ -211,13 +207,11 @@ export async function handleGetSubscriptionStatus(request: Request, env: Env): P
   try {
     console.log('handleGetSubscriptionStatus: Starting');
     
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       console.log('handleGetSubscriptionStatus: Unauthorized');
       return errorResponse('Unauthorized', 401);
     }
-
-    const { user } = authResult;
     console.log('handleGetSubscriptionStatus: User authenticated:', user.id);
 
     // Get user's subscription and payment status
@@ -297,13 +291,11 @@ export async function handleGetUsageSummary(request: Request, env: Env): Promise
   try {
     console.log('handleGetUsageSummary: Starting');
     
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       console.log('handleGetUsageSummary: Unauthorized');
       return errorResponse('Unauthorized', 401);
     }
-
-    const { user } = authResult;
     console.log('handleGetUsageSummary: User authenticated:', user.id);
 
     // Get user's plan tier
@@ -358,13 +350,11 @@ export async function handleLogUsage(request: Request, env: Env): Promise<Respon
   try {
     console.log('handleLogUsage: Starting');
     
-    const authResult = await verifyAuth(request, env);
-    if (!authResult.success) {
+    const user = await verifyAuth(request, env);
+    if (!user) {
       console.log('handleLogUsage: Unauthorized');
       return errorResponse('Unauthorized', 401);
     }
-
-    const { user } = authResult;
     const body = await request.json();
     const { toolName } = body;
 
