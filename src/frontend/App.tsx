@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './lib/auth';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
+import TermsOfService from './pages/TermsOfService';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import PlayBuilder from './pages/PlayBuilder';
@@ -41,6 +42,7 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/terms" element={<TermsOfService />} />
             <Route path="/shared/:slug" element={<PublicSharedPage />} />
             <Route path="/invite" element={<InvitePage />} />
             
