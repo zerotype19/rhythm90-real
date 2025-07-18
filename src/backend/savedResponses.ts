@@ -7,6 +7,10 @@ export interface SaveResponseParams {
   tool_name: string;
   summary: string;
   response_blob: string;
+  system_prompt?: string;
+  user_input?: string;
+  final_prompt?: string;
+  raw_response_text?: string;
 }
 
 export interface SavedResponse {
@@ -16,6 +20,10 @@ export interface SavedResponse {
   tool_name: string;
   summary: string;
   response_blob: string;
+  system_prompt?: string;
+  user_input?: string;
+  final_prompt?: string;
+  raw_response_text?: string;
   is_favorite: boolean;
   is_shared_public: boolean;
   shared_slug?: string;
@@ -50,9 +58,14 @@ export const saveResponse = async (env: any, params: SaveResponseParams): Promis
     const result = await env.DB.prepare(`
       INSERT INTO ai_saved_responses (
         id, user_id, team_id, tool_name, summary, response_blob, 
+        system_prompt, user_input, final_prompt, raw_response_text,
         is_favorite, is_shared_public, is_shared_team, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?)
-    `).bind(id, user_id, team_id || null, tool_name, summary, response_blob, now, now).run();
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, ?, ?)
+    `).bind(
+      id, user_id, team_id || null, tool_name, summary, response_blob,
+      params.system_prompt || null, params.user_input || null, params.final_prompt || null, params.raw_response_text || null,
+      now, now
+    ).run();
 
     if (result.success) {
       // Log the action

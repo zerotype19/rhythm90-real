@@ -24,6 +24,10 @@ interface SavedResponse {
   tool_name: string;
   summary: string;
   response_blob: string;
+  system_prompt?: string;
+  user_input?: string;
+  final_prompt?: string;
+  raw_response_text?: string;
   is_favorite: boolean;
   is_shared_public: boolean;
   is_shared_team: boolean;
@@ -597,8 +601,43 @@ function TeamSharedPage() {
                   </button>
                 </div>
 
+                {/* User Input Section */}
+                {selectedResponse.user_input && (
+                  <div className="mb-4">
+                    <details className="group">
+                      <summary className="cursor-pointer font-semibold text-gray-900 mb-2 flex items-center">
+                        <span className="mr-2">▼</span>
+                        User Input
+                      </summary>
+                      <div className="bg-blue-50 rounded-md p-4 mt-2">
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                          {selectedResponse.user_input}
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                )}
+
+                {/* System Prompt Section */}
+                {selectedResponse.system_prompt && (
+                  <div className="mb-4">
+                    <details className="group">
+                      <summary className="cursor-pointer font-semibold text-gray-900 mb-2 flex items-center">
+                        <span className="mr-2">▼</span>
+                        System Prompt
+                      </summary>
+                      <div className="bg-green-50 rounded-md p-4 mt-2">
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                          {selectedResponse.system_prompt}
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                )}
+
+                {/* AI Response Section */}
                 <div className="mb-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Full Response</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">AI Response</h3>
                   <div className="bg-gray-50 rounded-md p-4 overflow-x-auto max-h-[60vh] overflow-y-auto">
                     <div 
                       className="text-sm text-gray-700 whitespace-pre-wrap break-words"
@@ -606,6 +645,23 @@ function TeamSharedPage() {
                     />
                   </div>
                 </div>
+
+                {/* Raw Response Text Section (if different from structured response) */}
+                {selectedResponse.raw_response_text && selectedResponse.raw_response_text !== selectedResponse.response_blob && (
+                  <div className="mb-4">
+                    <details className="group">
+                      <summary className="cursor-pointer font-semibold text-gray-900 mb-2 flex items-center">
+                        <span className="mr-2">▼</span>
+                        Raw AI Response
+                      </summary>
+                      <div className="bg-yellow-50 rounded-md p-4 mt-2">
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                          {selectedResponse.raw_response_text}
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-2">
                   {selectedResponse.is_shared_public && selectedResponse.shared_slug && (

@@ -244,6 +244,48 @@ export async function logAIUsage(db: any, userId: string, toolName: string): Pro
   }
 }
 
+// Helper function to save AI response with full prompt context
+export async function saveAIResponseWithContext(
+  env: any,
+  userId: string,
+  teamId: string | null,
+  toolName: string,
+  summary: string,
+  responseBlob: string,
+  messages: any[],
+  aiResponse: string
+): Promise<{ success: boolean; message: string; data?: any }> {
+  try {
+    // Extract system prompt and user input from messages
+    const systemMessages = messages.filter(msg => msg.role === 'system');
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    
+    const systemPrompt = systemMessages.map(msg => msg.content).join('\n\n');
+    const userInput = userMessages.map(msg => msg.content).join('\n\n');
+    const finalPrompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+    
+    // Import saveResponse function
+    const { saveResponse } = await import('./savedResponses');
+    
+    const result = await saveResponse(env, {
+      user_id: userId,
+      team_id: teamId,
+      tool_name: toolName,
+      summary,
+      response_blob: responseBlob,
+      system_prompt: systemPrompt,
+      user_input: userInput,
+      final_prompt: finalPrompt,
+      raw_response_text: aiResponse
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('Error saving AI response with context:', error);
+    return { success: false, message: 'Failed to save response with context' };
+  }
+}
+
 // Response helpers
 export function jsonResponse(data: any, status: number = 200): Response {
   return new Response(JSON.stringify(data), {

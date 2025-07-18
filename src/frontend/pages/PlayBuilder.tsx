@@ -36,6 +36,13 @@ function PlayBuilder() {
   const [userNote, setUserNote] = useState('');
   // Validation
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  // Prompt context for saving
+  const [promptContext, setPromptContext] = useState<{
+    system_prompt?: string;
+    user_input?: string;
+    final_prompt?: string;
+    raw_response_text?: string;
+  } | null>(null);
   const { currentTeam } = useAuth();
 
   // Helper to validate fields
@@ -277,6 +284,13 @@ function PlayBuilder() {
       };
       const response = await apiClient.generatePlay(payload);
       if (response.data) {
+        // Extract prompt context if available
+        if (response.data._promptContext) {
+          setPromptContext(response.data._promptContext);
+        } else {
+          setPromptContext(null);
+        }
+        
         // Check if we have structured data (new format)
         if (response.data.hypothesis || response.data.how_to_run_summary || response.data.signals_to_watch || 
             response.data.owner_role || response.data.what_success_looks_like || response.data.next_recommendation) {
@@ -469,6 +483,10 @@ function PlayBuilder() {
                     responseData={structured}
                     teamId={currentTeam?.id}
                     summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>
@@ -482,6 +500,10 @@ function PlayBuilder() {
                     responseData={{ output, hypothesis, suggestions }}
                     teamId={currentTeam?.id}
                     summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>
@@ -522,6 +544,10 @@ function PlayBuilder() {
                     responseData={{ hypothesis, suggestions }}
                     teamId={currentTeam?.id}
                     summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>

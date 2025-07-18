@@ -298,12 +298,39 @@ class ApiClient {
 
   // Saved Responses
   /**
-   * Save a response (requires summary, tool_name, response_blob, optional team_id)
+   * Save a response (requires summary, tool_name, response_blob, optional team_id and prompt context)
    */
-  async saveResponse({ summary, tool_name, response_blob, team_id }: { summary: string; tool_name: string; response_blob: string; team_id?: string }) {
+  async saveResponse({ 
+    summary, 
+    tool_name, 
+    response_blob, 
+    team_id,
+    system_prompt,
+    user_input,
+    final_prompt,
+    raw_response_text
+  }: { 
+    summary: string; 
+    tool_name: string; 
+    response_blob: string; 
+    team_id?: string;
+    system_prompt?: string;
+    user_input?: string;
+    final_prompt?: string;
+    raw_response_text?: string;
+  }) {
     return this.request('/api/saved-responses/save', {
       method: 'POST',
-      body: JSON.stringify({ summary, tool_name, response_blob, team_id }),
+      body: JSON.stringify({ 
+        summary, 
+        tool_name, 
+        response_blob, 
+        team_id,
+        system_prompt,
+        user_input,
+        final_prompt,
+        raw_response_text
+      }),
       credentials: 'include',
     });
   }

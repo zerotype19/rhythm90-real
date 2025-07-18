@@ -12,6 +12,11 @@ interface SavedResponseActionsProps {
   isSharedPublic?: boolean;
   isSharedTeam?: boolean;
   onStatusChange?: () => void;
+  // New prompt context fields
+  systemPrompt?: string;
+  userInput?: string;
+  finalPrompt?: string;
+  rawResponseText?: string;
 }
 
 export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
@@ -24,6 +29,10 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
   isSharedPublic = false,
   isSharedTeam = false,
   onStatusChange,
+  systemPrompt,
+  userInput,
+  finalPrompt,
+  rawResponseText,
 }) => {
   // State for modals and actions
   const [showSave, setShowSave] = useState(false);
@@ -53,6 +62,10 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
         tool_name: toolName,
         response_blob: JSON.stringify(responseData),
         team_id: teamId,
+        system_prompt: systemPrompt,
+        user_input: userInput,
+        final_prompt: finalPrompt,
+        raw_response_text: rawResponseText,
       });
       
       if (res.data?.data?.id) {
@@ -102,6 +115,10 @@ export const SavedResponseActions: React.FC<SavedResponseActionsProps> = ({
         tool_name: toolName,
         response_blob: JSON.stringify(responseData),
         team_id: teamId,
+        system_prompt: systemPrompt,
+        user_input: userInput,
+        final_prompt: finalPrompt,
+        raw_response_text: rawResponseText,
       });
       
       if (res.data?.data?.id) {

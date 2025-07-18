@@ -268,7 +268,11 @@ export default {
           team_id: body.team_id,
           tool_name: body.tool_name,
           summary: body.summary,
-          response_blob: body.response_blob
+          response_blob: body.response_blob,
+          system_prompt: body.system_prompt,
+          user_input: body.user_input,
+          final_prompt: body.final_prompt,
+          raw_response_text: body.raw_response_text
         });
         
         if (result.success) {

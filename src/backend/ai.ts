@@ -299,8 +299,25 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
       user_note: userNote,
       timestamp: new Date().toISOString()
     };
-    // Return structured payload
-    return jsonResponse(backendPayload);
+    
+    // Extract prompt context for saving
+    const systemMessages = messages.filter(msg => msg.role === 'system');
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    
+    const systemPrompt = systemMessages.map(msg => msg.content).join('\n\n');
+    const userInput = userMessages.map(msg => msg.content).join('\n\n');
+    const finalPrompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+    
+    // Return structured payload with prompt context
+    return jsonResponse({
+      ...backendPayload,
+      _promptContext: {
+        system_prompt: systemPrompt,
+        user_input: userInput,
+        final_prompt: finalPrompt,
+        raw_response_text: aiResponse
+      }
+    });
   } catch (error) {
     console.error('Generate play error:', error);
     return errorResponse('Failed to generate play', 500);
