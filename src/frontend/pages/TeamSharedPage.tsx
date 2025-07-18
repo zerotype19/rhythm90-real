@@ -339,7 +339,7 @@ function TeamSharedPage() {
               className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-2"
             >
               <FaArrowLeft className="w-4 h-4 mr-2" />
-              ← Back to Team Shared
+              Back to Team Shared
             </Link>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center">
@@ -349,7 +349,7 @@ function TeamSharedPage() {
                     {response.tool_name}
                   </h1>
                   <p className="text-sm sm:text-base text-gray-600 mt-1">
-                    {formatDate(response.created_at)} • Shared by {response.user_email}
+                    {formatDate(response.created_at)} • Shared by {response.user_email || 'Unknown User'}
                   </p>
                 </div>
               </div>
