@@ -2,6 +2,7 @@ import { Env, GeneratePlayRequest, GeneratePlayResponse, InterpretSignalRequest,
 import { callOpenAI, jsonResponse, errorResponse, logAIUsage } from './utils';
 import { verifyAuth } from './auth';
 import { buildSystemPrompt } from './systemPrompts';
+import { checkUsageLimit, recordUsage } from './usage';
 
 // Function to get team context for AI prompts
 async function getTeamContext(db: any, userId: string): Promise<string> {
@@ -100,6 +101,12 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
   try {
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
+
+    // Check usage limits
+    const usageCheck = await checkUsageLimit(request, env, 'play_builder');
+    if (!usageCheck.allowed) {
+      return errorResponse(usageCheck.reason || 'Usage limit exceeded', 429);
+    }
     const body: any = await request.json();
     // Log raw request body (excluding PII)
     const { idea_prompt, top_signal, team_type, quarter_focus, owner_role, idea, context } = body;
@@ -214,9 +221,12 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
     // Log full OpenAI response
     console.log('[AI DEBUG] PlayBuilder Raw OpenAI Response:', aiResponse);
     
-    // Log AI usage
+        // Log AI usage
     await logAIUsage(env.DB, user.id, 'play_builder');
-    
+
+    // Record usage for billing
+    await recordUsage(request, env, 'play_builder');
+
     // --- Output Structuring ---
     let backendPayload: any = {};
     let warning = undefined;
@@ -331,6 +341,12 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
   try {
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
+
+    // Check usage limits
+    const usageCheck = await checkUsageLimit(request, env, 'signal_lab');
+    if (!usageCheck.allowed) {
+      return errorResponse(usageCheck.reason || 'Usage limit exceeded', 429);
+    }
     const body: InterpretSignalRequest = await request.json();
     const { observation, context, team_type, session_purpose, challenges } = body;
     if (!observation) return errorResponse('Observation is required', 400);
@@ -374,6 +390,9 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'signal_lab');
+
+    // Record usage for billing
+    await recordUsage(request, env, 'signal_lab');
 
     // --- Output Structuring ---
     let backendPayload: any = {};
@@ -471,6 +490,12 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
   try {
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
+
+    // Check usage limits
+    const usageCheck = await checkUsageLimit(request, env, 'ritual_guide');
+    if (!usageCheck.allowed) {
+      return errorResponse(usageCheck.reason || 'Usage limit exceeded', 429);
+    }
     const body: GenerateRitualPromptsRequest = await request.json();
     const { ritual_type, team_type, top_challenges, focus_areas, additional_context } = body;
     if (!ritual_type) return errorResponse('Ritual type is required', 400);
@@ -567,6 +592,9 @@ Additional Refinements:
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'ritual_guide');
+
+    // Record usage for billing
+    await recordUsage(request, env, 'ritual_guide');
 
     // --- Output Structuring ---
     let backendPayload: any = {};

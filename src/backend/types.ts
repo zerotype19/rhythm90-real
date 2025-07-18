@@ -224,4 +224,8 @@ export interface Env {
   MAILERSEND_API_KEY: string;
   MAILERSEND_FROM_EMAIL: string;
   MAILERSEND_FROM_NAME: string;
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+  STRIPE_PRO_LIMITED_PRICE_ID: string;
+  STRIPE_PRO_UNLIMITED_PRICE_ID: string;
 } 

@@ -163,7 +163,7 @@ export async function handleCreateCheckoutSession(request: Request, env: Env): P
       }
     }
 
-    // Create checkout session
+    // Create checkout session with trial
     const checkoutPayload = {
       customer: customerId,
       payment_method_types: ['card'],
@@ -174,6 +174,12 @@ export async function handleCreateCheckoutSession(request: Request, env: Env): P
         },
       ],
       mode: 'subscription',
+      subscription_data: {
+        trial_period_days: 15,
+        metadata: {
+          user_id: user.id
+        }
+      },
       success_url: successUrl || `${env.APP_URL}/app/settings?tab=billing&success=true`,
       cancel_url: cancelUrl || `${env.APP_URL}/app/settings?tab=billing&canceled=true`,
       metadata: {

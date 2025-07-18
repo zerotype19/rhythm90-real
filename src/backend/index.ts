@@ -11,6 +11,8 @@ import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkD
 import { handleDashboardOverview, handleGetAnnouncements, handleCreateAnnouncement, handleUpdateAnnouncement, handleDeleteAnnouncement } from './dashboard';
 import { handleGetPortalLink, handleCreateCheckoutSession, handleGetSubscriptionStatus, getLastStripeDebugLog } from './billing';
 import { handleUpdateModel, handleUpdateAnnouncement as handleUpdateSystemAnnouncement, handleGetSettings } from './admin';
+import { handleStripeWebhook, initializePlanTierMapping } from './stripe-webhook';
+import { getUserUsageSummary } from './usage';
 import { handleGetSystemPrompts, handleUpdateSystemPrompt, handleGetPlaceholders } from './systemPrompts';
 import { handleCreatePlannerSession, handleGetPlannerSessions, handleGetPlannerSession } from './planner';
 import { handleGetSession as handleGetAssistantSession, handleSendMessage, handleClearConversation } from './assistant';
@@ -20,6 +22,9 @@ export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // Initialize plan tier mapping from environment variables
+    initializePlanTierMapping(env);
 
     // Handle CORS preflight requests
     if (request.method === 'OPTIONS') {
@@ -88,6 +93,16 @@ export default {
       }
       if (path === '/api/billing/subscription-status' && request.method === 'GET') {
         return await handleGetSubscriptionStatus(request, env);
+      }
+
+      // Stripe webhook route
+      if (path === '/api/stripe/webhook' && request.method === 'POST') {
+        return await handleStripeWebhook(request, env);
+      }
+
+      // Usage tracking routes
+      if (path === '/api/usage/summary' && request.method === 'GET') {
+        return await getUserUsageSummary(request, env);
       }
 
       // Team routes
