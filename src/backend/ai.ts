@@ -1922,6 +1922,15 @@ Replace Persona1, Age1, etc. with real values. Return ONLY raw JSON.`
       }
     }
 
+    // Extract prompt context for saving
+    const promptContext = {
+      tool_name: 'Synthetic Focus Group',
+      user_input: `Topic/Category: ${topic_or_category}\nTarget Audience: ${audience_seed_info}\nRequired Segments: ${must_include_segments || 'None'}`,
+      system_prompt: systemPromptText,
+      user_message: userMessage.content,
+      ai_response: aiResponse
+    };
+
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'synthetic-focus-group',
@@ -1935,7 +1944,10 @@ Replace Persona1, Age1, etc. with real values. Return ONLY raw JSON.`
     };
 
     // Store focus group in cookie if we have one
-    let response = jsonResponse(backendPayload);
+    let response = jsonResponse({
+      ...backendPayload,
+      prompt_context: promptContext
+    });
     if (backendPayload.persona_lineup && Array.isArray(backendPayload.persona_lineup) && backendPayload.persona_lineup.length > 0) {
       response = storeFocusGroupSession(user.id, backendPayload, response);
     }

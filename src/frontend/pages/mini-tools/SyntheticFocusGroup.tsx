@@ -242,6 +242,7 @@ function SyntheticFocusGroup() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Synthetic focus group for: "${topicOrCategory}"`}
+            promptContext={output.prompt_context}
           />
         </div>
       </div>
