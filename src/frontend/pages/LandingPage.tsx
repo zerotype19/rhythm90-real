@@ -40,10 +40,10 @@ function LandingPage() {
           </p>
           <Link 
             to="/login" 
-            className="group bg-red-600 hover:bg-red-700 px-8 py-4 rounded-lg text-lg font-medium transition-all duration-300 inline-flex items-center gap-2 hover:scale-105"
+            className="group bg-red-600 hover:bg-red-700 px-8 py-4 rounded-lg text-lg font-medium transition-all duration-300 inline-flex items-center gap-2 hover:scale-105 relative overflow-hidden"
           >
             Start Your Rhythm
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">→</span>
+            <span className="inline-block opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out">→</span>
           </Link>
         </div>
       </div>

@@ -68,4 +68,13 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Smooth button hover animations */
+.group:hover .group-hover\:translate-x-0 {
+  transform: translateX(0) !important;
+}
+
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1 !important;
 } 
