@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import { useState } from 'react';
 import AssistantModal from './AssistantModal';
 import FloatingChatIcon from './FloatingChatIcon';
+import Footer from './Footer';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -121,7 +122,7 @@ function AppLayout({ children }: AppLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Mobile Hamburger */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white shadow z-50">
         <Link to="/app/dashboard" className="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
@@ -282,10 +283,13 @@ function AppLayout({ children }: AppLayoutProps) {
         )}
       </div>
       {/* Main Content */}
-      <div className="md:pl-64">
-        <main className="min-h-screen px-2 sm:px-4 md:px-0">
+      <div className="md:pl-64 flex-1 flex flex-col">
+        <main className="flex-1 px-2 sm:px-4 md:px-0">
           {children}
         </main>
+        
+        {/* Footer */}
+        <Footer />
       </div>
 
       {/* Floating Chat Icon */}
