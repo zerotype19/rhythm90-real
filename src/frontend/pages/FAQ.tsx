@@ -1,10 +1,20 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 
-const FAQ: React.FC = () => {
+function FAQ() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-sm p-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <Link to="/" className="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
+            Rhythm90
+          </Link>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white shadow-lg rounded-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Frequently Asked Questions</h1>
           
           <div className="space-y-8">
@@ -133,10 +143,20 @@ const FAQ: React.FC = () => {
               </p>
             </div>
           </div>
+
+          {/* Back to Home */}
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <Link 
+              to="/" 
+              className="text-red-600 hover:text-red-700 font-medium transition-colors"
+            >
+              ← Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default FAQ; 
