@@ -1,7 +1,19 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import Footer from '../components/Footer';
 
 function LandingPage() {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Add delay for icon pulse animation
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 800); // 0.8 second delay
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white flex flex-col">
       {/* Navigation */}
@@ -21,18 +33,17 @@ function LandingPage() {
       <div className="max-w-7xl mx-auto px-6 py-20">
         <div className="text-center">
           <h1 className="text-6xl font-bold mb-6">
-            Build Better Teams with
-            <span className="text-red-500"> Rhythm</span>
+            Build Smarter Teams with Rhythm90
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Transform your team's performance with AI-powered play building, signal interpretation, 
-            and ritual guidance. Make data-driven decisions and build winning strategies.
+            Bring clarity, focus, and momentum to your team. Use AI-assisted plays, live insights, and simple rituals to turn every quarter into real progress.
           </p>
           <Link 
             to="/login" 
-            className="bg-red-600 hover:bg-red-700 px-8 py-4 rounded-lg text-lg font-medium transition-colors inline-block"
+            className="group bg-red-600 hover:bg-red-700 px-8 py-4 rounded-lg text-lg font-medium transition-all duration-300 inline-flex items-center gap-2 hover:scale-105"
           >
-            Get Started
+            Start Your Rhythm
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">→</span>
           </Link>
         </div>
       </div>
@@ -40,34 +51,34 @@ function LandingPage() {
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-6 py-20">
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center group cursor-pointer">
+            <div className={`bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${isLoaded ? 'animate-pulse' : ''}`}>
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Play Builder</h3>
-            <p className="text-gray-400">Transform ideas into testable hypotheses with AI assistance</p>
+            <h3 className="text-xl font-semibold mb-2 group-hover:underline transition-all duration-300">Play Builder</h3>
+            <p className="text-gray-400">Turn ideas into smart, testable plays — fast.</p>
           </div>
           
-          <div className="text-center">
-            <div className="bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center group cursor-pointer">
+            <div className={`bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${isLoaded ? 'animate-pulse' : ''}`}>
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Signal Lab</h3>
-            <p className="text-gray-400">Interpret observations and turn them into actionable insights</p>
+            <h3 className="text-xl font-semibold mb-2 group-hover:underline transition-all duration-300">Signal Lab</h3>
+            <p className="text-gray-400">Spot live signals and shape sharper decisions.</p>
           </div>
           
-          <div className="text-center">
-            <div className="bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="text-center group cursor-pointer">
+            <div className={`bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${isLoaded ? 'animate-pulse' : ''}`}>
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Ritual Guide</h3>
-            <p className="text-gray-400">Create effective team rituals and meeting structures</p>
+            <h3 className="text-xl font-semibold mb-2 group-hover:underline transition-all duration-300">Ritual Guide</h3>
+            <p className="text-gray-400">Run simple, high-impact rituals that stick.</p>
           </div>
         </div>
       </div>
@@ -105,6 +116,15 @@ function LandingPage() {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Footer Micro-copy */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="text-center">
+          <p className="text-sm text-gray-400">
+            Built by teams, for teams. No new tools. No extra noise.
+          </p>
         </div>
       </div>
       
