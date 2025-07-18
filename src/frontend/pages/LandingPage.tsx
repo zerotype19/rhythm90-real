@@ -71,6 +71,42 @@ function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* Book Banner Section */}
+      <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="bg-gradient-to-r from-red-900 to-red-800 rounded-2xl p-8 md:p-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Learn the Complete Framework
+              </h2>
+              <p className="text-xl text-red-100 mb-6 max-w-2xl">
+                Dive deeper into the Rhythm90 methodology with our comprehensive guide. 
+                Master the art of building high-performing teams through strategic play building, 
+                signal interpretation, and ritual design.
+              </p>
+              <a 
+                href="https://www.amazon.com/dp/B0FGF9VC5J"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white text-red-600 hover:bg-gray-100 px-8 py-3 rounded-lg font-semibold transition-colors inline-flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Get the Book on Amazon
+              </a>
+            </div>
+            <div className="flex-shrink-0">
+              <img 
+                src="/rhythm90_cover.jpg" 
+                alt="Rhythm90 Book Cover" 
+                className="w-48 h-64 object-cover rounded-lg shadow-2xl"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Footer */}
       <Footer />
