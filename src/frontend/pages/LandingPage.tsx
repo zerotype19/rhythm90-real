@@ -19,7 +19,7 @@ function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
+      <div className="max-w-7xl mx-auto px-6 pt-20 pb-12">
         <div className="text-center">
           <h1 className="text-6xl font-bold mb-6">
             Build Smarter Teams with Rhythm90
@@ -38,7 +38,7 @@ function LandingPage() {
       </div>
 
       {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
+      <div className="max-w-7xl mx-auto px-6 pt-12 pb-20">
         <div className="grid md:grid-cols-3 gap-8">
           <div className="text-center group cursor-pointer">
             <div className="bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
