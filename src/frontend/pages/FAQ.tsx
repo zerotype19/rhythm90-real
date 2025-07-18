@@ -131,6 +131,111 @@ function FAQ() {
             </div>
 
             <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">11. What plans are available?</h2>
+              <p className="text-gray-700 mb-2">We currently offer three plans:</p>
+              <p className="text-gray-700 mb-2">
+                <strong>Free Tier:</strong><br />
+                15-day trial with no tool usage after expiration.
+              </p>
+              <p className="text-gray-700 mb-2">
+                <strong>Pro Limited ($6.99/month):</strong><br />
+                Access to all tools, up to 100 uses per tool per month.
+              </p>
+              <p className="text-gray-700 mb-2">
+                <strong>Pro Unlimited ($11.99/month):</strong><br />
+                Unlimited access to all tools, no monthly limits.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">12. How does the free trial work?</h2>
+              <p className="text-gray-700 mb-2">All new subscriptions start with a 15-day free trial.</p>
+              <p className="text-gray-700 mb-2">You can explore all Pro features with no charge during this time.</p>
+              <p className="text-gray-700">
+                After 15 days, you'll need to upgrade to keep using the tools.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">13. How is usage tracked?</h2>
+              <p className="text-gray-700 mb-2">We track how many times you use each AI-powered tool (like Play Builder, Signal Lab, and Ritual Guide).</p>
+              <p className="text-gray-700 mb-2">
+                <strong>Pro Limited:</strong> 100 uses per tool per month.
+              </p>
+              <p className="text-gray-700 mb-2">
+                <strong>Pro Unlimited:</strong> No limits.
+              </p>
+              <p className="text-gray-700">
+                Usage resets on your billing cycle date — not on the first of each month.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">14. How do I upgrade or downgrade?</h2>
+              <p className="text-gray-700 mb-2">You can upgrade, downgrade, or cancel anytime through your account settings.</p>
+              <p className="text-gray-700">
+                Changes take effect immediately, and we'll handle the rest behind the scenes.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">15. What happens if I hit my limit?</h2>
+              <p className="text-gray-700 mb-2">If you reach your usage limit on the Pro Limited plan:</p>
+              <p className="text-gray-700 mb-2">You'll get a friendly upgrade prompt in the app.</p>
+              <p className="text-gray-700">
+                You can either wait until your usage resets next cycle or upgrade to Pro Unlimited for unlimited access.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">16. What happens if my payment fails?</h2>
+              <p className="text-gray-700 mb-2">If a payment fails (like an expired card), we'll:</p>
+              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                <li>Notify you by email.</li>
+                <li>Retry the payment per Stripe's standard schedule.</li>
+                <li>If the issue isn't resolved, your subscription will automatically downgrade to the Free Tier.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">17. How do you handle billing securely?</h2>
+              <p className="text-gray-700 mb-2">All payments are processed through Stripe, a global, PCI-compliant payment provider.</p>
+              <p className="text-gray-700 mb-2">We do not store your payment details on our servers.</p>
+              <p className="text-gray-700 mb-2">We only store:</p>
+              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                <li>Your Stripe subscription ID.</li>
+                <li>Your plan tier.</li>
+                <li>Trial end dates and usage counts.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">18. Can I see how much I've used?</h2>
+              <p className="text-gray-700">
+                Yes! We'll soon add a usage summary in your account settings, so you can track how many times you've used each tool this month.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">19. How do I cancel my subscription?</h2>
+              <p className="text-gray-700 mb-2">You can cancel anytime in your account settings.</p>
+              <p className="text-gray-700">
+                Your access will continue until the end of your billing period — no partial refunds, but no penalties either.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-3">20. Who can I contact for billing help?</h2>
+              <p className="text-gray-700 mb-2">If you have any billing questions or issues, email us at:</p>
+              <p className="text-gray-700">
+                billing@rhythm90.io
+              </p>
+              <p className="text-gray-700">
+                We're happy to help!
+              </p>
+            </div>
+
+            <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">Anything else I should know?</h2>
               <p className="text-gray-700 mb-2">
                 Rhythm90.io is here to help you work smarter — but we don't guarantee results or outcomes.

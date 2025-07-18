@@ -10,6 +10,7 @@ compatibility_flags = ["nodejs_compat"]
 binding = "DB"
 database_name = "rhythm90-db"
 database_id = "73d8857c-97f9-4cfa-800a-225d7346be67"
+migrations_dir = "migrations"
 
 [vars]
 APP_URL = "https://rhythm90.io"
