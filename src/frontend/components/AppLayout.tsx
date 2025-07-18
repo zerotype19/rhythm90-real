@@ -184,25 +184,25 @@ function AppLayout({ children }: AppLayoutProps) {
             {/* User Menu */}
             <div className="p-4 border-t border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                <div className="flex items-center min-w-0 flex-1">
+                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-sm font-medium">
                       {user?.name?.charAt(0) || 'U'}
                     </span>
                   </div>
-                  <div className="ml-3">
+                  <div className="ml-3 min-w-0 flex-1">
                     <div className="flex items-center space-x-2">
-                      <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                      <p className="text-sm font-medium text-gray-700 truncate">{user?.name}</p>
                       {subscriptionStatus && (
                         <PlanBadge plan={subscriptionStatus.plan} size="small" />
                       )}
                     </div>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                   </div>
                 </div>
                 <button
                   onClick={logout}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 ml-3 flex-shrink-0 p-1"
                   title="Sign out"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,25 +264,25 @@ function AppLayout({ children }: AppLayoutProps) {
               {/* User Menu */}
               <div className="p-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                  <div className="flex items-center min-w-0 flex-1">
+                    <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-white text-sm font-medium">
                         {user?.name?.charAt(0) || 'U'}
                       </span>
                     </div>
-                    <div className="ml-3">
+                    <div className="ml-3 min-w-0 flex-1">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                        <p className="text-sm font-medium text-gray-700 truncate">{user?.name}</p>
                         {subscriptionStatus && (
                           <PlanBadge plan={subscriptionStatus.plan} size="small" />
                         )}
                       </div>
-                      <p className="text-xs text-gray-500">{user?.email}</p>
+                      <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                     </div>
                   </div>
                   <button
                     onClick={logout}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 ml-3 flex-shrink-0 p-1"
                     title="Sign out"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
