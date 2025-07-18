@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth';
 import { useState } from 'react';
 import AssistantModal from './AssistantModal';
 import FloatingChatIcon from './FloatingChatIcon';
-import Footer from './Footer';
+import LoggedInFooter from './LoggedInFooter';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -289,7 +289,7 @@ function AppLayout({ children }: AppLayoutProps) {
         </main>
         
         {/* Footer */}
-        <Footer />
+        <LoggedInFooter />
       </div>
 
       {/* Floating Chat Icon */}
