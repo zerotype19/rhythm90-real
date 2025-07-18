@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppLayout from '../components/AppLayout';
 import SavedResponseActions from '../components/SavedResponseActions';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { apiClient } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { 
@@ -592,8 +593,7 @@ function QuarterlyPlannerForm() {
             
             {isLoading ? (
               <div className="text-center py-6 sm:py-8">
-                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-red-600 mx-auto mb-3 sm:mb-4"></div>
-                <p className="text-xs sm:text-sm text-gray-500">Generating your quarterly summary...</p>
+                <LoadingSpinner size="lg" showText text="Generating your quarterly summary..." />
               </div>
             ) : structuredSummary ? (
               <div>

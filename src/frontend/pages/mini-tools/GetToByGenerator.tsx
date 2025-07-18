@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppLayout from '../../components/AppLayout';
 import SavedResponseActions from '../../components/SavedResponseActions';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import { FaCrosshairs, FaArrowLeft } from 'react-icons/fa';
 import { apiClient } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -202,7 +203,11 @@ function GetToByGenerator() {
           {/* Output Section */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Generated Statement</h2>
-            {output ? (
+            {isLoading ? (
+              <div className="text-center py-12">
+                <LoadingSpinner size="lg" showText text="Generating your Get/To/By statement..." />
+              </div>
+            ) : output ? (
               renderOutput()
             ) : (
               <div className="text-center text-gray-500 py-8">
