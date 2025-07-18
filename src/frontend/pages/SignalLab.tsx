@@ -11,6 +11,13 @@ function SignalLab() {
   const [output, setOutput] = useState('');
   const [structured, setStructured] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Prompt context for saving
+  const [promptContext, setPromptContext] = useState<{
+    system_prompt?: string;
+    user_input?: string;
+    final_prompt?: string;
+    raw_response_text?: string;
+  } | null>(null);
   const { currentTeam } = useAuth();
 
   const handleInterpret = async () => {
@@ -19,6 +26,13 @@ function SignalLab() {
     try {
       const response = await apiClient.interpretSignal(observation, context);
       if (response.data) {
+        // Extract prompt context if available
+        if (response.data._promptContext) {
+          setPromptContext(response.data._promptContext);
+        } else {
+          setPromptContext(null);
+        }
+        
         // Try to parse structured fields
         if (
           response.data.possible_meaning !== undefined ||
@@ -155,6 +169,10 @@ function SignalLab() {
                     responseData={structured}
                     teamId={currentTeam?.id}
                     summary={`Signal: "${observation.substring(0, 100)}${observation.length > 100 ? '...' : ''}"`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>
@@ -170,6 +188,10 @@ function SignalLab() {
                     responseData={{ output }}
                     teamId={currentTeam?.id}
                     summary={`Signal: "${observation.substring(0, 100)}${observation.length > 100 ? '...' : ''}"`}
+                    systemPrompt={promptContext?.system_prompt}
+                    userInput={promptContext?.user_input}
+                    finalPrompt={promptContext?.final_prompt}
+                    rawResponseText={promptContext?.raw_response_text}
                   />
                 </div>
               </div>
