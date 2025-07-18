@@ -1163,6 +1163,15 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
       }
     }
 
+    // Extract prompt context for saving
+    const promptContext = {
+      tool_name: 'Persona Generator',
+      user_input: audience_seed,
+      system_prompt: systemPromptText,
+      user_message: userMessage.content,
+      ai_response: aiResponse
+    };
+
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'persona-generator',
@@ -1176,7 +1185,10 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     };
 
     // Store persona in cookie if we have one
-    let response = jsonResponse(backendPayload);
+    let response = jsonResponse({
+      ...backendPayload,
+      prompt_context: promptContext
+    });
     if (backendPayload.persona_sheet && Object.keys(backendPayload.persona_sheet).length > 0) {
       response = storePersonaSession(user.id, backendPayload.persona_sheet, response);
     }

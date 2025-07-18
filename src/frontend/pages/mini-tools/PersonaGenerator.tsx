@@ -208,6 +208,7 @@ function PersonaGenerator() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Persona for: "${audienceSeed.substring(0, 100)}${audienceSeed.length > 100 ? '...' : ''}"`}
+            promptContext={output.prompt_context}
           />
         </div>
       </div>
