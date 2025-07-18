@@ -30,6 +30,12 @@ function Footer() {
             >
               Security Policy
             </Link>
+            <Link 
+              to="/faq" 
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              FAQ
+            </Link>
           </div>
         </div>
       </div>
