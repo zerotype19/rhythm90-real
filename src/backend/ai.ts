@@ -910,7 +910,24 @@ export async function handleGetToByGenerator(request: Request, env: Env): Promis
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    // Extract prompt context for saving
+    const systemMessages = messages.filter(msg => msg.role === 'system');
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    
+    const systemPrompt = systemMessages.map(msg => msg.content).join('\n\n');
+    const userInput = userMessages.map(msg => msg.content).join('\n\n');
+    const finalPrompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+    
+    // Return structured payload with prompt context
+    return jsonResponse({
+      ...backendPayload,
+      _promptContext: {
+        system_prompt: systemPrompt,
+        user_input: userInput,
+        final_prompt: finalPrompt,
+        raw_response_text: aiResponse
+      }
+    });
   } catch (error) {
     console.error('Get/To/By Generator error:', error);
     return errorResponse('Failed to generate Get/To/By statement', 500);
@@ -988,6 +1005,15 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
       }
     }
 
+    // Extract prompt context for saving
+    const promptContext = {
+      tool_name: 'Creative Tension Finder',
+      user_input: problem_or_strategy_summary,
+      system_prompt: systemPromptText,
+      user_message: userMessage.content,
+      ai_response: aiResponse
+    };
+
     // Debug log
     lastMiniToolDebugLog = {
       tool: 'creative-tension-finder',
@@ -1000,7 +1026,10 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
       timestamp: new Date().toISOString()
     };
 
-    return jsonResponse(backendPayload);
+    return jsonResponse({
+      ...backendPayload,
+      prompt_context: promptContext
+    });
   } catch (error) {
     console.error('Creative-Tension Finder error:', error);
     return errorResponse('Failed to find creative tensions', 500);

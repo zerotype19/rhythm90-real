@@ -13,6 +13,13 @@ function GetToByGenerator() {
   const [output, setOutput] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  // Prompt context for saving
+  const [promptContext, setPromptContext] = useState<{
+    system_prompt?: string;
+    user_input?: string;
+    final_prompt?: string;
+    raw_response_text?: string;
+  } | null>(null);
   const { currentTeam } = useAuth();
 
   const handleGenerate = async () => {
@@ -29,6 +36,13 @@ function GetToByGenerator() {
       const response = await apiClient.getToByGenerator(audienceDescription, behavioralOrEmotionalInsight, brandProductRole);
 
       if (response.data) {
+        // Extract prompt context if available
+        if (response.data._promptContext) {
+          setPromptContext(response.data._promptContext);
+        } else {
+          setPromptContext(null);
+        }
+        
         setOutput(response.data);
       }
     } catch (err: any) {
@@ -95,6 +109,10 @@ function GetToByGenerator() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Get/To/By for: "${audienceDescription.substring(0, 100)}${audienceDescription.length > 100 ? '...' : ''}"`}
+            systemPrompt={promptContext?.system_prompt}
+            userInput={promptContext?.user_input}
+            finalPrompt={promptContext?.final_prompt}
+            rawResponseText={promptContext?.raw_response_text}
           />
         </div>
       </div>

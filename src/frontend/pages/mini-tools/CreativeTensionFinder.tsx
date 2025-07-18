@@ -93,6 +93,7 @@ function CreativeTensionFinder() {
             responseData={output}
             teamId={currentTeam?.id}
             summary={`Creative tensions for: "${problemOrStrategySummary.substring(0, 100)}${problemOrStrategySummary.length > 100 ? '...' : ''}"`}
+            promptContext={output.prompt_context}
           />
         </div>
       </div>
