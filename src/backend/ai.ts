@@ -388,15 +388,19 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     // --- Output Structuring ---
     let backendPayload: any = {};
     let warning = undefined;
+    console.log('AI Response for Signal Lab:', aiResponse); // Debug log
     try {
       // Try to parse as JSON first
       const parsed = JSON.parse(aiResponse);
+      console.log('Parsed JSON:', parsed); // Debug log
       backendPayload = {
         signal_summary: parsed.signal_summary || '',
         why_it_matters: parsed.why_it_matters || '',
         possible_next_step: parsed.possible_next_step || ''
       };
+      console.log('Backend payload (JSON):', backendPayload); // Debug log
     } catch (err) {
+      console.log('JSON parsing failed, trying text extraction'); // Debug log
       // Try to extract sections from text if not JSON
       let signal_summary = '', why_it_matters = '', possible_next_step = '';
       
@@ -410,6 +414,8 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
       const nextMatch = aiResponse.match(/\*\*Possible Next Step\*\*\s*[:\-]?\s*([\s\S]*)/i);
       if (nextMatch) possible_next_step = nextMatch[1].trim();
       
+      console.log('Extracted fields:', { signal_summary, why_it_matters, possible_next_step }); // Debug log
+      
       // If at least one field is found, return structured
       if (signal_summary || why_it_matters || possible_next_step) {
         backendPayload = {
@@ -418,6 +424,7 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
           possible_next_step
         };
         warning = 'AI response was not valid JSON; fields were extracted heuristically.';
+        console.log('Backend payload (extracted):', backendPayload); // Debug log
       } else {
         // Fallback: pass raw response
         backendPayload = {
@@ -427,6 +434,7 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
           raw_response: aiResponse
         };
         warning = 'AI response could not be parsed; raw response returned.';
+        console.log('Backend payload (fallback):', backendPayload); // Debug log
       }
     }
 

@@ -26,6 +26,7 @@ function SignalLab() {
     setIsLoading(true);
     try {
       const response = await apiClient.interpretSignal(observation, context);
+      console.log('Signal Lab response:', response); // Debug log
       if (response.data) {
         // Extract prompt context if available
         if (response.data._promptContext) {
@@ -40,12 +41,14 @@ function SignalLab() {
           response.data.why_it_matters !== undefined ||
           response.data.possible_next_step !== undefined
         ) {
+          console.log('Setting structured data:', response.data); // Debug log
           setStructured(response.data);
           setOutput('');
         } else if (response.data.output) {
           setOutput(response.data.output);
           setStructured(null);
         } else {
+          console.log('Setting raw output:', response.data); // Debug log
           setOutput(JSON.stringify(response.data, null, 2));
           setStructured(null);
         }
