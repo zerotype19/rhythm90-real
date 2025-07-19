@@ -1101,7 +1101,7 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
 
     const userMessage = {
       role: 'user',
-      content: `Problem/Strategy: ${problem_or_strategy_summary}\n\nOutput JSON only: [{ "tension": "...", "optional_platform_name": "..." }]\n\nDo not include markdown fences, code blocks, or explanation.`
+      content: `Problem/Strategy: ${problem_or_strategy_summary}\n\nReturn ONLY a JSON array with 4-6 creative tensions in this exact format:\n[{ "tension": "Wanting control vs. craving surprise", "optional_platform_name": "Control Chaos" }]\n\nDo not include markdown fences, code blocks, or any explanation text.`
     };
 
     const messages = [systemMessage, userMessage];
@@ -1139,6 +1139,27 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
             const platform_name = tension.match(/"optional_platform_name":\s*"([^"]+)"/)?.[1] || '';
             return { tension: tension_text, optional_platform_name: platform_name };
           });
+        }
+      }
+      
+      // If no JSON array found, try to extract tensions from natural language
+      if (tensions.length === 0) {
+        console.log('[AI DEBUG] Creative Tension Finder: No JSON array found, trying natural language extraction');
+        
+        // Split by lines and look for tension patterns
+        const lines = aiResponse.split('\n');
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          // Look for patterns like "1. Wanting control vs. craving surprise" or "• Wanting control vs. craving surprise"
+          const tensionMatch = trimmedLine.match(/^[\d\-\•\*]\s*(.+?)(?:\s*[-–—]\s*(.+))?$/);
+          if (tensionMatch) {
+            const tension = tensionMatch[1].trim();
+            const platform = tensionMatch[2] ? tensionMatch[2].trim() : '';
+            tensions.push({ 
+              tension, 
+              optional_platform_name: platform 
+            });
+          }
         }
       }
       
