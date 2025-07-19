@@ -58,7 +58,7 @@ interface StripeSubscriptionStatus {
 }
 
 function Settings() {
-  const [activeTab, setActiveTab] = useState<'account' | 'team' | 'billing'>('account');
+  const [activeTab, setActiveTab] = useState<'account' | 'team' | 'billing' | 'data'>('account');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +100,10 @@ function Settings() {
   const [billingForm, setBillingForm] = useState({ plan: 'free', seat_count: 1 });
   const [stripeSubscription, setStripeSubscription] = useState<StripeSubscriptionStatus | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
+
+  // Data management
+  const [dataDeleting, setDataDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -448,10 +452,31 @@ function Settings() {
     handleUpgradeModalClose();
   };
 
+  const handleDeleteAllResponses = async () => {
+    setDataDeleting(true);
+    setError(null);
+
+    try {
+      const response = await apiClient.deleteAllResponses();
+      if (response.data) {
+        showSuccess(`Successfully deleted ${response.data.deletedCount || 0} responses`);
+        setShowDeleteConfirm(false);
+      } else {
+        showError(response.error || 'Failed to delete responses');
+      }
+    } catch (err) {
+      console.error('Failed to delete responses:', err);
+      showError('Failed to delete responses');
+    } finally {
+      setDataDeleting(false);
+    }
+  };
+
   const tabs = [
     { id: 'account', name: 'Account Settings', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     { id: 'team', name: 'Team Management', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
     { id: 'billing', name: 'Billing', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { id: 'data', name: 'Data Management', icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' },
   ];
 
   if (loading) {
@@ -1101,6 +1126,120 @@ function Settings() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'data' && (
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Data Management</h2>
+              
+              <div className="space-y-6">
+                {/* Delete All Responses */}
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-6 w-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <h3 className="text-lg font-medium text-red-800">Delete Everything I've Done</h3>
+                      <div className="mt-2 text-sm text-red-700">
+                        <p>
+                          This will permanently delete all your saved responses from all tools (Play Builder, Signal Lab, Ritual Guide, Mini Tools, etc.).
+                        </p>
+                        <p className="mt-2 font-medium">
+                          This action cannot be undone. Your billing information and usage logs will be preserved.
+                        </p>
+                      </div>
+                      <div className="mt-4">
+                        {!showDeleteConfirm ? (
+                          <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-red-50"
+                          >
+                            Delete All My Responses
+                          </button>
+                        ) : (
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium text-red-800">
+                              Are you absolutely sure? This will delete all your saved responses permanently.
+                            </p>
+                            <div className="flex space-x-3">
+                              <button
+                                onClick={handleDeleteAllResponses}
+                                disabled={dataDeleting}
+                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-red-50 disabled:opacity-50 flex items-center"
+                              >
+                                {dataDeleting ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  'Yes, Delete Everything'
+                                )}
+                              </button>
+                              <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                disabled={dataDeleting}
+                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Data Retention Info */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-lg font-medium text-blue-800">What Gets Deleted</h3>
+                      <div className="mt-2 text-sm text-blue-700">
+                        <ul className="list-disc list-inside space-y-1">
+                          <li>All saved responses from Play Builder</li>
+                          <li>All saved responses from Signal Lab</li>
+                          <li>All saved responses from Ritual Guide</li>
+                          <li>All saved responses from Mini Tools</li>
+                          <li>All favorites and shared responses</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-lg font-medium text-green-800">What Gets Preserved</h3>
+                      <div className="mt-2 text-sm text-green-700">
+                        <ul className="list-disc list-inside space-y-1">
+                          <li>Your account and team membership</li>
+                          <li>Billing and subscription information</li>
+                          <li>Usage logs for billing purposes</li>
+                          <li>Team settings and member information</li>
+                          <li>Chat assistant conversations (use the clear function in chat)</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

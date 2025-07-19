@@ -4,7 +4,7 @@ import { handleCreateTeam, handleGetTeams, handleJoinTeam, handleUpdateTeam } fr
 import { handleGeneratePlay, handleInterpretSignal, handleGenerateRitualPrompts, handlePlainEnglishTranslator, handleGetToByGenerator, handleCreativeTensionFinder, handlePersonaGenerator, handlePersonaAsk, handleFocusGroupAsk, handleJourneyBuilder, handleTestLearnScale, handleAgileSprintPlanner, handleConnectedMediaMatrix, handleSyntheticFocusGroup, lastMiniToolDebugLog } from './ai';
 import { lastPlayBuilderDebugLog, lastSignalLabDebugLog, lastRitualGuideDebugLog } from './ai';
 import { jsonResponse, errorResponse, corsHeaders } from './utils';
-import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared, getTeamSharedBySlug } from './savedResponses';
+import { saveResponse, toggleFavorite, setShareStatus, getUserHistory, getTeamSharedHistory, getTeamSharedHistoryEnhanced, getAvailableToolNames, getPublicShared, getTeamSharedBySlug, deleteAllUserResponses } from './savedResponses';
 import { verifyAuth } from './auth';
 import { handleGetAccountSettings, handleUpdateAccountSettings, handleGetTeamSettings, handleUpdateTeamName, handleUpdateTeamProfile, handleInviteTeamMember, handleRemoveTeamMember, handleSetMemberRole, handleGetBillingInfo, handleUpdateSubscription, handleCancelSubscription, getLastSettingsDebugLog } from './settings';
 import { handleGetTeamBenchmarks, handleGetIndustryBenchmarks, getLastBenchmarkDebugLog } from './benchmarking';
@@ -456,6 +456,19 @@ export default {
         if (!teamMember?.team_id) return errorResponse('User must belong to a team', 400);
         
         const result = await getAvailableToolNames(env, teamMember.team_id);
+        
+        if (result.success) {
+          return jsonResponse(result);
+        } else {
+          return errorResponse(result.message, 400);
+        }
+      }
+
+      if (path === '/api/saved-responses/delete-all' && request.method === 'DELETE') {
+        const user = await verifyAuth(request, env);
+        if (!user) return errorResponse('Unauthorized', 401);
+        
+        const result = await deleteAllUserResponses(env, user.id);
         
         if (result.success) {
           return jsonResponse(result);

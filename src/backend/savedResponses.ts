@@ -489,4 +489,41 @@ export const getTeamSharedBySlug = async (env: any, sharedSlug: string, teamId: 
     console.error('Error getting team shared response:', error);
     return { success: false, message: 'Internal server error' };
   }
+};
+
+// Delete all saved responses for a user
+export const deleteAllUserResponses = async (env: any, userId: string): Promise<{ success: boolean; message: string; deletedCount?: number }> => {
+  try {
+    // First get the count of responses to be deleted
+    const countResult = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM ai_saved_responses WHERE user_id = ?
+    `).bind(userId).first();
+
+    const count = countResult?.count || 0;
+
+    if (count === 0) {
+      return { success: true, message: 'No responses to delete', deletedCount: 0 };
+    }
+
+    // Delete all responses for the user
+    const result = await env.DB.prepare(`
+      DELETE FROM ai_saved_responses WHERE user_id = ?
+    `).bind(userId).run();
+
+    if (result.success) {
+      // Log the action
+      await logAIUsage(env.DB, userId, 'delete_all_responses');
+      
+      return { 
+        success: true, 
+        message: `Successfully deleted ${count} responses`,
+        deletedCount: count
+      };
+    } else {
+      return { success: false, message: 'Failed to delete responses' };
+    }
+  } catch (error) {
+    console.error('Error deleting all user responses:', error);
+    return { success: false, message: 'Internal server error' };
+  }
 }; 

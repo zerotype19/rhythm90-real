@@ -432,6 +432,13 @@ class ApiClient {
     });
   }
 
+  async deleteAllResponses() {
+    return this.request('/api/saved-responses/delete-all', {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+  }
+
   /**
    * Get invite information by invite code
    */
