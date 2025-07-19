@@ -146,7 +146,7 @@ function AppLayout({ children }: AppLayoutProps) {
         <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-50 md:w-64 md:bg-white md:shadow-lg md:block">
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+            <div className="flex items-center justify-center h-16 px-4">
               <Link to="/app/dashboard" className="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
                 Rhythm90
               </Link>
@@ -214,7 +214,7 @@ function AppLayout({ children }: AppLayoutProps) {
           <div className="fixed inset-0 z-50 flex">
             <div className="fixed inset-0 bg-black bg-opacity-30" onClick={() => setSidebarOpen(false)} />
             <div className="relative w-64 bg-white shadow-lg h-full flex flex-col">
-              <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+              <div className="flex items-center justify-between h-16 px-4">
                 <Link to="/app/dashboard" className="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
                   Rhythm90
                 </Link>
