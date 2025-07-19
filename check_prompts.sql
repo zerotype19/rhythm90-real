@@ -1,0 +1,1 @@
+SELECT tool_name, prompt_text FROM ai_system_prompts WHERE tool_name IN ('signal_lab', 'play_builder', 'ritual_guide', 'plain_english_translator', 'get_to_by_generator', 'creative_tension_finder', 'persona_generator', 'journey_builder', 'test_learn_scale', 'agile_sprint_planner', 'connected_media_matrix', 'synthetic_focus_group');

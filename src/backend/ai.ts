@@ -235,25 +235,25 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
       let hypothesis = '', how_to_run_summary = '', signals_to_watch: string[] = [], owner_role = '', what_success_looks_like = '', next_recommendation: string[] = [];
       
       // Minimal, safe regex extraction
-      const hypothesisMatch = aiResponse.match(/Hypothesis\s*[:\-]?\s*([\s\S]*?)(?=How-to-Run Summary|How to Run Summary|Signals to Watch|Owner Role|What Success Looks Like|Next Recommendation|$)/i);
+      const hypothesisMatch = aiResponse.match(/Hypothesis:\s*([\s\S]*?)(?=How-to-Run Summary:|How to Run Summary:|Signals to Watch:|Owner Role:|What Success Looks Like:|Next Recommendation:|$)/i);
       if (hypothesisMatch) hypothesis = hypothesisMatch[1].trim();
       
-      const summaryMatch = aiResponse.match(/How-to-Run Summary\s*[:\-]?\s*([\s\S]*?)(?=Signals to Watch|Owner Role|What Success Looks Like|Next Recommendation|$)/i);
+      const summaryMatch = aiResponse.match(/How-to-Run Summary:\s*([\s\S]*?)(?=Signals to Watch:|Owner Role:|What Success Looks Like:|Next Recommendation:|$)/i);
       if (summaryMatch) how_to_run_summary = summaryMatch[1].trim();
       
-      const signalsMatch = aiResponse.match(/Signals to Watch\s*[:\-]?\s*([\s\S]*?)(?=Owner Role|What Success Looks Like|Next Recommendation|$)/i);
+      const signalsMatch = aiResponse.match(/Signals to Watch:\s*([\s\S]*?)(?=Owner Role:|What Success Looks Like:|Next Recommendation:|$)/i);
       if (signalsMatch) {
         const lines = signalsMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
         signals_to_watch = lines;
       }
       
-      const ownerMatch = aiResponse.match(/Owner Role\s*[:\-]?\s*([\s\S]*?)(?=What Success Looks Like|Next Recommendation|$)/i);
+      const ownerMatch = aiResponse.match(/Owner Role:\s*([\s\S]*?)(?=What Success Looks Like:|Next Recommendation:|$)/i);
       if (ownerMatch) owner_role = ownerMatch[1].trim();
       
-      const successMatch = aiResponse.match(/What Success Looks Like\s*[:\-]?\s*([\s\S]*?)(?=Next Recommendation|$)/i);
+      const successMatch = aiResponse.match(/What Success Looks Like:\s*([\s\S]*?)(?=Next Recommendation:|$)/i);
       if (successMatch) what_success_looks_like = successMatch[1].trim();
       
-      const nextMatch = aiResponse.match(/Next Recommendation\s*[:\-]?\s*([\s\S]*)/i);
+      const nextMatch = aiResponse.match(/Next Recommendation:\s*([\s\S]*)/i);
       if (nextMatch) {
         const lines = nextMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
         next_recommendation = lines;
@@ -615,25 +615,25 @@ Additional Refinements:
       let agenda: string[] = [], discussion_prompts: string[] = [], roles_contributions = '', preparation_tips = '', success_definition = '';
       
       // Minimal, safe regex extraction
-      const agendaMatch = aiResponse.match(/Agenda\s*[:\-]?\s*([\s\S]*?)(?=Discussion Prompts|Roles|Preparation|Success|$)/i);
+      const agendaMatch = aiResponse.match(/Agenda:\s*([\s\S]*?)(?=Discussion Prompts:|Roles:|Preparation:|Success:|$)/i);
       if (agendaMatch) {
         const lines = agendaMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
         agenda = lines;
       }
       
-      const promptsMatch = aiResponse.match(/Discussion Prompts\s*[:\-]?\s*([\s\S]*?)(?=Roles|Preparation|Success|$)/i);
+      const promptsMatch = aiResponse.match(/Discussion Prompts:\s*([\s\S]*?)(?=Roles:|Preparation:|Success:|$)/i);
       if (promptsMatch) {
         const lines = promptsMatch[1].split(/\n|\*/).map(l => l.replace(/^[-\d.\s]+/, '').trim()).filter(Boolean);
         discussion_prompts = lines;
       }
       
-      const rolesMatch = aiResponse.match(/Roles[^:]*:\s*([\s\S]*?)(?=Preparation|Success|$)/i);
+      const rolesMatch = aiResponse.match(/Roles:\s*([\s\S]*?)(?=Preparation:|Success:|$)/i);
       if (rolesMatch) roles_contributions = rolesMatch[1].trim();
       
-      const prepMatch = aiResponse.match(/Preparation[^:]*:\s*([\s\S]*?)(?=Success|$)/i);
+      const prepMatch = aiResponse.match(/Preparation:\s*([\s\S]*?)(?=Success:|$)/i);
       if (prepMatch) preparation_tips = prepMatch[1].trim();
       
-      const successMatch = aiResponse.match(/Success[^:]*:\s*([\s\S]*)/i);
+      const successMatch = aiResponse.match(/Success:\s*([\s\S]*)/i);
       if (successMatch) success_definition = successMatch[1].trim();
       
       // If at least one field was extracted, return structured with warning
