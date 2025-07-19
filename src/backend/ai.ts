@@ -140,9 +140,6 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
     let extracted_owner_role = extractField(owner_role, 'owner_role');
     let extracted_additional_context = extractField(additional_context, 'additional_context');
     
-    // Get team context for AI prompt injection
-    const teamContext = await getTeamContext(env.DB, user.id);
-    
     // Get system prompt from database
     const systemPromptText = await buildSystemPrompt(env.DB, 'play_builder', {
       play_idea: extracted_play_idea,
@@ -154,11 +151,6 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
     });
     
     let messages = [{ role: 'system', content: systemPromptText }];
-    
-    // Add team context if available
-    if (teamContext) {
-      messages.push({ role: 'system', content: teamContext });
-    }
     
     // Build user message with new field structure
     let contextMsg = 'Context:';
@@ -346,9 +338,6 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     const { observation, context } = body;
     if (!observation) return errorResponse('Observation is required', 400);
 
-    // Get team context for AI prompt injection (industry, focus_areas, team_description)
-    const teamContext = await getTeamContext(env.DB, user.id);
-    
     // Get team data for placeholder replacement
     let teamData = { industry: '', focus_areas: '', team_description: '' };
     try {
@@ -381,11 +370,6 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
     });
     
     let messages = [{ role: 'system', content: systemPromptText }];
-    
-    // Add team context if available (this provides additional context beyond placeholders)
-    if (teamContext) {
-      messages.push({ role: 'system', content: teamContext });
-    }
     
     let contextBlock = `Observation: ${observation}`;
     if (context) contextBlock += `\nContext: ${context}`;
