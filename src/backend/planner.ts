@@ -100,10 +100,11 @@ Quarterly Planning Inputs:
     console.log('Generating AI summary for planner session...');
     const messages = [
       { role: 'system', content: systemPromptText },
-      { role: 'user', content: teamContext + userInputs + '\n\nPlease provide a clear, actionable summary for this team\'s quarterly planning session.' }
+      { role: 'user', content: teamContext + userInputs + '\n\nPlease provide a clear, actionable summary for this team\'s quarterly planning session. Return ONLY a JSON object with the exact structure specified in the system prompt. Do not include markdown formatting, headers, or any other text outside the JSON object.' }
     ];
     const summary = await callOpenAI(messages, env);
     console.log('AI summary generated successfully, length:', summary.length);
+    console.log('AI summary content:', summary);
 
     // Create planner session
     const sessionId = crypto.randomUUID();
