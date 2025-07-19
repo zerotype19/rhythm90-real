@@ -45,7 +45,14 @@ function CreativeTensionFinder() {
   };
 
   const renderOutput = () => {
-    if (!output || !Array.isArray(output)) return null;
+    console.log('[FRONTEND DEBUG] Creative Tension Finder: renderOutput called with:', output);
+    console.log('[FRONTEND DEBUG] Creative Tension Finder: output type:', typeof output);
+    console.log('[FRONTEND DEBUG] Creative Tension Finder: isArray:', Array.isArray(output));
+    
+    if (!output || !Array.isArray(output)) {
+      console.log('[FRONTEND DEBUG] Creative Tension Finder: No output or not array, returning null');
+      return null;
+    }
 
     return (
       <div className="space-y-6">
@@ -173,7 +180,18 @@ function CreativeTensionFinder() {
                 <LoadingSpinner size="lg" showText text="Finding creative tensions..." />
               </div>
             ) : output ? (
-              renderOutput()
+              <>
+                {renderOutput()}
+                {/* Fallback for non-array responses */}
+                {output && !Array.isArray(output) && (
+                  <div className="bg-white rounded-lg shadow p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Response (Non-Array Format)</h3>
+                    <div className="bg-gray-50 rounded-md p-4">
+                      <pre className="text-gray-800 whitespace-pre-wrap text-sm">{JSON.stringify(output, null, 2)}</pre>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center text-gray-500 py-8">
                 <FaLightbulb className="w-12 h-12 mx-auto mb-4 text-gray-300" />
