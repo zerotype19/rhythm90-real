@@ -36,10 +36,9 @@ function SignalLab() {
         
         // Try to parse structured fields
         if (
-          response.data.possible_meaning !== undefined ||
-          response.data.possible_causes !== undefined ||
-          response.data.challenge_or_confirmation !== undefined ||
-          response.data.suggested_next_exploration !== undefined
+          response.data.signal_summary !== undefined ||
+          response.data.why_it_matters !== undefined ||
+          response.data.possible_next_step !== undefined
         ) {
           setStructured(response.data);
           setOutput('');
@@ -63,32 +62,22 @@ function SignalLab() {
     if (!structured) return null;
     const sections = [
       {
-        key: 'possible_meaning',
-        label: 'Possible Meaning',
+        key: 'signal_summary',
+        label: 'Signal Summary',
         icon: <FaLightbulb className="text-yellow-500 mr-2" />,
-        content: structured.possible_meaning,
+        content: structured.signal_summary,
       },
       {
-        key: 'possible_causes',
-        label: 'Possible Causes',
-        icon: <FaClipboardList className="text-blue-500 mr-2" />,
-        content: structured.possible_causes && Array.isArray(structured.possible_causes)
-          ? structured.possible_causes.filter(Boolean).map((c: string, i: number) => <li key={i}>{c}</li>)
-          : structured.possible_causes,
-      },
-      {
-        key: 'challenge_or_confirmation',
-        label: 'Challenge or Confirmation',
+        key: 'why_it_matters',
+        label: 'Why It Matters',
         icon: <FaCheckCircle className="text-emerald-500 mr-2" />,
-        content: structured.challenge_or_confirmation,
+        content: structured.why_it_matters,
       },
       {
-        key: 'suggested_next_exploration',
-        label: 'Suggested Next Exploration',
+        key: 'possible_next_step',
+        label: 'Possible Next Step',
         icon: <FaArrowRight className="text-orange-500 mr-2" />,
-        content: structured.suggested_next_exploration && Array.isArray(structured.suggested_next_exploration)
-          ? structured.suggested_next_exploration.filter(Boolean).map((c: string, i: number) => <li key={i}>{c}</li>)
-          : structured.suggested_next_exploration,
+        content: structured.possible_next_step,
       },
     ];
     return (
@@ -101,7 +90,7 @@ function SignalLab() {
                 <span className="font-bold text-sm text-gray-900">{section.label}</span>
               </div>
               <div className="text-xs text-gray-800 leading-relaxed mt-1" style={{fontSize: '13px'}}>
-                {Array.isArray(section.content) ? <ul className="list-disc ml-5">{section.content}</ul> : section.content}
+                {section.content}
               </div>
             </div>
           ) : null
@@ -132,6 +121,9 @@ function SignalLab() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={4}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Describe what you observed — for example, a surprising result, customer behavior, friction point, or comment that stood out.
+                </p>
               </div>
               
               <div>
@@ -145,6 +137,16 @@ function SignalLab() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={3}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Add any helpful details, like which play, team, audience, or moment this came from. This helps connect the observation to work in motion, but it's okay to leave it blank.
+                </p>
+              </div>
+              
+              {/* Guidance text above button */}
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="text-sm text-blue-800">
+                  <strong>Reminder:</strong> Good signals are specific, surprising, actionable, and explained — they help the team decide what to do next, not just what happened.
+                </p>
               </div>
               
               <button
