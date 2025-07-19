@@ -1221,10 +1221,21 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     };
 
     console.log('[AI DEBUG] Creative Tension Finder: Final response payload:', backendPayload);
-    return jsonResponse({
-      ...backendPayload,
-      prompt_context: promptContext
-    });
+    
+    // Return the array as the main response with prompt_context as a separate field
+    if (Array.isArray(backendPayload)) {
+      // For arrays, return them as the main response with prompt_context as a property
+      return jsonResponse({
+        tensions: backendPayload,
+        prompt_context: promptContext
+      });
+    } else {
+      // If backendPayload is not an array, return it as is with prompt_context
+      return jsonResponse({
+        ...backendPayload,
+        prompt_context: promptContext
+      });
+    }
   } catch (error) {
     console.error('Creative-Tension Finder error:', error);
     return errorResponse('Failed to find creative tensions', 500);

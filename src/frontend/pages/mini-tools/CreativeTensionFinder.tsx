@@ -31,7 +31,17 @@ function CreativeTensionFinder() {
 
       if (response.data) {
         console.log('[FRONTEND DEBUG] Creative Tension Finder: Setting output:', response.data);
-        setOutput(response.data);
+        
+        // Handle new response format with tensions array
+        if (response.data.tensions && Array.isArray(response.data.tensions)) {
+          setOutput(response.data.tensions);
+        } else if (Array.isArray(response.data)) {
+          // Backward compatibility with direct array format
+          setOutput(response.data);
+        } else {
+          // Fallback for other formats
+          setOutput(response.data);
+        }
       } else {
         console.log('[FRONTEND DEBUG] Creative Tension Finder: No data in response');
         setError('No data received from API');
