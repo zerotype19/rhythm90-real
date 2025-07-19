@@ -1057,10 +1057,12 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
+    console.log('[AI DEBUG] Creative Tension Finder: Starting');
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { problem_or_strategy_summary } = body;
+    console.log('[AI DEBUG] Creative Tension Finder: Input received:', { problem_or_strategy_summary });
     if (!problem_or_strategy_summary) return errorResponse('Problem or strategy summary is required', 400);
 
     // Get team data for placeholder replacement
@@ -1103,7 +1105,9 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     };
 
     const messages = [systemMessage, userMessage];
+    console.log('[AI DEBUG] Creative Tension Finder: Calling OpenAI with messages:', messages);
     const aiResponse = await callOpenAI(messages, env, 'creative_tension_finder');
+    console.log('[AI DEBUG] Creative Tension Finder: OpenAI response received:', aiResponse);
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_creative_tension_finder');
@@ -1114,9 +1118,12 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     let parseStatus = 'success';
 
     try {
+      console.log('[AI DEBUG] Creative Tension Finder: Attempting JSON parse');
       const parsed = JSON.parse(aiResponse);
       backendPayload = Array.isArray(parsed) ? parsed : [];
+      console.log('[AI DEBUG] Creative Tension Finder: JSON parse successful, payload:', backendPayload);
     } catch (err) {
+      console.log('[AI DEBUG] Creative Tension Finder: JSON parse failed, trying fallback parsing');
       // If JSON parsing failed, try to extract structured data from the raw response
       parseStatus = 'fallback_used';
       let tensions: any[] = [];
@@ -1168,6 +1175,7 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
       timestamp: new Date().toISOString()
     };
 
+    console.log('[AI DEBUG] Creative Tension Finder: Final response payload:', backendPayload);
     return jsonResponse({
       ...backendPayload,
       prompt_context: promptContext

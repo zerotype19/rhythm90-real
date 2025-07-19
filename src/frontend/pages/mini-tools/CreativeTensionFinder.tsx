@@ -25,12 +25,19 @@ function CreativeTensionFinder() {
     setOutput(null);
 
     try {
+      console.log('[FRONTEND DEBUG] Creative Tension Finder: Calling API with:', problemOrStrategySummary);
       const response = await apiClient.creativeTensionFinder(problemOrStrategySummary);
+      console.log('[FRONTEND DEBUG] Creative Tension Finder: API response:', response);
 
       if (response.data) {
+        console.log('[FRONTEND DEBUG] Creative Tension Finder: Setting output:', response.data);
         setOutput(response.data);
+      } else {
+        console.log('[FRONTEND DEBUG] Creative Tension Finder: No data in response');
+        setError('No data received from API');
       }
     } catch (err: any) {
+      console.log('[FRONTEND DEBUG] Creative Tension Finder: Error:', err);
       setError(err.response?.data?.error || 'Failed to generate creative tensions');
     } finally {
       setIsLoading(false);
