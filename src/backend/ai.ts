@@ -1805,7 +1805,9 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     };
 
     const messages = [systemMessage, userMessage];
+    console.log('[AI DEBUG] Agile Sprint Planner: Calling OpenAI with messages:', messages);
     const aiResponse = await callOpenAI(messages, env, 'agile_sprint_planner');
+    console.log('[AI DEBUG] Agile Sprint Planner: OpenAI response received:', aiResponse);
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_agile_sprint_planner');
@@ -1816,7 +1818,9 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
     let parseStatus = 'success';
 
     try {
+      console.log('[AI DEBUG] Agile Sprint Planner: Attempting JSON parse');
       const parsed = JSON.parse(aiResponse);
+      console.log('[AI DEBUG] Agile Sprint Planner: JSON parse successful, parsed:', parsed);
       backendPayload = {
         sprint_objective: parsed.sprint_objective || '',
         team_roster_and_responsibilities: parsed.team_roster_and_responsibilities || '',
@@ -1826,6 +1830,7 @@ Return ONLY raw JSON — no markdown, no comments, no code fences.`
         rapid_testing_validation_methods: parsed.rapid_testing_validation_methods || '',
         definition_of_done: Array.isArray(parsed.definition_of_done) ? parsed.definition_of_done : []
       };
+      console.log('[AI DEBUG] Agile Sprint Planner: Backend payload created:', backendPayload);
     } catch (err) {
       // If JSON parsing failed, try to extract structured data from the raw response
       parseStatus = 'fallback_used';

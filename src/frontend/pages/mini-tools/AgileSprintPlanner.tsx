@@ -27,12 +27,19 @@ function AgileSprintPlanner() {
     setOutput(null);
 
     try {
+      console.log('[FRONTEND DEBUG] Agile Sprint Planner: Calling API with:', { challengeStatement, timeHorizon, teamSizeRoles });
       const response = await apiClient.agileSprintPlanner(challengeStatement, timeHorizon, teamSizeRoles);
+      console.log('[FRONTEND DEBUG] Agile Sprint Planner: API response:', response);
 
       if (response.data) {
+        console.log('[FRONTEND DEBUG] Agile Sprint Planner: Setting output:', response.data);
         setOutput(response.data);
+      } else {
+        console.log('[FRONTEND DEBUG] Agile Sprint Planner: No data in response');
+        setError('No data received from API');
       }
     } catch (err: any) {
+      console.log('[FRONTEND DEBUG] Agile Sprint Planner: Error:', err);
       setError(err.response?.data?.error || 'Failed to generate sprint plan');
     } finally {
       setIsLoading(false);
