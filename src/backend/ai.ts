@@ -405,16 +405,61 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
       let signal_summary = '', why_it_matters = '', possible_next_step = '';
       
       // Extract sections based on new system prompt structure
+      console.log('[AI DEBUG] Raw AI response length:', aiResponse.length);
+      console.log('[AI DEBUG] Raw AI response:', JSON.stringify(aiResponse));
+      
       const summaryMatch = aiResponse.match(/\*\*Signal Summary\*\*:\s*([\s\S]*?)(?=\*\*Why It Matters\*\*:|$)/i);
+      console.log('[AI DEBUG] Summary match:', summaryMatch);
       if (summaryMatch) signal_summary = summaryMatch[1].trim();
       
       const whyMatch = aiResponse.match(/\*\*Why It Matters\*\*:\s*([\s\S]*?)(?=\*\*Possible Next Step\*\*:|$)/i);
+      console.log('[AI DEBUG] Why match:', whyMatch);
       if (whyMatch) why_it_matters = whyMatch[1].trim();
       
       const nextMatch = aiResponse.match(/\*\*Possible Next Step\*\*:\s*([\s\S]*)/i);
+      console.log('[AI DEBUG] Next match:', nextMatch);
       if (nextMatch) possible_next_step = nextMatch[1].trim();
       
       console.log('Extracted fields:', { signal_summary, why_it_matters, possible_next_step }); // Debug log
+      
+      // If regex extraction failed, try alternative parsing
+      if (!signal_summary && !why_it_matters && !possible_next_step) {
+        console.log('[AI DEBUG] Regex extraction failed, trying alternative parsing');
+        
+        // Split by lines and look for the headers
+        const lines = aiResponse.split('\n');
+        let currentSection = '';
+        let currentContent: string[] = [];
+        
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine.startsWith('**Signal Summary:**')) {
+            currentSection = 'summary';
+            currentContent = [trimmedLine.replace('**Signal Summary:**', '').trim()];
+          } else if (trimmedLine.startsWith('**Why It Matters:**')) {
+            if (currentSection === 'summary' && currentContent.length > 0) {
+              signal_summary = currentContent.join('\n').trim();
+            }
+            currentSection = 'why';
+            currentContent = [trimmedLine.replace('**Why It Matters:**', '').trim()];
+          } else if (trimmedLine.startsWith('**Possible Next Step:**')) {
+            if (currentSection === 'why' && currentContent.length > 0) {
+              why_it_matters = currentContent.join('\n').trim();
+            }
+            currentSection = 'next';
+            currentContent = [trimmedLine.replace('**Possible Next Step:**', '').trim()];
+          } else if (trimmedLine && currentSection) {
+            currentContent.push(trimmedLine);
+          }
+        }
+        
+        // Set the last section
+        if (currentSection === 'next' && currentContent.length > 0) {
+          possible_next_step = currentContent.join('\n').trim();
+        }
+        
+        console.log('[AI DEBUG] Alternative parsing results:', { signal_summary, why_it_matters, possible_next_step });
+      }
       
       // If at least one field is found, return structured
       if (signal_summary || why_it_matters || possible_next_step) {
