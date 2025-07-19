@@ -108,9 +108,16 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
       return errorResponse(usageCheck.reason || 'Usage limit exceeded', 429);
     }
     const body: any = await request.json();
-    // Log raw request body (excluding PII)
-    const { idea_prompt, top_signal, team_type, quarter_focus, owner_role, idea, context } = body;
-    console.log('[AI DEBUG] Raw PlayBuilder request body:', JSON.stringify({ idea_prompt, top_signal, team_type, quarter_focus, owner_role, idea, context }, null, 2));
+    
+    // Extract new payload fields
+    const { play_idea, observed_signal, target_outcome, signals_to_watch, owner_role, additional_context } = body;
+    console.log('[AI DEBUG] Raw PlayBuilder request body:', JSON.stringify({ play_idea, observed_signal, target_outcome, signals_to_watch, owner_role, additional_context }, null, 2));
+    
+    // Validate required fields
+    if (!play_idea || !observed_signal || !target_outcome || !signals_to_watch || !owner_role) {
+      return errorResponse('Missing required fields: play_idea, observed_signal, target_outcome, signals_to_watch, owner_role', 400);
+    }
+    
     // Extraction helper
     function extractField(field: any, fieldName: string): string {
       let result = '';
@@ -124,27 +131,26 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
       console.log(`[AI DEBUG] Extracted ${fieldName}:`, result);
       return result;
     }
-    // New fields
-    let extracted_team_type = extractField(team_type, 'team_type');
-    let extracted_quarter_focus = extractField(quarter_focus, 'quarter_focus');
-    let extracted_top_signal = extractField(top_signal, 'top_signal');
+    
+    // Extract all fields
+    let extracted_play_idea = extractField(play_idea, 'play_idea');
+    let extracted_observed_signal = extractField(observed_signal, 'observed_signal');
+    let extracted_target_outcome = extractField(target_outcome, 'target_outcome');
+    let extracted_signals_to_watch = extractField(signals_to_watch, 'signals_to_watch');
     let extracted_owner_role = extractField(owner_role, 'owner_role');
-    let extracted_idea_prompt = extractField(idea_prompt, 'idea_prompt');
-    // Old fields for fallback
-    let extracted_idea = extractField(idea, 'idea');
-    let extracted_context = extractField(context, 'context');
+    let extracted_additional_context = extractField(additional_context, 'additional_context');
     
     // Get team context for AI prompt injection
     const teamContext = await getTeamContext(env.DB, user.id);
     
     // Get system prompt from database
     const systemPromptText = await buildSystemPrompt(env.DB, 'play_builder', {
-      team_type: extracted_team_type,
-      quarter_focus: extracted_quarter_focus,
-      top_signal: extracted_top_signal,
+      play_idea: extracted_play_idea,
+      observed_signal: extracted_observed_signal,
+      target_outcome: extracted_target_outcome,
+      signals_to_watch: extracted_signals_to_watch,
       owner_role: extracted_owner_role,
-      idea_prompt: extracted_idea_prompt,
-      context: extracted_context
+      additional_context: extracted_additional_context
     });
     
     let messages = [{ role: 'system', content: systemPromptText }];
@@ -154,25 +160,23 @@ export async function handleGeneratePlay(request: Request, env: Env): Promise<Re
       messages.push({ role: 'system', content: teamContext });
     }
     
-    // If new fields are present, use new prompt structure
-    if (extracted_team_type || extracted_quarter_focus || extracted_top_signal || extracted_owner_role || extracted_idea_prompt) {
-      let contextMsg = 'Context:';
-      if (extracted_team_type) contextMsg += `\nTeam Type: ${extracted_team_type}`;
-      if (extracted_quarter_focus) contextMsg += `\nQuarter Focus: ${extracted_quarter_focus}`;
-      if (extracted_top_signal) contextMsg += `\nTop Signal: ${extracted_top_signal}`;
-      if (extracted_owner_role) contextMsg += `\nOwner Role: ${extracted_owner_role}`;
-      if (extracted_context) contextMsg += `\nAdditional Context: ${extracted_context}`;
-      // Repeat key fields for emphasis
-      if (extracted_idea_prompt) contextMsg += `\n\nThe core idea to address is: ${extracted_idea_prompt}.`;
-      if (extracted_top_signal) contextMsg += `\nThe key signal driving this is: ${extracted_top_signal}.`;
-      messages.push({ role: 'user', content: contextMsg });
-      let ideaMsg = 'Help us shape a Play for this idea:';
-      if (extracted_idea_prompt) ideaMsg += ` ${extracted_idea_prompt}`;
-      messages.push({ role: 'user', content: ideaMsg });
-      // Always instruct the AI to return the six sections, with sharper instructions
-      messages.push({
-        role: 'user',
-        content: `Please return your answer with the following sections:
+    // Build user message with new field structure
+    let contextMsg = 'Context:';
+    contextMsg += `\nPlay Idea: ${extracted_play_idea}`;
+    contextMsg += `\nWhy This Play: ${extracted_observed_signal}`;
+    contextMsg += `\nTarget Outcome: ${extracted_target_outcome}`;
+    contextMsg += `\nSignals to Watch: ${extracted_signals_to_watch}`;
+    contextMsg += `\nOwner Role: ${extracted_owner_role}`;
+    if (extracted_additional_context) {
+      contextMsg += `\nAdditional Context: ${extracted_additional_context}`;
+    }
+    
+    messages.push({ role: 'user', content: contextMsg });
+    
+    // Always instruct the AI to return the six sections, with sharper instructions
+    messages.push({
+      role: 'user',
+      content: `Please return your answer with the following sections:
 1. Hypothesis (in Rhythm90 framing)
 2. How-to-Run Summary (include timeframe, sample size, control/experiment)
 3. Signals to Watch (what surprises or confirms progress)
@@ -195,24 +199,13 @@ In What Success Looks Like, include what we will learn from the results and how 
 
 Tailor your output to the Owner Role if specified.
 
-Important: Always ensure your recommendations are directly tied to the provided idea_prompt and top_signal. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.
+Important: Always ensure your recommendations are directly tied to the provided play_idea and observed_signal. Do not suggest generic plays or solutions unrelated to these inputs.
 
 Avoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or signal.
 
 ⚠️ CRITICAL: Return ONLY raw JSON — no markdown fences, no code blocks, no comments, no explanation text. Do not wrap output like \`\`\`json ... \`\`\`. Return the JSON object directly.`
-      });
-    } else if (extracted_idea) {
-      // Fallback to old prompt structure
-      let legacyPrompt = `As a business strategy expert, help convert this idea into a testable hypothesis:\n\nIdea: ${extracted_idea}`;
-      if (extracted_context) legacyPrompt += `\nContext: ${extracted_context}`;
-      // Repeat key fields for emphasis
-      legacyPrompt += `\n\nThe core idea to address is: ${extracted_idea}.`;
-      legacyPrompt += `\nThe key signal driving this is: ${extracted_context ? extracted_context : 'N/A'}.`;
-      legacyPrompt += `\n\nPlease provide:\n1. A clear, testable hypothesis statement\n2. 3-5 specific suggestions for how to test this hypothesis\n\nImportant: Always ensure your recommendations are directly tied to the provided idea and context. Do not suggest generic plays or solutions unrelated to these inputs, even if they match the quarter focus or team type.\n\nAvoid suggesting pricing changes or other strategies unless they are explicitly part of the idea or context.\n\nFormat your response as JSON with "hypothesis" and "suggestions" fields.`;
-      messages.push({ role: 'user', content: legacyPrompt });
-    } else {
-      return errorResponse('Idea or idea_prompt is required', 400);
-    }
+    });
+    
     // --- AI Debugger Logging ---
     // Log prettified prompt
     console.log('[AI DEBUG] PlayBuilder Final Prompt:', JSON.stringify(messages, null, 2));
@@ -221,7 +214,7 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
     // Log full OpenAI response
     console.log('[AI DEBUG] PlayBuilder Raw OpenAI Response:', aiResponse);
     
-        // Log AI usage
+    // Log AI usage
     await logAIUsage(env.DB, user.id, 'play_builder');
 
     // Record usage for billing
@@ -326,7 +319,9 @@ Avoid suggesting pricing changes or other strategies unless they are explicitly 
         user_input: userInput,
         final_prompt: finalPrompt,
         raw_response_text: aiResponse
-      }
+      },
+      user_note: userNote,
+      warning
     });
   } catch (error) {
     console.error('Generate play error:', error);

@@ -7,28 +7,24 @@ import { useAuth } from '../lib/auth';
 import { trackAIGeneration } from '../utils/analytics';
 import { FaLightbulb, FaClipboardList, FaCheckCircle, FaChartLine, FaUserTie, FaArrowRight } from 'react-icons/fa';
 
-const TEAM_TYPE_OPTIONS = [
-  'B2B', 'B2C', 'SaaS', 'DTC', 'Agency', 'Other'
-];
-const QUARTER_FOCUS_OPTIONS = [
-  'Growth', 'Retention', 'Friction Reduction', 'Brand Lift', 'Other'
-];
 const OWNER_ROLE_OPTIONS = [
-  'Rhythm90 Lead', 'Strategic Lead', 'Executional Lead', 'Signal Owner', 'Other'
+  'Rhythm90 Lead',
+  'Strategic Lead', 
+  'Executional Lead',
+  'Signal Owner',
+  'Other'
 ];
 
 function PlayBuilder() {
-  // New fields
-  const [teamType, setTeamType] = useState('');
-  const [teamTypeOther, setTeamTypeOther] = useState('');
-  const [quarterFocus, setQuarterFocus] = useState('');
-  const [quarterFocusOther, setQuarterFocusOther] = useState('');
-  const [topSignal, setTopSignal] = useState('');
+  // Form fields
+  const [playIdea, setPlayIdea] = useState('');
+  const [whyThisPlay, setWhyThisPlay] = useState('');
+  const [targetOutcome, setTargetOutcome] = useState('');
+  const [signalsToWatch, setSignalsToWatch] = useState('');
   const [ownerRole, setOwnerRole] = useState('');
   const [ownerRoleOther, setOwnerRoleOther] = useState('');
-  const [ideaPrompt, setIdeaPrompt] = useState('');
-  // Legacy fields
-  const [context, setContext] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  
   // Output
   const [output, setOutput] = useState('');
   const [structured, setStructured] = useState<any>(null);
@@ -36,8 +32,10 @@ function PlayBuilder() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userNote, setUserNote] = useState('');
+  
   // Validation
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  
   // Prompt context for saving
   const [promptContext, setPromptContext] = useState<{
     system_prompt?: string;
@@ -45,18 +43,32 @@ function PlayBuilder() {
     final_prompt?: string;
     raw_response_text?: string;
   } | null>(null);
+  
   const { currentTeam } = useAuth();
 
   // Helper to validate fields
   const validate = () => {
     const errs: {[key: string]: string} = {};
-    if (!ideaPrompt.trim()) errs.idea_prompt = 'Idea is required.';
-    if (ideaPrompt.length > 300) errs.idea_prompt = 'Max 300 characters.';
-    if (context.length > 300) errs.context = 'Max 300 characters.';
-    if (topSignal.length > 300) errs.top_signal = 'Max 300 characters.';
-    if (teamType === 'Other' && (!teamTypeOther.trim() || teamTypeOther.length > 50)) errs.team_type_other = 'Required, max 50 characters.';
-    if (quarterFocus === 'Other' && (!quarterFocusOther.trim() || quarterFocusOther.length > 50)) errs.quarter_focus_other = 'Required, max 50 characters.';
-    if (ownerRole === 'Other' && (!ownerRoleOther.trim() || ownerRoleOther.length > 50)) errs.owner_role_other = 'Required, max 50 characters.';
+    
+    if (!playIdea.trim()) errs.play_idea = 'Play Idea is required.';
+    if (playIdea.length > 300) errs.play_idea = 'Max 300 characters.';
+    
+    if (!whyThisPlay.trim()) errs.why_this_play = 'Why This Play is required.';
+    if (whyThisPlay.length > 300) errs.why_this_play = 'Max 300 characters.';
+    
+    if (!targetOutcome.trim()) errs.target_outcome = 'Target Outcome is required.';
+    if (targetOutcome.length > 300) errs.target_outcome = 'Max 300 characters.';
+    
+    if (!signalsToWatch.trim()) errs.signals_to_watch = 'Signals to Watch is required.';
+    if (signalsToWatch.length > 300) errs.signals_to_watch = 'Max 300 characters.';
+    
+    if (!ownerRole) errs.owner_role = 'Owner Role is required.';
+    if (ownerRole === 'Other' && (!ownerRoleOther.trim() || ownerRoleOther.length > 50)) {
+      errs.owner_role_other = 'Required, max 50 characters.';
+    }
+    
+    if (additionalNotes.length > 300) errs.additional_notes = 'Max 300 characters.';
+    
     return errs;
   };
 
@@ -277,15 +289,16 @@ function PlayBuilder() {
         }
         return typeof field === 'string' ? field : (field ? String(field) : '');
       };
+      
       const payload: any = {
-        team_type: extractValue(teamType === 'Other' ? teamTypeOther : teamType),
-        quarter_focus: extractValue(quarterFocus === 'Other' ? quarterFocusOther : quarterFocus),
-        top_signal: extractValue(topSignal),
+        play_idea: extractValue(playIdea),
+        observed_signal: extractValue(whyThisPlay),
+        target_outcome: extractValue(targetOutcome),
+        signals_to_watch: extractValue(signalsToWatch),
         owner_role: extractValue(ownerRole === 'Other' ? ownerRoleOther : ownerRole),
-        idea_prompt: extractValue(ideaPrompt),
-        idea: extractValue(ideaPrompt), // legacy
-        context: extractValue(context)
+        additional_context: extractValue(additionalNotes)
       };
+      
       const response = await apiClient.generatePlay(payload);
       if (response.data) {
         // Extract prompt context if available
@@ -326,6 +339,16 @@ function PlayBuilder() {
     }
   };
 
+  // Check if form is valid for submission
+  const isFormValid = () => {
+    return playIdea.trim() && 
+           whyThisPlay.trim() && 
+           targetOutcome.trim() && 
+           signalsToWatch.trim() && 
+           ownerRole && 
+           !isLoading;
+  };
+
   return (
     <AppLayout>
       <div className="p-6">
@@ -337,75 +360,91 @@ function PlayBuilder() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Transform Your Idea</h2>
             
             <div className="space-y-4">
-              {/* Team Type */}
+              {/* Play Idea */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Team Type</label>
-                <select
-                  value={teamType}
-                  onChange={e => setTeamType(e.target.value)}
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Play Idea <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={playIdea}
+                  onChange={e => setPlayIdea(e.target.value)}
+                  placeholder="Describe the change, experiment, or idea you want to test or explore."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">Select team type</option>
-                  {TEAM_TYPE_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-                {teamType === 'Other' && (
-                  <input
-                    type="text"
-                    value={teamTypeOther}
-                    onChange={e => setTeamTypeOther(e.target.value)}
-                    maxLength={50}
-                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="Please specify (max 50 characters)"
-                  />
-                )}
-                <p className="text-xs text-gray-500 mt-1">Select the type of team or business model. Choose ‘Other’ to enter a custom type.</p>
-                {errors.team_type_other && <p className="text-xs text-red-500">{errors.team_type_other}</p>}
-              </div>
-              {/* Quarter Focus */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quarter Focus</label>
-                <select
-                  value={quarterFocus}
-                  onChange={e => setQuarterFocus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">Select focus</option>
-                  {QUARTER_FOCUS_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-                {quarterFocus === 'Other' && (
-                  <input
-                    type="text"
-                    value={quarterFocusOther}
-                    onChange={e => setQuarterFocusOther(e.target.value)}
-                    maxLength={50}
-                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="Please specify (max 50 characters)"
-                  />
-                )}
-                <p className="text-xs text-gray-500 mt-1">What is your team’s main focus this quarter? Choose ‘Other’ to enter a custom focus area.</p>
-                {errors.quarter_focus_other && <p className="text-xs text-red-500">{errors.quarter_focus_other}</p>}
-              </div>
-              {/* Top Signal */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Top Signal</label>
-                <input
-                  type="text"
-                  value={topSignal}
-                  onChange={e => setTopSignal(e.target.value)}
+                  rows={3}
                   maxLength={300}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="E.g., high churn at onboarding"
                 />
-                <p className="text-xs text-gray-500 mt-1">Describe the key signal or observation driving this play. (E.g., ‘High churn at onboarding’)</p>
-                {errors.top_signal && <p className="text-xs text-red-500">{errors.top_signal}</p>}
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-500">This is your core idea or challenge.</p>
+                  <span className="text-xs text-gray-400">{playIdea.length}/300</span>
+                </div>
+                {errors.play_idea && <p className="text-xs text-red-500">{errors.play_idea}</p>}
               </div>
+
+              {/* Why This Play? */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Why This Play? <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={whyThisPlay}
+                  onChange={e => setWhyThisPlay(e.target.value)}
+                  placeholder="What feedback, data, or observation makes this worth testing?"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={3}
+                  maxLength={300}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-500">Mention what prompted the idea (e.g., drop-off, insight, feedback).</p>
+                  <span className="text-xs text-gray-400">{whyThisPlay.length}/300</span>
+                </div>
+                {errors.why_this_play && <p className="text-xs text-red-500">{errors.why_this_play}</p>}
+              </div>
+
+              {/* Target Outcome */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Target Outcome <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={targetOutcome}
+                  onChange={e => setTargetOutcome(e.target.value)}
+                  placeholder="What's the measurable goal or improvement you're aiming for?"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={3}
+                  maxLength={300}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-500">Be specific — e.g., +15% bundling, -20% abandonment.</p>
+                  <span className="text-xs text-gray-400">{targetOutcome.length}/300</span>
+                </div>
+                {errors.target_outcome && <p className="text-xs text-red-500">{errors.target_outcome}</p>}
+              </div>
+
+              {/* Signals to Watch */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Signals to Watch <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={signalsToWatch}
+                  onChange={e => setSignalsToWatch(e.target.value)}
+                  placeholder="What clues or indicators will tell you if it's working?"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={3}
+                  maxLength={300}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-500">Include quantitative (KPIs) and qualitative (feedback) signals.</p>
+                  <span className="text-xs text-gray-400">{signalsToWatch.length}/300</span>
+                </div>
+                {errors.signals_to_watch && <p className="text-xs text-red-500">{errors.signals_to_watch}</p>}
+              </div>
+
               {/* Owner Role */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Owner Role</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Owner Role <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={ownerRole}
                   onChange={e => setOwnerRole(e.target.value)}
@@ -426,40 +465,32 @@ function PlayBuilder() {
                     placeholder="Please specify (max 50 characters)"
                   />
                 )}
-                <p className="text-xs text-gray-500 mt-1">Who will own this play? Select a role or choose ‘Other’ to enter a custom owner.</p>
+                <p className="text-xs text-gray-500 mt-1">Who will own this play?</p>
+                {errors.owner_role && <p className="text-xs text-red-500">{errors.owner_role}</p>}
                 {errors.owner_role_other && <p className="text-xs text-red-500">{errors.owner_role_other}</p>}
               </div>
-              {/* Idea Prompt (Your Idea) */}
+
+              {/* Additional Notes (Optional) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Your Idea</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes (Optional)</label>
                 <textarea
-                  value={ideaPrompt}
-                  onChange={e => setIdeaPrompt(e.target.value)}
-                  placeholder="Describe your idea or challenge"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  rows={4}
-                  maxLength={300}
-                />
-                <p className="text-xs text-gray-500 mt-1">Briefly describe your idea or challenge. (Required, max 300 characters)</p>
-                {errors.idea_prompt && <p className="text-xs text-red-500">{errors.idea_prompt}</p>}
-              </div>
-              {/* Context (Optional) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Context (Optional)</label>
-                <textarea
-                  value={context}
-                  onChange={e => setContext(e.target.value)}
-                  placeholder="Add any relevant background, team details, or market context..."
+                  value={additionalNotes}
+                  onChange={e => setAdditionalNotes(e.target.value)}
+                  placeholder="Add any helpful background or details."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={3}
                   maxLength={300}
                 />
-                <p className="text-xs text-gray-500 mt-1">Add any relevant background, team details, or market context. (Optional, max 300 characters)</p>
-                {errors.context && <p className="text-xs text-red-500">{errors.context}</p>}
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-500">Add any helpful background or details.</p>
+                  <span className="text-xs text-gray-400">{additionalNotes.length}/300</span>
+                </div>
+                {errors.additional_notes && <p className="text-xs text-red-500">{errors.additional_notes}</p>}
               </div>
+
               <button
                 onClick={handleGenerate}
-                disabled={!ideaPrompt.trim() || isLoading}
+                disabled={!isFormValid()}
                 className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
                 {isLoading ? 'Generating...' : 'Generate Hypothesis'}
@@ -490,7 +521,7 @@ function PlayBuilder() {
                     toolName="Play Builder"
                     responseData={structured}
                     teamId={currentTeam?.id}
-                    summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                    summary={`Play: "${playIdea.substring(0, 100)}${playIdea.length > 100 ? '...' : ''}"`}
                     systemPrompt={promptContext?.system_prompt}
                     userInput={promptContext?.user_input}
                     finalPrompt={promptContext?.final_prompt}
@@ -507,7 +538,7 @@ function PlayBuilder() {
                     toolName="Play Builder"
                     responseData={{ output, hypothesis, suggestions }}
                     teamId={currentTeam?.id}
-                    summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                    summary={`Play: "${playIdea.substring(0, 100)}${playIdea.length > 100 ? '...' : ''}"`}
                     systemPrompt={promptContext?.system_prompt}
                     userInput={promptContext?.user_input}
                     finalPrompt={promptContext?.final_prompt}
@@ -551,7 +582,7 @@ function PlayBuilder() {
                     toolName="Play Builder"
                     responseData={{ hypothesis, suggestions }}
                     teamId={currentTeam?.id}
-                    summary={`Play: "${ideaPrompt.substring(0, 100)}${ideaPrompt.length > 100 ? '...' : ''}"`}
+                    summary={`Play: "${playIdea.substring(0, 100)}${playIdea.length > 100 ? '...' : ''}"`}
                     systemPrompt={promptContext?.system_prompt}
                     userInput={promptContext?.user_input}
                     finalPrompt={promptContext?.final_prompt}
