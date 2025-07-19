@@ -507,26 +507,29 @@ export async function handleGenerateRitualPrompts(request: Request, env: Env): P
 
     // Get team context for AI prompt injection
     const teamContext = await getTeamContext(env.DB, user.id);
+    
+    // Get team data for placeholder replacement
+    let teamData = { industry: '', focus_areas: '', team_description: '' };
+    try {
+      const teamResult = await env.DB.prepare(`
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = ?
+        ORDER BY tm.joined_at ASC
+        LIMIT 1
+      `).bind(user.id).first();
+      
+      if (teamResult) {
+        const team = teamResult as any;
+        teamData.industry = team.industry || '';
+        teamData.focus_areas = team.focus_areas || '';
+        teamData.team_description = team.team_description || '';
+      }
+    } catch (error) {
+      console.error('Error getting team data for placeholders:', error);
+    }
 
     // --- Prompt Assembly ---
-    const RITUAL_GUIDE_SYSTEM_MESSAGE = {
-      role: 'system',
-      content: `You are a Rhythm90 Ritual Guide assistant helping teams plan effective quarterly rituals.
-
-The official Rhythm90 rituals are:
-- kickoff: To align on 1–3 focused plays, define success outcomes, assign owners, and set the business context for the quarter.
-- pulse_check: To review in-flight plays, surface blockers, check early signals, and adjust priorities or support.
-- rr: To reflect on what ran, what was learned, and what should happen next, including adjustments to plays or approach.
-
-Your job is to:
-- Provide a clear, stepwise agenda tailored to the ritual type.
-- Include sharp discussion prompts that surface live signals, help prioritize, and align the team.
-- Highlight roles and how they contribute.
-- Suggest preparation materials or data.
-- Define success in terms of collective team learning, clarity, and forward motion.
-- Connect all recommendations to the team type, business context, top challenges, focus areas, or category context if provided.`
-    };
-    
     // Build context block with all fields, marking missing ones as "None provided"
     let contextBlock = 'Context:';
     contextBlock += `\nRitual Type: ${ritual_type}`;
@@ -565,13 +568,16 @@ Additional Refinements:
 
 ⚠️ CRITICAL: Return ONLY raw JSON — no markdown fences, no code blocks, no comments, no explanation text. Do not wrap output like \`\`\`json ... \`\`\`. Return the JSON object directly.`;
     
-    // Get system prompt from database
+    // Get system prompt from database with team context
     const systemPromptText = await buildSystemPrompt(env.DB, 'ritual_guide', {
       ritual_type,
       team_type,
       top_challenges,
       focus_areas,
-      additional_context
+      additional_context,
+      team_industry: teamData.industry,
+      team_focus_areas: teamData.focus_areas,
+      team_description: teamData.team_description
     });
     
     const messages = [
@@ -708,9 +714,33 @@ export async function handlePlainEnglishTranslator(request: Request, env: Env): 
     const { original_text } = body;
     if (!original_text) return errorResponse('Original text is required', 400);
 
-    // Get system prompt from database
+    // Get team data for placeholder replacement
+    let teamData = { industry: '', focus_areas: '', team_description: '' };
+    try {
+      const teamResult = await env.DB.prepare(`
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = ?
+        ORDER BY tm.joined_at ASC
+        LIMIT 1
+      `).bind(user.id).first();
+      
+      if (teamResult) {
+        const team = teamResult as any;
+        teamData.industry = team.industry || '';
+        teamData.focus_areas = team.focus_areas || '';
+        teamData.team_description = team.team_description || '';
+      }
+    } catch (error) {
+      console.error('Error getting team data for placeholders:', error);
+    }
+
+    // Get system prompt from database with team context
     const systemPromptText = await buildSystemPrompt(env.DB, 'plain_english_translator', {
-      original_text
+      original_text,
+      team_industry: teamData.industry,
+      focus_areas: teamData.focus_areas,
+      team_description: teamData.team_description
     });
     
     const systemMessage = {
@@ -863,11 +893,35 @@ export async function handleGetToByGenerator(request: Request, env: Env): Promis
       return errorResponse('All fields are required', 400);
     }
 
-    // Get system prompt from database
+    // Get team data for placeholder replacement
+    let teamData = { industry: '', focus_areas: '', team_description: '' };
+    try {
+      const teamResult = await env.DB.prepare(`
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = ?
+        ORDER BY tm.joined_at ASC
+        LIMIT 1
+      `).bind(user.id).first();
+      
+      if (teamResult) {
+        const team = teamResult as any;
+        teamData.industry = team.industry || '';
+        teamData.focus_areas = team.focus_areas || '';
+        teamData.team_description = team.team_description || '';
+      }
+    } catch (error) {
+      console.error('Error getting team data for placeholders:', error);
+    }
+
+    // Get system prompt from database with team context
     const systemPromptText = await buildSystemPrompt(env.DB, 'get_to_by_generator', {
       audience_description,
       behavioral_or_emotional_insight,
-      brand_product_role
+      brand_product_role,
+      team_industry: teamData.industry,
+      focus_areas: teamData.focus_areas,
+      team_description: teamData.team_description
     });
     
     const systemMessage = {
@@ -972,9 +1026,33 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     const { problem_or_strategy_summary } = body;
     if (!problem_or_strategy_summary) return errorResponse('Problem or strategy summary is required', 400);
 
-    // Get system prompt from database
+    // Get team data for placeholder replacement
+    let teamData = { industry: '', focus_areas: '', team_description: '' };
+    try {
+      const teamResult = await env.DB.prepare(`
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = ?
+        ORDER BY tm.joined_at ASC
+        LIMIT 1
+      `).bind(user.id).first();
+      
+      if (teamResult) {
+        const team = teamResult as any;
+        teamData.industry = team.industry || '';
+        teamData.focus_areas = team.focus_areas || '';
+        teamData.team_description = team.team_description || '';
+      }
+    } catch (error) {
+      console.error('Error getting team data for placeholders:', error);
+    }
+
+    // Get system prompt from database with team context
     const systemPromptText = await buildSystemPrompt(env.DB, 'creative_tension_finder', {
-      problem_or_strategy_summary
+      problem_or_strategy_summary,
+      team_industry: teamData.industry,
+      focus_areas: teamData.focus_areas,
+      team_description: teamData.team_description
     });
     
     const systemMessage = {
@@ -1075,9 +1153,33 @@ export async function handlePersonaGenerator(request: Request, env: Env): Promis
     console.log(`[DEBUG] PersonaGenerator called with user_id: ${user.id}`);
     if (!audience_seed) return errorResponse('Audience seed is required', 400);
 
-    // Get system prompt from database
+    // Get team data for placeholder replacement
+    let teamData = { industry: '', focus_areas: '', team_description: '' };
+    try {
+      const teamResult = await env.DB.prepare(`
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = ?
+        ORDER BY tm.joined_at ASC
+        LIMIT 1
+      `).bind(user.id).first();
+      
+      if (teamResult) {
+        const team = teamResult as any;
+        teamData.industry = team.industry || '';
+        teamData.focus_areas = team.focus_areas || '';
+        teamData.team_description = team.team_description || '';
+      }
+    } catch (error) {
+      console.error('Error getting team data for placeholders:', error);
+    }
+
+    // Get system prompt from database with team context
     const systemPromptText = await buildSystemPrompt(env.DB, 'persona_generator', {
-      audience_seed
+      audience_seed,
+      team_industry: teamData.industry,
+      focus_areas: teamData.focus_areas,
+      team_description: teamData.team_description
     });
     
     const systemMessage = {

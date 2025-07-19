@@ -57,11 +57,25 @@ export async function handleCreatePlannerSession(request: Request, env: Env): Pr
     }
 
     // Get team profile for context
-        const team = await env.DB.prepare(`
+    const team = await env.DB.prepare(`
       SELECT industry, focus_areas, team_description
       FROM teams
       WHERE id = ?
     `).bind(teamMember.team_id).first();
+
+    // Get system prompt from database with team context
+    const systemPromptText = await buildSystemPrompt(env.DB, 'quarterly_planner', {
+      big_challenge: inputs.bigChallenge,
+      learning_goals: inputs.learningGoals.join(', '),
+      business_context: inputs.businessContext || '',
+      known_plays: inputs.knownPlays || '',
+      signals_to_watch: inputs.signalsToWatch.join(', '),
+      blockers: inputs.blockers || '',
+      roles: JSON.stringify(inputs.roles),
+      team_industry: team?.industry || '',
+      focus_areas: team?.focus_areas || '',
+      team_description: team?.team_description || ''
+    });
 
     // Generate AI summary
     const teamContext = team ? `
@@ -84,7 +98,7 @@ Quarterly Planning Inputs:
 
     console.log('Generating AI summary for planner session...');
     const messages = [
-      { role: 'system', content: PLANNER_SYSTEM_PROMPT },
+      { role: 'system', content: systemPromptText },
       { role: 'user', content: teamContext + userInputs + '\n\nPlease provide a clear, actionable summary for this team\'s quarterly planning session.' }
     ];
     const summary = await callOpenAI(messages, env);
