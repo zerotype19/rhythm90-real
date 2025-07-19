@@ -2317,22 +2317,24 @@ export async function handleFocusGroupAsk(request: Request, env: Env): Promise<R
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
+    console.log('[AI DEBUG] Focus Group Ask: Starting');
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { question } = body;
+    console.log('[AI DEBUG] Focus Group Ask: Question received:', question);
     if (!question) {
       return errorResponse('Question is required', 400);
     }
 
     // Get focus group from session
-    console.log(`[DEBUG] FocusGroupAsk called with user_id: ${user.id}`);
+    console.log(`[AI DEBUG] Focus Group Ask: Getting focus group for user_id: ${user.id}`);
     const focusGroup = getFocusGroupSession(user.id, request);
     if (!focusGroup) {
-      console.log(`[DEBUG] No focus group found for user ${user.id}`);
+      console.log(`[AI DEBUG] Focus Group Ask: No focus group found for user ${user.id}`);
       return errorResponse('No focus group found for this session. Please generate a focus group first.', 400);
     }
-    console.log(`[DEBUG] Found focus group with ${focusGroup.persona_lineup?.length || 0} personas`);
+    console.log(`[AI DEBUG] Focus Group Ask: Found focus group with ${focusGroup.persona_lineup?.length || 0} personas`);
 
     // Build system message with all personas
     const personas = focusGroup.persona_lineup || [];
@@ -2369,7 +2371,9 @@ Keep responses concise (1-2 sentences each) and conversational.`
     };
 
     const messages = [systemMessage, userMessage];
+    console.log('[AI DEBUG] Focus Group Ask: Calling OpenAI with messages:', messages);
     const aiResponse = await callOpenAI(messages, env);
+    console.log('[AI DEBUG] Focus Group Ask: OpenAI response received:', aiResponse);
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_focus_group_ask');
@@ -2381,11 +2385,13 @@ Keep responses concise (1-2 sentences each) and conversational.`
 
     try {
       // For Ask Mode, we expect a simple text response, not JSON
+      console.log('[AI DEBUG] Focus Group Ask: Processing response');
       backendPayload = {
         answer: aiResponse.trim(),
         focus_group_size: personas.length,
         persona_names: personas.map(p => p.name)
       };
+      console.log('[AI DEBUG] Focus Group Ask: Final payload:', backendPayload);
     } catch (err) {
       parseStatus = 'failed';
       backendPayload = { 

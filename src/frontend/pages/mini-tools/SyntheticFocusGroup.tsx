@@ -36,17 +36,24 @@ function SyntheticFocusGroup() {
     setAskResponse(null); // Clear previous ask responses
 
     try {
+      console.log('[FRONTEND DEBUG] Synthetic Focus Group: Calling API with:', { topicOrCategory, audienceSeedInfo, mustIncludeSegments });
       const response = await apiClient.syntheticFocusGroup(topicOrCategory, audienceSeedInfo, mustIncludeSegments);
+      console.log('[FRONTEND DEBUG] Synthetic Focus Group: API response:', response);
 
       if (response.data) {
+        console.log('[FRONTEND DEBUG] Synthetic Focus Group: Setting output:', response.data);
         setOutput(response.data);
         
         // Show warning if parsing failed
         if (response.data.warning) {
           setError(`Generated with warnings: ${response.data.warning}`);
         }
+      } else {
+        console.log('[FRONTEND DEBUG] Synthetic Focus Group: No data in response');
+        setError('No data received from API');
       }
     } catch (err: any) {
+      console.log('[FRONTEND DEBUG] Synthetic Focus Group: Error:', err);
       setError(err.response?.data?.error || 'Failed to generate focus group');
     } finally {
       setIsLoading(false);
@@ -69,13 +76,20 @@ function SyntheticFocusGroup() {
     setAskResponse(null);
 
     try {
+      console.log('[FRONTEND DEBUG] Focus Group Ask: Calling API with question:', askQuestion);
       const response = await apiClient.focusGroupAsk(askQuestion);
+      console.log('[FRONTEND DEBUG] Focus Group Ask: API response:', response);
 
       if (response.data) {
+        console.log('[FRONTEND DEBUG] Focus Group Ask: Setting response data:', response.data);
         setAskResponse(response.data);
         setAskQuestion(''); // Clear the question input
+      } else {
+        console.log('[FRONTEND DEBUG] Focus Group Ask: No data in response');
+        setAskError('No response data received');
       }
     } catch (err: any) {
+      console.log('[FRONTEND DEBUG] Focus Group Ask: Error:', err);
       setAskError(err.response?.data?.error || 'Failed to get focus group response');
     } finally {
       setIsAsking(false);
