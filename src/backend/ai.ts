@@ -2361,22 +2361,24 @@ export async function handlePersonaAsk(request: Request, env: Env): Promise<Resp
     return new Response(null, { headers: { 'Access-Control-Allow-Origin': '*' } });
   }
   try {
+    console.log('[AI DEBUG] Persona Ask: Starting');
     const user = await verifyAuth(request, env);
     if (!user) return errorResponse('Unauthorized', 401);
     const body = await request.json();
     const { question } = body;
+    console.log('[AI DEBUG] Persona Ask: Question received:', question);
     if (!question) {
       return errorResponse('Question is required', 400);
     }
 
     // Get persona from session
-    console.log(`[DEBUG] PersonaAsk called with user_id: ${user.id}`);
+    console.log(`[AI DEBUG] Persona Ask: Getting persona for user_id: ${user.id}`);
     const persona = getPersonaSession(user.id, request);
     if (!persona) {
-      console.log(`[DEBUG] No persona found for user ${user.id}`);
+      console.log(`[AI DEBUG] Persona Ask: No persona found for user ${user.id}`);
       return errorResponse('No persona found for this session. Please generate a persona first.', 400);
     }
-    console.log(`[DEBUG] Found persona: ${persona.name}`);
+    console.log(`[AI DEBUG] Persona Ask: Found persona: ${persona.name}`);
 
     const systemMessage = {
       role: 'system',
@@ -2397,7 +2399,9 @@ Answer the following question as ${persona.name}, staying in character and true 
     };
 
     const messages = [systemMessage, userMessage];
+    console.log('[AI DEBUG] Persona Ask: Calling OpenAI with messages:', messages);
     const aiResponse = await callOpenAI(messages, env);
+    console.log('[AI DEBUG] Persona Ask: OpenAI response received:', aiResponse);
     
     // Log AI usage
     await logAIUsage(env.DB, user.id, 'mini_tool_persona_ask');
@@ -2409,11 +2413,14 @@ Answer the following question as ${persona.name}, staying in character and true 
 
     try {
       // For Ask Mode, we expect a simple text response, not JSON
+      console.log('[AI DEBUG] Persona Ask: Processing response');
       backendPayload = {
         answer: aiResponse.trim(),
         persona_name: persona.name
       };
+      console.log('[AI DEBUG] Persona Ask: Final payload:', backendPayload);
     } catch (err) {
+      console.log('[AI DEBUG] Persona Ask: Error processing response:', err);
       parseStatus = 'failed';
       backendPayload = { 
         answer: aiResponse.trim(),

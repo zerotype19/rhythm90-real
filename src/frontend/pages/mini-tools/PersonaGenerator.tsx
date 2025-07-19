@@ -62,13 +62,20 @@ function PersonaGenerator() {
     setAskResponse(null);
 
     try {
+      console.log('[FRONTEND DEBUG] Persona Ask: Calling API with question:', askQuestion);
       const response = await apiClient.personaAsk(askQuestion);
+      console.log('[FRONTEND DEBUG] Persona Ask: API response:', response);
 
       if (response.data) {
+        console.log('[FRONTEND DEBUG] Persona Ask: Setting response data:', response.data);
         setAskResponse(response.data);
         setAskQuestion(''); // Clear the question input
+      } else {
+        console.log('[FRONTEND DEBUG] Persona Ask: No data in response');
+        setAskError('No response data received');
       }
     } catch (err: any) {
+      console.log('[FRONTEND DEBUG] Persona Ask: Error:', err);
       setAskError(err.response?.data?.error || 'Failed to get persona response');
     } finally {
       setIsAsking(false);
