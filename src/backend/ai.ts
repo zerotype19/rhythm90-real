@@ -348,20 +348,41 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
 
     // Get team context for AI prompt injection (industry, focus_areas, team_description)
     const teamContext = await getTeamContext(env.DB, user.id);
+    
+    // Get team data for placeholder replacement
+    let teamData = { industry: '', focus_areas: '', team_description: '' };
+    try {
+      const teamResult = await env.DB.prepare(`
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE tm.user_id = ?
+        ORDER BY tm.joined_at ASC
+        LIMIT 1
+      `).bind(user.id).first();
+      
+      if (teamResult) {
+        const team = teamResult as any;
+        teamData.industry = team.industry || '';
+        teamData.focus_areas = team.focus_areas || '';
+        teamData.team_description = team.team_description || '';
+      }
+    } catch (error) {
+      console.error('Error getting team data for placeholders:', error);
+    }
 
     // --- Prompt Assembly ---
     // Get system prompt from database with new structure
     const systemPromptText = await buildSystemPrompt(env.DB, 'signal_lab', {
       observation,
       context: context || '',
-      team_industry: teamContext?.industry || '',
-      focus_areas: teamContext?.focus_areas || '',
-      team_description: teamContext?.team_description || ''
+      team_industry: teamData.industry,
+      focus_areas: teamData.focus_areas,
+      team_description: teamData.team_description
     });
     
     let messages = [{ role: 'system', content: systemPromptText }];
     
-    // Add team context if available
+    // Add team context if available (this provides additional context beyond placeholders)
     if (teamContext) {
       messages.push({ role: 'system', content: teamContext });
     }
