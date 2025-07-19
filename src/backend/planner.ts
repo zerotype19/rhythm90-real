@@ -1,6 +1,7 @@
 import { Env, PlannerSession, CreatePlannerSessionRequest } from './types';
 import { verifyAuth } from './auth';
 import { callOpenAI, jsonResponse, errorResponse } from './utils';
+import { buildSystemPrompt } from './systemPrompts';
 
 const PLANNER_SYSTEM_PROMPT = `You are the Rhythm90 Assistant, a smart but lightweight guide. You help teams shape the quarter ahead by surfacing goals, learning focus, play ideas, and signals to watch. Use their team profile (industry, focus areas, description) and planner inputs to generate relevant, sharp, no-fluff suggestions. Keep it conversational and motivating, not formal or bureaucratic.
 

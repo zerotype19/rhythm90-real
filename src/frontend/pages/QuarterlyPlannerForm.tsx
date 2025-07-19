@@ -211,12 +211,13 @@ function QuarterlyPlannerForm() {
   const saveSession = async () => {
     setIsLoading(true);
     try {
-      console.log('Saving planner session with inputs:', inputs);
+      console.log('[FRONTEND DEBUG] Quarterly Planner: Saving session with inputs:', inputs);
       
       const response = await apiClient.createPlannerSession(inputs);
-      console.log('API response:', response);
+      console.log('[FRONTEND DEBUG] Quarterly Planner: API response:', response);
 
       if (response.data?.session && response.data?.summary) {
+        console.log('[FRONTEND DEBUG] Quarterly Planner: Setting session and summary');
         setSession(response.data.session);
         setSummary(response.data.summary);
         
@@ -230,11 +231,17 @@ function QuarterlyPlannerForm() {
         // Try to parse the summary as structured data
         const parsed = parseAIResponse(response.data.summary);
         if (parsed) {
+          console.log('[FRONTEND DEBUG] Quarterly Planner: Parsed structured summary:', parsed);
           setStructuredSummary(parsed);
+        } else {
+          console.log('[FRONTEND DEBUG] Quarterly Planner: Could not parse structured summary');
         }
+      } else {
+        console.log('[FRONTEND DEBUG] Quarterly Planner: No session or summary in response');
+        alert('No response data received from API');
       }
     } catch (error) {
-      console.error('Error saving planner session:', error);
+      console.error('[FRONTEND DEBUG] Quarterly Planner: Error saving session:', error);
       alert('Error saving planner session. Please try again.');
     } finally {
       setIsLoading(false);
