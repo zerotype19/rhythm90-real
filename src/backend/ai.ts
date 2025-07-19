@@ -1120,8 +1120,32 @@ export async function handleCreativeTensionFinder(request: Request, env: Env): P
     try {
       console.log('[AI DEBUG] Creative Tension Finder: Attempting JSON parse');
       const parsed = JSON.parse(aiResponse);
-      backendPayload = Array.isArray(parsed) ? parsed : [];
-      console.log('[AI DEBUG] Creative Tension Finder: JSON parse successful, payload:', backendPayload);
+      
+      // Handle different response formats
+      if (Array.isArray(parsed)) {
+        // Direct array format
+        backendPayload = parsed;
+        console.log('[AI DEBUG] Creative Tension Finder: Direct array format, payload:', backendPayload);
+      } else if (typeof parsed === 'object' && parsed !== null) {
+        // Object with numbered keys format (like {"0": {...}, "1": {...}})
+        console.log('[AI DEBUG] Creative Tension Finder: Object format detected, converting to array');
+        const tensionsArray = [];
+        const keys = Object.keys(parsed).filter(key => /^\d+$/.test(key)).sort((a, b) => parseInt(a) - parseInt(b));
+        
+        for (const key of keys) {
+          const tension = parsed[key];
+          if (tension && typeof tension === 'object' && tension.tension) {
+            tensionsArray.push(tension);
+          }
+        }
+        
+        backendPayload = tensionsArray;
+        console.log('[AI DEBUG] Creative Tension Finder: Converted object to array, payload:', backendPayload);
+      } else {
+        // Fallback to empty array
+        backendPayload = [];
+        console.log('[AI DEBUG] Creative Tension Finder: Invalid format, using empty array');
+      }
     } catch (err) {
       console.log('[AI DEBUG] Creative Tension Finder: JSON parse failed, trying fallback parsing');
       // If JSON parsing failed, try to extract structured data from the raw response
