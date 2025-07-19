@@ -405,13 +405,13 @@ export async function handleInterpretSignal(request: Request, env: Env): Promise
       let signal_summary = '', why_it_matters = '', possible_next_step = '';
       
       // Extract sections based on new system prompt structure
-      const summaryMatch = aiResponse.match(/\*\*Signal Summary\*\*\s*[:\-]?\s*([\s\S]*?)(?=\*\*Why It Matters\*\*|$)/i);
+      const summaryMatch = aiResponse.match(/\*\*Signal Summary\*\*:\s*([\s\S]*?)(?=\*\*Why It Matters\*\*:|$)/i);
       if (summaryMatch) signal_summary = summaryMatch[1].trim();
       
-      const whyMatch = aiResponse.match(/\*\*Why It Matters\*\*\s*[:\-]?\s*([\s\S]*?)(?=\*\*Possible Next Step\*\*|$)/i);
+      const whyMatch = aiResponse.match(/\*\*Why It Matters\*\*:\s*([\s\S]*?)(?=\*\*Possible Next Step\*\*:|$)/i);
       if (whyMatch) why_it_matters = whyMatch[1].trim();
       
-      const nextMatch = aiResponse.match(/\*\*Possible Next Step\*\*\s*[:\-]?\s*([\s\S]*)/i);
+      const nextMatch = aiResponse.match(/\*\*Possible Next Step\*\*:\s*([\s\S]*)/i);
       if (nextMatch) possible_next_step = nextMatch[1].trim();
       
       console.log('Extracted fields:', { signal_summary, why_it_matters, possible_next_step }); // Debug log
